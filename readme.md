@@ -31,6 +31,38 @@ cyber-asana auth status
 
 It reads local state only, never calls the API, and exits `0` even when no credential is set — so it still answers when every other command is failing with `401`. The token is shown masked. Precedence is `--token` > `ASANA_ACCESS_TOKEN` > `ASANA_TOKEN`.
 
+### OAuth
+
+A PAT is the simpler choice for a single user. OAuth is worth the setup when several people use the same install, or when you want a credential that refreshes itself instead of living forever in your shell profile.
+
+cyber-asana uses **your own** Asana app, so no third-party registration ever sees your data. Create one at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps), add `http://localhost:7654/callback` as a redirect URL, then:
+
+```sh
+export ASANA_CLIENT_ID=<client-id>
+export ASANA_CLIENT_SECRET=<client-secret>
+cyber-asana auth login
+```
+
+`auth login` opens the browser, captures the redirect on a loopback server bound to `127.0.0.1`, and stores the tokens. It is a one-time human step — agents inherit the stored credentials the same way they inherit a PAT.
+
+Credentials live under `$XDG_CONFIG_HOME/cyber-asana` (or `~/.config/cyber-asana`), split by who owns them:
+
+| File | Contents | Written by |
+| --- | --- | --- |
+| `settings.json` | `client_id`, `client_secret` | you, by hand |
+| `credentials.json` | access token, refresh token, expiry | the CLI, on every refresh |
+
+Both are `0600`. `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` override `settings.json` per field.
+
+To get a token without storing it — for a one-off shell, a CI step, or a container:
+
+```sh
+cyber-asana auth login --no-store            # prints the access token
+export ASANA_ACCESS_TOKEN=$(cyber-asana auth login --no-store --raw)
+```
+
+`--no-store` prints only the access token, which expires in an hour. The long-lived refresh token requires `--include-refresh-token`. Both put a live credential on stdout, where shell history, CI logs, and agent transcripts will capture it.
+
 ## Agent skills
 
 `cyber-asana` ships workflow skills under [`skills/`](skills/) for Cursor, Claude Code, and other agents. **Start here** — skills encode when to use MCP tools vs CLI, how to resolve projects from repo config, and common workflows (standups, sprint reports, task creation).
