@@ -63,6 +63,14 @@ export ASANA_ACCESS_TOKEN=$(cyber-asana auth login --no-store --raw)
 
 `--no-store` prints only the access token, which expires in an hour. The long-lived refresh token requires `--include-refresh-token`. Both put a live credential on stdout, where shell history, CI logs, and agent transcripts will capture it.
 
+To feed the *stored* token to another tool without re-authorizing, use `auth token` — it refreshes first if the token is within a minute of expiring, so what it prints is always usable:
+
+```sh
+curl -H "Authorization: Bearer $(cyber-asana auth token)" https://app.asana.com/api/1.0/users/me
+```
+
+`auth logout` revokes the grant with Asana and then deletes the local credentials. Revoking first matters: Asana revokes only refresh tokens, so once the file is gone there is nothing left to revoke with. If revocation fails the credentials are still deleted, and the output tells you the grant may still be live so you can remove it at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps). `--local` skips revocation, and logging out twice is not an error.
+
 ## Agent skills
 
 `cyber-asana` ships workflow skills under [`skills/`](skills/) for Cursor, Claude Code, and other agents. **Start here** — skills encode when to use MCP tools vs CLI, how to resolve projects from repo config, and common workflows (standups, sprint reports, task creation).

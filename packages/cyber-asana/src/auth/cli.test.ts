@@ -161,3 +161,184 @@ describe('auth login', () => {
 		expect(deps.login).toHaveBeenCalledWith(expect.objectContaining({ scopes: ['tasks:read', 'projects:read'] }))
 	})
 })
+
+describe('auth token', () => {
+	const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+	const originalArgv = [...process.argv]
+
+	afterEach(() => {
+		vi.clearAllMocks()
+		process.argv = [...originalArgv]
+	})
+
+	const NOW = 1_000_000
+
+	function tokenDeps(overrides: Record<string, unknown> = {}) {
+		return {
+			configDir: () => '/tmp/cyber-asana-test',
+			readSettings: vi.fn().mockResolvedValue({ client_id: 'client-123', client_secret: 'secret-456' }),
+			readCredentials: vi.fn().mockResolvedValue({
+				accessToken: 'stored-token',
+				refreshToken: 'refresh-token',
+				expiresAt: NOW + 600_000,
+			}),
+			writeCredentials: vi.fn().mockResolvedValue(undefined),
+			refreshAccessToken: vi.fn().mockResolvedValue({
+				accessToken: 'refreshed-token',
+				refreshToken: 'refresh-token',
+				expiresAt: NOW + 3_600_000,
+			}),
+			now: () => NOW,
+			...overrides,
+		}
+	}
+
+	async function runToken(deps: Record<string, unknown>, args: string[] = []) {
+		const program = new Command().addCommand(authCommand(deps as never))
+		process.argv = ['node', 'test']
+		await program.parseAsync(['node', 'test', 'auth', 'token', ...args], { from: 'node' })
+		return logSpy.mock.calls.map((call) => String(call[0])).join('\n')
+	}
+
+	it('prints the stored access token for shell substitution', async () => {
+		const out = await runToken(tokenDeps())
+
+		expect(out.trim()).toBe('stored-token')
+	})
+
+	it('leaves a token that is still valid alone', async () => {
+		const deps = tokenDeps()
+
+		await runToken(deps)
+
+		expect(deps.refreshAccessToken).not.toHaveBeenCalled()
+	})
+
+	it('refreshes a token that is about to expire', async () => {
+		const deps = tokenDeps({
+			readCredentials: vi.fn().mockResolvedValue({
+				accessToken: 'stale-token',
+				refreshToken: 'refresh-token',
+				expiresAt: NOW + 5_000,
+			}),
+		})
+
+		const out = await runToken(deps)
+
+		expect(deps.refreshAccessToken).toHaveBeenCalledWith(
+			expect.objectContaining({ refreshToken: 'refresh-token', clientId: 'client-123' }),
+			expect.anything(),
+		)
+		expect(out.trim()).toBe('refreshed-token')
+	})
+
+	it('persists the refreshed token so the next command does not refresh again', async () => {
+		const deps = tokenDeps({
+			readCredentials: vi.fn().mockResolvedValue({
+				accessToken: 'stale-token',
+				refreshToken: 'refresh-token',
+				expiresAt: NOW + 5_000,
+			}),
+		})
+
+		await runToken(deps)
+
+		expect(deps.writeCredentials).toHaveBeenCalledWith(
+			'/tmp/cyber-asana-test',
+			expect.objectContaining({ accessToken: 'refreshed-token' }),
+		)
+	})
+
+	it('tells the user to log in when nothing is stored', async () => {
+		const deps = tokenDeps({ readCredentials: vi.fn().mockResolvedValue(undefined) })
+
+		await expect(runToken(deps)).rejects.toThrow(/auth login/)
+	})
+
+	it('reports that an expired token cannot be refreshed without a refresh token', async () => {
+		const deps = tokenDeps({
+			readCredentials: vi.fn().mockResolvedValue({ accessToken: 'stale-token', expiresAt: NOW + 5_000 }),
+		})
+
+		await expect(runToken(deps)).rejects.toThrow(/auth login/)
+	})
+})
+
+describe('auth logout', () => {
+	const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+	const originalArgv = [...process.argv]
+
+	afterEach(() => {
+		vi.clearAllMocks()
+		process.argv = [...originalArgv]
+	})
+
+	function logoutDeps(overrides: Record<string, unknown> = {}) {
+		return {
+			configDir: () => '/tmp/cyber-asana-test',
+			readSettings: vi.fn().mockResolvedValue({ client_id: 'client-123', client_secret: 'secret-456' }),
+			readCredentials: vi.fn().mockResolvedValue({
+				accessToken: 'stored-token',
+				refreshToken: 'refresh-token',
+				expiresAt: 2_000_000,
+			}),
+			revokeRefreshToken: vi.fn().mockResolvedValue(undefined),
+			deleteCredentials: vi.fn().mockResolvedValue(true),
+			...overrides,
+		}
+	}
+
+	async function runLogout(deps: Record<string, unknown>, args: string[] = []) {
+		const program = new Command().addCommand(authCommand(deps as never))
+		process.argv = ['node', 'test']
+		await program.parseAsync(['node', 'test', 'auth', 'logout', ...args], { from: 'node' })
+		return logSpy.mock.calls.map((call) => String(call[0])).join('\n')
+	}
+
+	it('revokes the grant before forgetting the refresh token', async () => {
+		const order: string[] = []
+		const deps = logoutDeps({
+			revokeRefreshToken: vi.fn(async () => {
+				order.push('revoke')
+			}),
+			deleteCredentials: vi.fn(async () => {
+				order.push('delete')
+				return true
+			}),
+		})
+
+		await runLogout(deps)
+
+		expect(order).toEqual(['revoke', 'delete'])
+	})
+
+	it('deletes the local credentials without revoking when asked to stay local', async () => {
+		const deps = logoutDeps()
+
+		await runLogout(deps, ['--local'])
+
+		expect(deps.revokeRefreshToken).not.toHaveBeenCalled()
+		expect(deps.deleteCredentials).toHaveBeenCalled()
+	})
+
+	it('still forgets the credentials when revocation fails, and says so', async () => {
+		const deps = logoutDeps({ revokeRefreshToken: vi.fn().mockRejectedValue(new Error('invalid_client')) })
+
+		const out = await runLogout(deps)
+
+		expect(deps.deleteCredentials).toHaveBeenCalled()
+		expect(out).toMatch(/invalid_client|could not revoke/i)
+	})
+
+	it('reports already logged out rather than failing', async () => {
+		const deps = logoutDeps({
+			readCredentials: vi.fn().mockResolvedValue(undefined),
+			deleteCredentials: vi.fn().mockResolvedValue(false),
+		})
+
+		const out = await runLogout(deps)
+
+		expect(deps.revokeRefreshToken).not.toHaveBeenCalled()
+		expect(out).toMatch(/not logged in|already/i)
+	})
+})

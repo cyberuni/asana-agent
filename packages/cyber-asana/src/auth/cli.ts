@@ -3,9 +3,9 @@ import { getTokenOverride } from '../client.js'
 import { output, printFields, printNextSteps } from '../output.js'
 import { type Credential, maskToken, resolveCredential } from './credential.js'
 import { defaultLoginDeps, type LoginParams, performLogin } from './login.js'
-import type { Tokens } from './oauth.js'
+import { refreshAccessToken, revokeRefreshToken, type Tokens } from './oauth.js'
 import { type AppSettings, configDir, readSettings, resolveAppCredentials } from './settings.js'
-import { writeCredentials } from './token-store.js'
+import { deleteCredentials, readCredentials, writeCredentials } from './token-store.js'
 
 // `auth status` is a credential diagnostic that works when the credential does
 // not — `user me` answers "who am I to Asana?" and needs a working token to
@@ -36,12 +36,20 @@ or put them in settings.json under your config directory:
 A personal access token remains the simpler option for a single user:
 https://app.asana.com/0/my-apps`
 
+/** Refresh this far ahead of expiry so a command never runs with a token that dies mid-flight. */
+const REFRESH_WINDOW_MS = 60_000
+
 export type AuthCommandDeps = {
 	readCredential: () => Credential
 	configDir: () => string
 	readSettings: (dir: string) => Promise<AppSettings>
 	login: (params: LoginParams) => Promise<Tokens>
+	readCredentials: (dir: string) => Promise<Tokens | undefined>
 	writeCredentials: (dir: string, tokens: Tokens) => Promise<void>
+	deleteCredentials: (dir: string) => Promise<boolean>
+	refreshAccessToken: typeof refreshAccessToken
+	revokeRefreshToken: typeof revokeRefreshToken
+	now: () => number
 }
 
 function defaultDeps(): AuthCommandDeps {
@@ -50,7 +58,12 @@ function defaultDeps(): AuthCommandDeps {
 		configDir: () => configDir(),
 		readSettings,
 		login: (params) => performLogin(params, defaultLoginDeps()),
+		readCredentials,
 		writeCredentials,
+		deleteCredentials,
+		refreshAccessToken,
+		revokeRefreshToken,
+		now: () => Date.now(),
 	}
 }
 
@@ -190,6 +203,82 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 				)
 			},
 		)
+
+	cmd
+		.command('token')
+		.description('Print the stored access token, refreshing it first when it is about to expire')
+		.action(async () => {
+			const dir = deps.configDir()
+			const stored = await deps.readCredentials(dir)
+			if (!stored) throw new Error('Not logged in. Run `cyber-asana auth login` first.')
+
+			let tokens = stored
+			if (tokens.expiresAt - deps.now() < REFRESH_WINDOW_MS) {
+				const app = resolveAppCredentials({ settings: await deps.readSettings(dir) })
+				if (!tokens.refreshToken || !app) {
+					throw new Error(
+						'The stored access token has expired and cannot be refreshed. Run `cyber-asana auth login` again.',
+					)
+				}
+				tokens = await deps.refreshAccessToken(
+					{ clientId: app.clientId, clientSecret: app.clientSecret, refreshToken: tokens.refreshToken },
+					{ fetch: globalThis.fetch, now: deps.now },
+				)
+				await deps.writeCredentials(dir, tokens)
+			}
+
+			// This command exists to be piped into other tools, so text output is
+			// the bare token and nothing else.
+			output({ access_token: tokens.accessToken, expires_at: new Date(tokens.expiresAt).toISOString() }, () => {
+				console.log(tokens.accessToken)
+			})
+		})
+
+	cmd
+		.command('logout')
+		.description('Revoke the stored grant and delete the local credentials')
+		.option('--local', 'Delete the local credentials without revoking the grant')
+		.action(async (opts: { local?: boolean }) => {
+			const dir = deps.configDir()
+			const stored = await deps.readCredentials(dir)
+
+			// Asana revokes only refresh tokens, so revocation has to happen before
+			// the file is deleted — afterwards there is nothing left to revoke with.
+			let revocationError: string | undefined
+			if (stored?.refreshToken && !opts.local) {
+				const app = resolveAppCredentials({ settings: await deps.readSettings(dir) })
+				if (app) {
+					try {
+						await deps.revokeRefreshToken(
+							{ clientId: app.clientId, clientSecret: app.clientSecret, refreshToken: stored.refreshToken },
+							{ fetch: globalThis.fetch, now: deps.now },
+						)
+					} catch (error) {
+						revocationError = error instanceof Error ? error.message : String(error)
+					}
+				}
+			}
+
+			const deleted = await deps.deleteCredentials(dir)
+			output(
+				{ deleted, revoked: stored?.refreshToken ? !revocationError && !opts.local : false, error: revocationError },
+				() => {
+					if (!deleted && !stored) {
+						printFields({ Status: 'not logged in' })
+						return
+					}
+					printFields({
+						Status: 'logged out',
+						Revoked: opts.local ? 'skipped (--local)' : revocationError ? 'failed' : 'yes',
+						// The local credentials are gone either way; say plainly that the
+						// grant may still be live so it can be revoked in the browser.
+						Warning: revocationError
+							? `Could not revoke the grant: ${revocationError}. Remove it at https://app.asana.com/0/my-apps`
+							: null,
+					})
+				},
+			)
+		})
 
 	return cmd
 }
