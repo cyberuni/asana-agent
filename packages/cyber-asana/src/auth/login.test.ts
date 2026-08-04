@@ -110,6 +110,51 @@ describe('performLogin', () => {
 		expect(new URL(d.opened[0]).searchParams.get('scope')).toBe('tasks:read')
 	})
 
+	describe('manual mode', () => {
+		it('uses the out-of-band redirect Asana documents for command line apps', async () => {
+			const announced: string[] = []
+			const d = deps({ promptForCode: async () => 'pasted-code', announce: (m: string) => announced.push(m) })
+
+			await performLogin({ app, port: 7654, manual: true }, d.value)
+
+			const url = new URL(announced.join('\n').match(/https:\/\/\S+/)?.[0] ?? '')
+			expect(url.searchParams.get('redirect_uri')).toBe('urn:ietf:wg:oauth:2.0:oob')
+		})
+
+		it('never opens a local port, since nothing will redirect to it', async () => {
+			const d = deps({ promptForCode: async () => 'pasted-code' })
+
+			await performLogin({ app, port: 7654, manual: true }, d.value)
+
+			expect(d.value.startCallbackServer).not.toHaveBeenCalled()
+		})
+
+		it('exchanges the code the user pasted, against the same redirect', async () => {
+			const d = deps({ promptForCode: async () => 'pasted-code' })
+
+			await performLogin({ app, port: 7654, manual: true }, d.value)
+
+			expect(d.value.exchangeCode).toHaveBeenCalledWith(
+				expect.objectContaining({ code: 'pasted-code', redirectUri: 'urn:ietf:wg:oauth:2.0:oob' }),
+				expect.anything(),
+			)
+		})
+
+		it('fails clearly when no code is pasted', async () => {
+			const d = deps({ promptForCode: async () => '  ' })
+
+			await expect(performLogin({ app, port: 7654, manual: true }, d.value)).rejects.toThrow(/no authorization code/i)
+		})
+	})
+
+	it('uses the redirect URI the caller specifies instead of the loopback default', async () => {
+		const d = deps()
+
+		await performLogin({ app, port: 7654, redirectUri: 'https://example.com/cb' }, d.value)
+
+		expect(new URL(d.opened[0]).searchParams.get('redirect_uri')).toBe('https://example.com/cb')
+	})
+
 	it('shuts the callback server down once the flow completes', async () => {
 		const d = deps()
 

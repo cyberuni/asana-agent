@@ -80,6 +80,16 @@ function addAppOptions(cmd: Command): Command {
 		.option('--client-secret <secret>', 'OAuth client secret (visible in shell history — prefer the env var)')
 }
 
+function portOf(redirectUri: string | undefined): number {
+	if (!redirectUri) return DEFAULT_CALLBACK_PORT
+	try {
+		const port = new URL(redirectUri).port
+		return port ? Number(port) : DEFAULT_CALLBACK_PORT
+	} catch {
+		return DEFAULT_CALLBACK_PORT
+	}
+}
+
 function parseScopes(value: string | undefined): string[] | undefined {
 	if (!value) return undefined
 	const scopes = value
@@ -157,6 +167,8 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 		.option('--include-refresh-token', 'Also print the long-lived refresh token (implies --no-store)')
 		.option('--raw', 'Print only the token, for shell substitution')
 		.option('--scope <list>', 'Comma-separated scopes to request')
+		.option('--manual', 'Paste the code from the browser instead of listening for a redirect')
+		.option('--redirect-uri <uri>', 'Redirect URL registered for the app (default: the loopback URL)')
 		.option('--port <port>', `Callback port (default: ${DEFAULT_CALLBACK_PORT})`)
 		.action(
 			async (
@@ -165,6 +177,8 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 					includeRefreshToken?: boolean
 					raw?: boolean
 					scope?: string
+					manual?: boolean
+					redirectUri?: string
 					port?: string
 				},
 			) => {
@@ -174,8 +188,12 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 
 				const tokens = await deps.login({
 					app,
-					port: opts.port ? Number(opts.port) : DEFAULT_CALLBACK_PORT,
+					// The listener has to bind the port the registered URL names, or
+					// the redirect arrives somewhere nothing is listening.
+					port: opts.port ? Number(opts.port) : portOf(opts.redirectUri),
 					scopes: parseScopes(opts.scope),
+					manual: opts.manual,
+					redirectUri: opts.redirectUri,
 				})
 
 				// Asking for the refresh token only makes sense when printing.

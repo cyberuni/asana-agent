@@ -35,13 +35,24 @@ It reads local state only, never calls the API, and exits `0` even when no crede
 
 A PAT is the simpler choice for a single user. OAuth is worth the setup when several people use the same install, or when you want a credential that refreshes itself instead of living forever in your shell profile.
 
-cyber-asana uses **your own** Asana app, so no third-party registration ever sees your data. Create one at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps), add `http://localhost:7654/callback` as a redirect URL, then:
+cyber-asana uses **your own** Asana app, so no third-party registration ever sees your data. Create one at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps), then:
 
 ```sh
 export ASANA_CLIENT_ID=<client-id>
 export ASANA_CLIENT_SECRET=<client-secret>
 cyber-asana auth login
 ```
+
+### Which redirect URL to register
+
+Asana requires redirect URLs to be `https`, with `urn:ietf:wg:oauth:2.0:oob` as the documented option for native and command-line apps. Two ways to run the flow:
+
+| Your app's redirect URL | Command |
+| --- | --- |
+| `urn:ietf:wg:oauth:2.0:oob` | `cyber-asana auth login --manual` — Asana shows a code, you paste it |
+| `http://localhost:7654/callback` (if your app accepts it) | `cyber-asana auth login` — the redirect is caught automatically |
+
+`--manual` needs no local port and works over SSH. If you registered a different URL or port, pass `--redirect-uri <url>`; the callback listener binds the port from that URL.
 
 `auth login`, `auth token`, and `auth logout` also accept `--client-id` and `--client-secret` directly, which is handy for a one-off or a first try without editing anything:
 

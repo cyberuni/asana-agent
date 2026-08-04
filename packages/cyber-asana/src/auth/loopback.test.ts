@@ -60,6 +60,18 @@ describe('startCallbackServer', () => {
 		})
 	})
 
+	it('explains that the port is taken rather than crashing', async () => {
+		const first = await startCallbackServer({ port: 0, expectedState: 'state-abc' })
+
+		try {
+			await expect(startCallbackServer({ port: first.port, expectedState: 'other' })).rejects.toThrow(
+				new RegExp(`${first.port}.*already`, 'is'),
+			)
+		} finally {
+			await first.close()
+		}
+	})
+
 	it('ignores requests to other paths', async () => {
 		await withServer('state-abc', async (server) => {
 			const stray = await fetch(`http://127.0.0.1:${server.port}/favicon.ico`)

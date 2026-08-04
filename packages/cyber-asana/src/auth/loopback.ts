@@ -75,7 +75,21 @@ export async function startCallbackServer({
 		settle.resolve(code)
 	})
 
-	await new Promise<void>((resolve) => server.listen(port, '127.0.0.1', resolve))
+	await new Promise<void>((resolve, reject) => {
+		// Without this, a port already held by an earlier login surfaces as an
+		// unhandled 'error' event and a raw stack trace.
+		server.once('error', (error: NodeJS.ErrnoException) => {
+			reject(
+				error.code === 'EADDRINUSE'
+					? new Error(
+							`Port ${port} is already in use — another \`cyber-asana auth login\` may still be waiting. ` +
+								'Stop it, or pass --port <port> with a redirect URL registered for that port.',
+						)
+					: error,
+			)
+		})
+		server.listen(port, '127.0.0.1', resolve)
+	})
 	const bound = (server.address() as AddressInfo).port
 
 	return {

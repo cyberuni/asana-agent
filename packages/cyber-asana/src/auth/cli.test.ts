@@ -169,6 +169,30 @@ describe('auth login', () => {
 		expect(out.trim()).toBe('access-token')
 	})
 
+	it('runs the out-of-band flow when asked for manual authorization', async () => {
+		const deps = loginDeps()
+
+		await runLogin(deps, ['--manual'])
+
+		expect(deps.login).toHaveBeenCalledWith(expect.objectContaining({ manual: true }))
+	})
+
+	it('passes an explicitly registered redirect URL through', async () => {
+		const deps = loginDeps()
+
+		await runLogin(deps, ['--redirect-uri', 'https://example.com/cb'])
+
+		expect(deps.login).toHaveBeenCalledWith(expect.objectContaining({ redirectUri: 'https://example.com/cb' }))
+	})
+
+	it('derives the callback port from a registered redirect URL', async () => {
+		const deps = loginDeps()
+
+		await runLogin(deps, ['--redirect-uri', 'http://localhost:9999/cb'])
+
+		expect(deps.login).toHaveBeenCalledWith(expect.objectContaining({ port: 9999 }))
+	})
+
 	it('accepts the app registration on the command line', async () => {
 		const deps = loginDeps({ readSettings: vi.fn().mockResolvedValue({}) })
 
