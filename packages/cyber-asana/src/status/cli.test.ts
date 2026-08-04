@@ -25,6 +25,40 @@ describe('status/cli', () => {
 		process.argv = [...originalArgv]
 	})
 
+	it('status list applies a minimal default field set, a count summary, and next steps', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listStatuses = vi.fn().mockResolvedValue([{ gid: 'st1', status_type: 'on_track' }])
+		const program = new Command().addCommand(
+			statusCommand({ listStatuses, getStatus: vi.fn(), createStatus: vi.fn(), deleteStatus: vi.fn() }),
+		)
+
+		await program.parseAsync(['node', 'test', 'status', 'list', '--parent-gid', 'proj1'], { from: 'node' })
+
+		expect(listStatuses).toHaveBeenCalledWith(
+			'proj1',
+			expect.objectContaining({ optFields: 'gid,status_type,title,created_at' }),
+		)
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n1 status update(s)')
+		expect(lines.some((l) => l.includes('cyber-asana status get <gid>'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
+	it('status list respects an explicit --opt-fields override', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listStatuses = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			statusCommand({ listStatuses, getStatus: vi.fn(), createStatus: vi.fn(), deleteStatus: vi.fn() }),
+		)
+
+		await program.parseAsync(['node', 'test', 'status', 'list', '--parent-gid', 'proj1', '--opt-fields', 'gid,text'], {
+			from: 'node',
+		})
+
+		expect(listStatuses).toHaveBeenCalledWith('proj1', expect.objectContaining({ optFields: 'gid,text' }))
+		vi.restoreAllMocks()
+	})
+
 	it('status delete emits a structured acknowledgement with --json', async () => {
 		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 		process.argv = ['node', 'test', '--json']
@@ -53,7 +87,10 @@ describe('status/cli', () => {
 			from: 'node',
 		})
 
-		expect(listStatusesMock).toHaveBeenCalledWith('proj1', { limit: 25 })
+		expect(listStatusesMock).toHaveBeenCalledWith('proj1', {
+			limit: 25,
+			optFields: 'gid,status_type,title,created_at',
+		})
 	})
 
 	it('status create forwards parent gid, status type, and text', async () => {

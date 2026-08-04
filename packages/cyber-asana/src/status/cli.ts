@@ -7,7 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { StatusApi } from './api.js'
 import { createStatus, deleteStatus, getStatus, listStatuses } from './api.js'
 
@@ -28,6 +28,12 @@ function resolveStatusApi(api?: StatusApi | (() => StatusApi)): StatusApi {
 	return api ?? { listStatuses, getStatus, createStatus, deleteStatus }
 }
 
+// Minimal default schema for status lists — principle 2. The body text is
+// deliberately excluded; `status get <gid>` fetches it on demand.
+const STATUS_LIST_FIELDS = 'gid,status_type,title,created_at'
+
+const STATUS_LIST_NEXT_STEPS = ['cyber-asana status get <gid> — read a status update in full']
+
 export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 	const cmd = new Command('status').description('Manage Asana status updates on projects, portfolios, and goals')
 
@@ -39,17 +45,19 @@ export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 		),
 	).action(
 		async (opts: { parent?: string; parentGid?: string; limit?: number; offset?: string; optFields?: string }) => {
-			const data = await resolveStatusApi(api).listStatuses(
-				requiredGid(opts, 'parent', 'Parent GID'),
-				paginationOptionsFromCli(opts),
-			)
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= STATUS_LIST_FIELDS
+			const data = await resolveStatusApi(api).listStatuses(requiredGid(opts, 'parent', 'Parent GID'), pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
+				const items = itemsForOutput(data)
+				printTable(items, [
 					{ label: 'ID', get: (s: Status) => s.gid },
 					{ label: 'Type', get: (s: Status) => s.status_type ?? '' },
 					{ label: 'Title', get: (s: Status) => s.title ?? '' },
 				])
+				printCountSummary(items.length, 'status update(s)')
 				printNextPageHint(data)
+				printNextSteps(STATUS_LIST_NEXT_STEPS)
 			})
 		},
 	)
