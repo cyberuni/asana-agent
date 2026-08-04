@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const toolDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const workspaceRoot = path.resolve(toolDir, '../..')
 
-export const dataDir = path.join(toolDir, 'data')
+const dataDir = path.join(toolDir, 'data')
 export const cyberAsanaSrcDir = path.join(workspaceRoot, 'packages/cyber-asana/src')
 
 export const officialBaselinePath = path.join(dataDir, 'official-asana-mcp-baseline.json')

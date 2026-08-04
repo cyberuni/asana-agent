@@ -7,8 +7,8 @@ const HTML_CODE_TOOL = /<code[^>]*>([a-z][a-z0-9_]*)<\/code>/g
 const SKIP_NAMES = new Set(['Tool'])
 
 /** Minimum/maximum expected official MCP tool count for sanity checks. */
-export const OFFICIAL_TOOL_COUNT_MIN = 20
-export const OFFICIAL_TOOL_COUNT_MAX = 40
+const OFFICIAL_TOOL_COUNT_MIN = 20
+const OFFICIAL_TOOL_COUNT_MAX = 40
 
 export function parseOfficialTools(content: string): string[] {
 	const fromMarkdown = parseMarkdownTableTools(content)

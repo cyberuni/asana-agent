@@ -8,7 +8,7 @@ import { output, printFields } from './output.js'
 // the start of every session.
 
 export const HOOK_COMMAND = 'cyber-asana --toon'
-export const DEFAULT_SETTINGS_PATH = join('.claude', 'settings.json')
+const DEFAULT_SETTINGS_PATH = join('.claude', 'settings.json')
 
 type HookEntry = { type?: string; command?: string }
 type HookMatcher = { matcher?: string; hooks?: HookEntry[] }
