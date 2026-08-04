@@ -7,6 +7,10 @@ export function setTokenOverride(token: string | undefined) {
 	tokenOverride = token
 }
 
+export function getTokenOverride(): string | undefined {
+	return tokenOverride
+}
+
 export function createClient(): Asana.ApiClient {
 	const token = tokenOverride ?? envValue('ASANA_TOKEN')
 	if (!token)

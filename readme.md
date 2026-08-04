@@ -23,6 +23,14 @@ export ASANA_WORKSPACE_GID=<workspace-gid>   # optional default workspace
 
 `ASANA_TOKEN` and `ASANA_WORKSPACE` still work as deprecated fallbacks. Or pass `--token <pat>` and `--workspace <gid>` per command.
 
+To see which credential is actually in effect — including any source being shadowed by a higher-precedence one:
+
+```sh
+cyber-asana auth status
+```
+
+It reads local state only, never calls the API, and exits `0` even when no credential is set — so it still answers when every other command is failing with `401`. The token is shown masked. Precedence is `--token` > `ASANA_ACCESS_TOKEN` > `ASANA_TOKEN`.
+
 ## Agent skills
 
 `cyber-asana` ships workflow skills under [`skills/`](skills/) for Cursor, Claude Code, and other agents. **Start here** — skills encode when to use MCP tools vs CLI, how to resolve projects from repo config, and common workflows (standups, sprint reports, task creation).

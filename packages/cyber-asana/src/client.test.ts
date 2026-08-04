@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { createClient, setTokenOverride } from './client.js'
+import { createClient, getTokenOverride, setTokenOverride } from './client.js'
 
 describe('createClient', () => {
 	const original = process.env.ASANA_TOKEN
@@ -42,6 +42,15 @@ describe('createClient', () => {
 		process.env.ASANA_ACCESS_TOKEN = 'preferred-token'
 		const client = createClient()
 		expect(client.authentications['token'].accessToken).toBe('preferred-token')
+	})
+
+	it('reports no token override until one is set', () => {
+		expect(getTokenOverride()).toBeUndefined()
+	})
+
+	it('reports the token override that was set', () => {
+		setTokenOverride('override-token')
+		expect(getTokenOverride()).toBe('override-token')
 	})
 
 	it('prefers setTokenOverride over ASANA_TOKEN env var', () => {
