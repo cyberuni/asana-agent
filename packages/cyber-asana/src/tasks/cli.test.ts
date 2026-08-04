@@ -34,6 +34,74 @@ describe('tasks/cli', () => {
 		process.argv = [...originalArgv]
 	})
 
+	// Mutation acknowledgements must honor --json/--toon like every other command.
+	describe.each([
+		{
+			name: 'task delete',
+			argv: ['task', 'delete', 't1'],
+			method: 'deleteTask',
+			payload: { deleted: true, resource: 'task', gid: 't1' },
+		},
+		{
+			name: 'task project add',
+			argv: ['task', 'project', 'add', 't1', 'p1'],
+			method: 'addTaskToProject',
+			payload: { task: 't1', project: 'p1', status: 'added' },
+		},
+		{
+			name: 'task project remove',
+			argv: ['task', 'project', 'remove', 't1', 'p1'],
+			method: 'removeTaskFromProject',
+			payload: { task: 't1', project: 'p1', status: 'removed' },
+		},
+		{
+			name: 'task follower add',
+			argv: ['task', 'follower', 'add', 't1', 'u1', 'u2'],
+			method: 'addFollowersToTask',
+			payload: { task: 't1', followers: ['u1', 'u2'], status: 'added' },
+		},
+		{
+			name: 'task follower remove',
+			argv: ['task', 'follower', 'remove', 't1', 'u1'],
+			method: 'removeFollowersFromTask',
+			payload: { task: 't1', followers: ['u1'], status: 'removed' },
+		},
+		{
+			name: 'task dependency add',
+			argv: ['task', 'dependency', 'add', 't1', 'd1'],
+			method: 'addDependencies',
+			payload: { task: 't1', dependencies: ['d1'], status: 'added' },
+		},
+		{
+			name: 'task dependency remove',
+			argv: ['task', 'dependency', 'remove', 't1', 'd1'],
+			method: 'removeDependencies',
+			payload: { task: 't1', dependencies: ['d1'], status: 'removed' },
+		},
+		{
+			name: 'task dependent add',
+			argv: ['task', 'dependent', 'add', 't1', 'd1'],
+			method: 'addDependents',
+			payload: { task: 't1', dependents: ['d1'], status: 'added' },
+		},
+		{
+			name: 'task dependent remove',
+			argv: ['task', 'dependent', 'remove', 't1', 'd1'],
+			method: 'removeDependents',
+			payload: { task: 't1', dependents: ['d1'], status: 'removed' },
+		},
+	])('$name', ({ argv, method, payload }) => {
+		it('emits a structured acknowledgement with --json', async () => {
+			process.argv = ['node', 'test', '--json']
+			const api = { [method]: vi.fn().mockResolvedValue(undefined) } as never
+			const program = new Command().option('--json').addCommand(taskCommand(api))
+
+			await program.parseAsync(['node', 'test', '--json', ...argv], { from: 'node' })
+
+			expect(logSpy).toHaveBeenCalledWith(JSON.stringify(payload, null, 2))
+		})
+	})
+
 	it('task create normalizes multi-project, followers, html notes, and custom fields', async () => {
 		createTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
 		const program = new Command().addCommand(taskCommand())

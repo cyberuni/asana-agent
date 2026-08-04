@@ -16,8 +16,30 @@ vi.mock('./api.js', async () => {
 const { sectionCommand } = await import('./cli.js')
 
 describe('sections/cli', () => {
+	const originalArgv = [...process.argv]
+
 	afterEach(() => {
 		vi.clearAllMocks()
+		process.argv = [...originalArgv]
+	})
+
+	it('section delete emits a structured acknowledgement with --json', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(
+			sectionCommand({
+				listSections: vi.fn(),
+				getSection: vi.fn(),
+				createSection: vi.fn(),
+				updateSection: vi.fn(),
+				deleteSection: vi.fn().mockResolvedValue(undefined),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', '--json', 'section', 'delete', 'sec1'], { from: 'node' })
+
+		expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ deleted: true, resource: 'section', gid: 'sec1' }, null, 2))
+		logSpy.mockRestore()
 	})
 
 	it('section create forwards project gid and name', async () => {

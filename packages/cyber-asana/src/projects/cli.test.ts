@@ -32,6 +32,27 @@ describe('projects/cli', () => {
 		process.argv = [...originalArgv]
 	})
 
+	it('project delete emits a structured acknowledgement with --json', async () => {
+		const projectCommand = await loadProjectCommand()
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(
+			projectCommand({
+				listProjects: vi.fn(),
+				getProject: vi.fn(),
+				getProjectTaskCounts: vi.fn(),
+				createProject: vi.fn(),
+				updateProject: vi.fn(),
+				deleteProject: vi.fn().mockResolvedValue(undefined),
+				searchProjects: vi.fn(),
+				exportProject: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', '--json', 'project', 'delete', 'p1'], { from: 'node' })
+
+		expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ deleted: true, resource: 'project', gid: 'p1' }, null, 2))
+	})
+
 	it('project search forwards text and filters to searchProjects', async () => {
 		searchProjectsMock.mockResolvedValue([{ gid: '1', name: 'Launch Roadmap' }])
 		const projectCommand = await loadProjectCommand()

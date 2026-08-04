@@ -320,7 +320,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		.description('Delete a project')
 		.action(async (gid: string) => {
 			await resolveProjectApi(api).deleteProject(gid)
-			console.log(`Deleted project ${gid}`)
+			output({ deleted: true, resource: 'project', gid }, () => console.log(`Deleted project ${gid}`))
 		})
 
 	cmd

@@ -115,7 +115,7 @@ export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 		.description('Delete a portfolio')
 		.action(async (gid: string) => {
 			await resolvePortfolioApi(api).deletePortfolio(gid)
-			console.log(`Deleted portfolio ${gid}`)
+			output({ deleted: true, resource: 'portfolio', gid }, () => console.log(`Deleted portfolio ${gid}`))
 		})
 
 	return cmd

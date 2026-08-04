@@ -111,7 +111,7 @@ export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 		.description('Delete a goal')
 		.action(async (gid: string) => {
 			await resolveGoalApi(api).deleteGoal(gid)
-			console.log(`Deleted goal ${gid}`)
+			output({ deleted: true, resource: 'goal', gid }, () => console.log(`Deleted goal ${gid}`))
 		})
 
 	return cmd

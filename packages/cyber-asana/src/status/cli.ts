@@ -96,7 +96,7 @@ export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 		.description('Delete a status update')
 		.action(async (gid: string) => {
 			await resolveStatusApi(api).deleteStatus(gid)
-			console.log(`Deleted status update ${gid}`)
+			output({ deleted: true, resource: 'status_update', gid }, () => console.log(`Deleted status update ${gid}`))
 		})
 
 	return cmd

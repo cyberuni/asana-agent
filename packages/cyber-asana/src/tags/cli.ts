@@ -131,7 +131,7 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 		.description('Delete a tag')
 		.action(async (gid: string) => {
 			await resolveTagApi(api).deleteTag(gid)
-			console.log(`Deleted tag ${gid}`)
+			output({ deleted: true, resource: 'tag', gid }, () => console.log(`Deleted tag ${gid}`))
 		})
 
 	const taskCmd = cmd.command('task').description('Manage task tag relationships')

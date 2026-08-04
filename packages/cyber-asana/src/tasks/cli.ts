@@ -379,7 +379,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.description('Delete a task')
 		.action(async (gid: string) => {
 			await resolveTaskApi(api).deleteTask(gid)
-			console.log(`Deleted task ${gid}`)
+			output({ deleted: true, resource: 'task', gid }, () => console.log(`Deleted task ${gid}`))
 		})
 
 	const subtaskCmd = cmd.command('subtask').description('Manage subtasks')
@@ -658,7 +658,9 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 				insertAfter: opts.insertAfter,
 				insertBefore: opts.insertBefore,
 			})
-			console.log(`Added task ${taskGid} to project ${projectGid}`)
+			output({ task: taskGid, project: projectGid, status: 'added' }, () =>
+				console.log(`Added task ${taskGid} to project ${projectGid}`),
+			)
 		},
 	)
 
@@ -667,7 +669,9 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.description('Remove a task from a project')
 		.action(async (taskGid: string, projectGid: string) => {
 			await resolveTaskApi(api).removeTaskFromProject(taskGid, projectGid)
-			console.log(`Removed task ${taskGid} from project ${projectGid}`)
+			output({ task: taskGid, project: projectGid, status: 'removed' }, () =>
+				console.log(`Removed task ${taskGid} from project ${projectGid}`),
+			)
 		})
 
 	const followerCmd = cmd.command('follower').description('Manage followers for a task')
@@ -677,7 +681,9 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.description('Add followers to a task')
 		.action(async (taskGid: string, followerGids: string[]) => {
 			await resolveTaskApi(api).addFollowersToTask(taskGid, followerGids)
-			console.log(`Added ${followerGids.length} follower(s) to task ${taskGid}`)
+			output({ task: taskGid, followers: followerGids, status: 'added' }, () =>
+				console.log(`Added ${followerGids.length} follower(s) to task ${taskGid}`),
+			)
 		})
 
 	followerCmd
@@ -685,7 +691,9 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.description('Remove followers from a task')
 		.action(async (taskGid: string, followerGids: string[]) => {
 			await resolveTaskApi(api).removeFollowersFromTask(taskGid, followerGids)
-			console.log(`Removed ${followerGids.length} follower(s) from task ${taskGid}`)
+			output({ task: taskGid, followers: followerGids, status: 'removed' }, () =>
+				console.log(`Removed ${followerGids.length} follower(s) from task ${taskGid}`),
+			)
 		})
 
 	const dependencyCmd = cmd.command('dependency').description('Manage task dependencies (tasks this task depends on)')
@@ -704,7 +712,9 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.description('Add dependencies to a task (space-separated GIDs)')
 		.action(async (taskGid: string, depGids: string[]) => {
 			await resolveTaskApi(api).addDependencies(taskGid, depGids)
-			console.log(`Added ${depGids.length} dependency(s) to task ${taskGid}`)
+			output({ task: taskGid, dependencies: depGids, status: 'added' }, () =>
+				console.log(`Added ${depGids.length} dependency(s) to task ${taskGid}`),
+			)
 		})
 
 	dependencyCmd
@@ -712,7 +722,9 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.description('Remove dependencies from a task (space-separated GIDs)')
 		.action(async (taskGid: string, depGids: string[]) => {
 			await resolveTaskApi(api).removeDependencies(taskGid, depGids)
-			console.log(`Removed ${depGids.length} dependency(s) from task ${taskGid}`)
+			output({ task: taskGid, dependencies: depGids, status: 'removed' }, () =>
+				console.log(`Removed ${depGids.length} dependency(s) from task ${taskGid}`),
+			)
 		})
 
 	const dependentCmd = cmd.command('dependent').description('Manage task dependents (tasks that depend on this task)')
@@ -731,7 +743,9 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.description('Add dependents to a task (space-separated GIDs)')
 		.action(async (taskGid: string, depGids: string[]) => {
 			await resolveTaskApi(api).addDependents(taskGid, depGids)
-			console.log(`Added ${depGids.length} dependent(s) to task ${taskGid}`)
+			output({ task: taskGid, dependents: depGids, status: 'added' }, () =>
+				console.log(`Added ${depGids.length} dependent(s) to task ${taskGid}`),
+			)
 		})
 
 	dependentCmd
@@ -739,7 +753,9 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.description('Remove dependents from a task (space-separated GIDs)')
 		.action(async (taskGid: string, depGids: string[]) => {
 			await resolveTaskApi(api).removeDependents(taskGid, depGids)
-			console.log(`Removed ${depGids.length} dependent(s) from task ${taskGid}`)
+			output({ task: taskGid, dependents: depGids, status: 'removed' }, () =>
+				console.log(`Removed ${depGids.length} dependent(s) from task ${taskGid}`),
+			)
 		})
 
 	cmd

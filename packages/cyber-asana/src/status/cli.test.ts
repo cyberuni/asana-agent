@@ -18,8 +18,31 @@ vi.mock('./api.js', async () => {
 const { statusCommand } = await import('./cli.js')
 
 describe('status/cli', () => {
+	const originalArgv = [...process.argv]
+
 	afterEach(() => {
 		vi.clearAllMocks()
+		process.argv = [...originalArgv]
+	})
+
+	it('status delete emits a structured acknowledgement with --json', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(
+			statusCommand({
+				listStatuses: vi.fn(),
+				getStatus: vi.fn(),
+				createStatus: vi.fn(),
+				deleteStatus: vi.fn().mockResolvedValue(undefined),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', '--json', 'status', 'delete', 'st1'], { from: 'node' })
+
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'status_update', gid: 'st1' }, null, 2),
+		)
+		logSpy.mockRestore()
 	})
 
 	it('status list forwards parent gid and pagination options', async () => {

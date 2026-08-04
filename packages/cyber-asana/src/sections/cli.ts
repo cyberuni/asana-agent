@@ -82,7 +82,7 @@ export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 		.description('Delete a section')
 		.action(async (gid: string) => {
 			await resolveSectionApi(api).deleteSection(gid)
-			console.log(`Deleted section ${gid}`)
+			output({ deleted: true, resource: 'section', gid }, () => console.log(`Deleted section ${gid}`))
 		})
 
 	return cmd

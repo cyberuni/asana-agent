@@ -26,8 +26,23 @@ vi.mock('./api.js', async () => {
 const { tagCommand } = await import('./cli.js')
 
 describe('tags/cli', () => {
+	const originalArgv = [...process.argv]
+
 	afterEach(() => {
 		vi.clearAllMocks()
+		process.argv = [...originalArgv]
+	})
+
+	it('tag delete emits a structured acknowledgement with --json', async () => {
+		deleteTagMock.mockResolvedValue(undefined)
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(tagCommand())
+
+		await program.parseAsync(['node', 'test', '--json', 'tag', 'delete', 'tag1'], { from: 'node' })
+
+		expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ deleted: true, resource: 'tag', gid: 'tag1' }, null, 2))
+		logSpy.mockRestore()
 	})
 
 	it('tag create forwards notes and color', async () => {
