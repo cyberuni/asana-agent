@@ -7,7 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { UserApi } from './api.js'
 import { getMe, getUser, listUsers } from './api.js'
 
@@ -36,6 +36,9 @@ function resolveUserApi(api?: UserApi | (() => UserApi)): UserApi {
 	)
 }
 
+// Minimal default schema for user lists — principle 2.
+const USER_LIST_FIELDS = 'gid,name,email'
+
 export function userCommand(api?: UserApi | (() => UserApi)) {
 	const cmd = new Command('user').description('Manage Asana users')
 
@@ -47,13 +50,15 @@ export function userCommand(api?: UserApi | (() => UserApi)) {
 			limit: false,
 		},
 	).action(async (opts: { workspace?: string; workspaceGid?: string; offset?: string; optFields?: string }) => {
-		const data = await resolveUserApi(api).listUsers(
-			requiredGid(opts, 'workspace', 'Workspace GID'),
-			paginationOptionsFromCli(opts),
-		)
+		const pagination = paginationOptionsFromCli(opts)
+		pagination.optFields ??= USER_LIST_FIELDS
+		const data = await resolveUserApi(api).listUsers(requiredGid(opts, 'workspace', 'Workspace GID'), pagination)
 		output(data, () => {
-			fmtUserList(itemsForOutput(data))
+			const items = itemsForOutput(data)
+			fmtUserList(items)
+			printCountSummary(items.length, 'user(s)')
 			printNextPageHint(data)
+			printNextSteps(['cyber-asana user get <gid> — view a user'])
 		})
 	})
 
