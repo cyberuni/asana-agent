@@ -32,6 +32,59 @@ describe('projects/cli', () => {
 		process.argv = [...originalArgv]
 	})
 
+	it('project list requests a minimal default field set, and respects an override', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const projectCommand = await loadProjectCommand()
+		const deps = {
+			listProjects,
+			getProject: vi.fn(),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		}
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+		expect(listProjects).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'gid,name' }))
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1', '--opt-fields', 'name,notes'], {
+				from: 'node',
+			})
+		expect(listProjects).toHaveBeenLastCalledWith('ws1', expect.objectContaining({ optFields: 'name,notes' }))
+	})
+
+	it('project list prints a count summary and next-step suggestions', async () => {
+		const projectCommand = await loadProjectCommand()
+		const program = new Command().addCommand(
+			projectCommand({
+				listProjects: vi.fn().mockResolvedValue([
+					{ gid: '1', name: 'A' },
+					{ gid: '2', name: 'B' },
+				]),
+				getProject: vi.fn(),
+				getProjectTaskCounts: vi.fn(),
+				createProject: vi.fn(),
+				updateProject: vi.fn(),
+				deleteProject: vi.fn(),
+				searchProjects: vi.fn(),
+				exportProject: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n2 project(s)')
+		expect(lines).toContain('\nNext steps:')
+		expect(lines.some((l) => l.includes('cyber-asana project get <gid>'))).toBe(true)
+	})
+
 	it('project delete emits a structured acknowledgement with --json', async () => {
 		const projectCommand = await loadProjectCommand()
 		process.argv = ['node', 'test', '--json']

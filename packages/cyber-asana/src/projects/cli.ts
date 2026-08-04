@@ -8,7 +8,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable, selectFormat } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable, selectFormat } from '../output.js'
 import { encodeToon } from '../toon.js'
 import {
 	createProject,
@@ -69,6 +69,15 @@ function fmtProjectCounts(projectGid: string, counts: Record<string, unknown>, u
 	)
 }
 
+// Minimal default schema for project lists — principle 2. Just the fields the
+// table renders, instead of Asana's larger default payload.
+const PROJECT_LIST_FIELDS = 'gid,name'
+
+const PROJECT_LIST_NEXT_STEPS = [
+	'cyber-asana project get <gid> — view a project',
+	'cyber-asana task list --project-gid <gid> — list a project’s tasks',
+]
+
 export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 	const cmd = new Command('project').description('Manage Asana projects')
 
@@ -84,13 +93,18 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 			offset?: string
 			optFields?: string
 		}) => {
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= PROJECT_LIST_FIELDS
 			const data = await resolveProjectApi(api).listProjects(
 				requiredGid(opts, 'workspace', 'Workspace GID'),
-				paginationOptionsFromCli(opts),
+				pagination,
 			)
 			output(data, () => {
-				fmtProjectList(itemsForOutput(data))
+				const items = itemsForOutput(data)
+				fmtProjectList(items)
+				printCountSummary(items.length, 'project(s)')
 				printNextPageHint(data)
+				printNextSteps(PROJECT_LIST_NEXT_STEPS)
 			})
 		},
 	)
