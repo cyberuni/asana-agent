@@ -58,6 +58,34 @@ Feature: url
     And the result project GID is empty
     And the result task GID is empty
 
+  Scenario: a non-digit workspace or project GID is reported as unknown
+    Given the input string "https://app.asana.com/1/abc/project/xyz"
+    When the URL is parsed
+    Then the result kind is "unknown"
+    And the result workspace GID is empty
+    And the result project GID is empty
+
+  Scenario: a non-digit task GID is reported as unknown
+    Given the input string "https://app.asana.com/1/8801234500011/project/8801234500022/task/my-task"
+    When the URL is parsed
+    Then the result kind is "unknown"
+    And the result project GID is empty
+    And the result task GID is empty
+
+  Scenario: a non-digit list-view GID is reported as unknown
+    Given the input string "https://app.asana.com/1/8801234500011/project/8801234500022/list/board"
+    When the URL is parsed
+    Then the result kind is "unknown"
+    And the result project GID is empty
+    And the result list-view GID is empty
+
+  Scenario: a non-digit GID in a legacy path is reported as unknown
+    Given the input string "https://app.asana.com/0/8801234500011/inbox"
+    When the URL is parsed
+    Then the result kind is "unknown"
+    And the result workspace GID is empty
+    And the result task GID is empty
+
   Scenario: a scheme-less Asana path is reported as unknown
     Given the input string "app.asana.com/0/8801234500011/8801234500033"
     When the URL is parsed
