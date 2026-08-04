@@ -7,7 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { GoalApi } from './api.js'
 import { createGoal, deleteGoal, getGoal, listGoals, updateGoal } from './api.js'
 
@@ -36,6 +36,14 @@ function resolveGoalApi(api?: GoalApi | (() => GoalApi)): GoalApi {
 	)
 }
 
+// Minimal default schema for goal lists — principle 2.
+const GOAL_LIST_FIELDS = 'gid,name,due_on'
+
+const GOAL_LIST_NEXT_STEPS = [
+	'cyber-asana goal get <gid> — view a goal',
+	'cyber-asana status list --parent-gid <gid> — status updates on a goal',
+]
+
 export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 	const cmd = new Command('goal').description('Manage Asana goals')
 
@@ -51,17 +59,19 @@ export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 			offset?: string
 			optFields?: string
 		}) => {
-			const data = await resolveGoalApi(api).listGoals(
-				requiredGid(opts, 'workspace', 'Workspace GID'),
-				paginationOptionsFromCli(opts),
-			)
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= GOAL_LIST_FIELDS
+			const data = await resolveGoalApi(api).listGoals(requiredGid(opts, 'workspace', 'Workspace GID'), pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
+				const items = itemsForOutput(data)
+				printTable(items, [
 					{ label: 'Name', get: (g: Goal) => g.name },
 					{ label: 'ID', get: (g: Goal) => g.gid },
 					{ label: 'Due', get: (g: Goal) => g.due_on ?? '' },
 				])
+				printCountSummary(items.length, 'goal(s)')
 				printNextPageHint(data)
+				printNextSteps(GOAL_LIST_NEXT_STEPS)
 			})
 		},
 	)
