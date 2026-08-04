@@ -8,6 +8,8 @@ const removeFollowersFromTaskMock = vi.fn()
 const getTasksByGidMock = vi.fn()
 const getTaskMock = vi.fn()
 const listTasksMock = vi.fn()
+const getMyTasksMock = vi.fn()
+const listSubtasksMock = vi.fn()
 
 vi.mock('./api.js', async () => {
 	const actual = await vi.importActual<typeof import('./api.js')>('./api.js')
@@ -20,6 +22,8 @@ vi.mock('./api.js', async () => {
 		getTasksByGid: getTasksByGidMock,
 		getTask: getTaskMock,
 		listTasks: listTasksMock,
+		getMyTasks: getMyTasksMock,
+		listSubtasks: listSubtasksMock,
 	}
 })
 
@@ -240,6 +244,84 @@ describe('tasks/cli', () => {
 		})
 
 		expect(listTasksMock).toHaveBeenCalledWith('p1', expect.objectContaining({ optFields: 'name,notes' }))
+	})
+
+	it('task my-tasks list requests a minimal default field set when none is given', async () => {
+		getMyTasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'my-tasks', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(getMyTasksMock).toHaveBeenCalledWith(
+			'ws1',
+			expect.objectContaining({ optFields: 'gid,name,completed,due_on' }),
+		)
+	})
+
+	it('task my-tasks list respects an explicit --opt-fields override', async () => {
+		getMyTasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'task', 'my-tasks', 'list', '--workspace-gid', 'ws1', '--opt-fields', 'name,notes'],
+			{ from: 'node' },
+		)
+
+		expect(getMyTasksMock).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'name,notes' }))
+	})
+
+	it('task subtask list requests a minimal default field set when none is given', async () => {
+		listSubtasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'subtask', 'list', '123'], { from: 'node' })
+
+		expect(listSubtasksMock).toHaveBeenCalledWith(
+			'123',
+			expect.objectContaining({ optFields: 'gid,name,completed,due_on' }),
+		)
+	})
+
+	it('task subtask list adds include-flag fields to the default field set', async () => {
+		listSubtasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'subtask', 'list', '123', '--assignee-email'], { from: 'node' })
+
+		expect(listSubtasksMock).toHaveBeenCalledWith(
+			'123',
+			expect.objectContaining({ optFields: 'gid,name,completed,due_on,assignee,assignee.email' }),
+		)
+	})
+
+	it('task subtask list composes include flags with an explicit --opt-fields override', async () => {
+		listSubtasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'task', 'subtask', 'list', '123', '--opt-fields', 'gid,name', '--num-subtasks'],
+			{ from: 'node' },
+		)
+
+		expect(listSubtasksMock).toHaveBeenCalledWith(
+			'123',
+			expect.objectContaining({ optFields: 'gid,name,num_subtasks' }),
+		)
+	})
+
+	it('task subtask list does not repeat a field named by both the default and an include flag', async () => {
+		listSubtasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'task', 'subtask', 'list', '123', '--opt-fields', 'gid,assignee', '--assignee-email'],
+			{ from: 'node' },
+		)
+
+		expect(listSubtasksMock).toHaveBeenCalledWith(
+			'123',
+			expect.objectContaining({ optFields: 'gid,assignee,assignee.email' }),
+		)
 	})
 
 	it('task list prints an aggregate summary and next-step suggestions', async () => {

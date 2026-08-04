@@ -12,6 +12,8 @@ import { isFull, truncate } from '../truncate.js'
 import type { StoryApi } from './api.js'
 import { createStory, getTaskTemplateData, interpolateTemplate, listStories } from './api.js'
 
+const TEXT_COLUMN_LIMIT = 60
+
 type Story = { gid: string; type?: string; text?: string; created_by?: { name: string } | null; created_at?: string }
 
 function fmtStory(s: Story) {
@@ -64,7 +66,8 @@ export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) 
 					{ label: 'ID', get: (s: Story) => s.gid },
 					{ label: 'Type', get: (s: Story) => s.type ?? '' },
 					{ label: 'By', get: (s: Story) => s.created_by?.name ?? '' },
-					{ label: 'Text', get: (s: Story) => (s.text ?? '').slice(0, 60) },
+					// The table stays readable at 60 characters; --full and the size hint come from truncate().
+					{ label: 'Text', get: (s: Story) => truncate(s.text, { limit: TEXT_COLUMN_LIMIT, full: isFull() }) },
 				],
 				{ entity: 'stories' },
 			)
