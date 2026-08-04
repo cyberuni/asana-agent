@@ -1,5 +1,110 @@
 # cyber-asana
 
+## 0.7.0
+
+### Minor Changes
+
+- 65124ac: Make stored OAuth credentials ambient, and show the authorize URL during login.
+
+  Every command now resolves stored credentials before dispatch and refreshes the
+  access token when it is within a minute of expiring, so `auth login` is
+  something you do once rather than something each later command has to know
+  about. Without this, `auth login` wrote a credentials file that nothing ever
+  read. Precedence is `--token` > `ASANA_ACCESS_TOKEN` > `ASANA_TOKEN` > stored
+  credentials; a stored token occupies its own slot so `auth status` still names
+  the true source instead of reporting it as `--token`.
+
+  `auth status` now reports stored credentials, including the granting account
+  and the expiry, and lists `credentials.json` among the ignored sources when an
+  env var shadows it.
+
+  Credential resolution never fails a command: unreadable or unrefreshable
+  credentials produce a warning on stderr rather than an exception, since
+  `auth login` and `auth logout` are exactly what you reach for when the
+  credential is the problem.
+
+  `auth login` prints the authorize URL to stderr before opening the browser. On
+  WSL and headless machines the opener is often a no-op, and without the URL the
+  command simply appeared to hang.
+
+- f62a57b: Accept `--client-id` and `--client-secret` on `auth login`, `auth token`, and
+  `auth logout`, so trying OAuth needs no edits to a shell profile or
+  `settings.json`. Precedence is flags > `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET`
+
+  > `settings.json`, resolved per field, and `auth status` continues to name the
+  > source that won.
+
+  A secret passed as an argument is captured by shell history and visible in the
+  process list, so the flag help and the readme both point at the environment
+  variables for ongoing use.
+
+- 49c9941: Add `cyber-asana auth login` — OAuth authorization through the browser.
+
+  cyber-asana authenticates against **your own** Asana app rather than a shipped
+  registration, so no third party's OAuth app sits between you and your data. Set
+  `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` (or write them to `settings.json`) and
+  run `auth login`. The consent redirect is caught by a one-shot server bound to
+  `127.0.0.1` — the authorization code arrives in a query string, so nothing off
+  the machine can reach the socket that receives it. PKCE and `state` are used
+  throughout.
+
+  Credentials are stored under `$XDG_CONFIG_HOME/cyber-asana`, split by owner:
+  `settings.json` is yours and hand-edited, `credentials.json` is the CLI's and
+  rewritten on every refresh. Both are `0600`.
+
+  `--no-store` runs the flow and prints the access token instead of saving it,
+  for one-off shells and CI. It emits only the hour-long access token; the
+  long-lived refresh token needs `--include-refresh-token`. `--raw` prints the
+  bare token for `$(...)` substitution.
+
+  A personal access token remains the documented happy path for a single user.
+
+- 2b62e10: Add `auth login --manual` for the out-of-band flow, `--redirect-uri` for an
+  explicitly registered redirect URL, and a clear message when the callback port
+  is taken.
+
+  Asana requires redirect URLs to be `https` and documents
+  `urn:ietf:wg:oauth:2.0:oob` for native and command-line apps, so a loopback
+  `http://localhost` URL is not always registrable — the flow then fails with
+  "The redirect_uri parameter does not match a valid url for the application".
+  `--manual` runs the documented path instead: Asana displays the code, you paste
+  it, and no local port is opened. It also works over SSH.
+
+  `--redirect-uri` covers apps registered against some other URL, and the
+  callback listener binds the port named by that URL.
+
+  A callback port already held by an earlier login previously crashed with an
+  unhandled EADDRINUSE stack trace; it now explains what is holding the port and
+  what to do about it.
+
+- 31652d4: Add `cyber-asana auth status` — a credential diagnostic that works when the
+  credential does not.
+
+  `user me` answers "who am I to Asana?" and needs a working token to answer at
+  all. `auth status` answers "what will this process authenticate with?", so it
+  reads local state only, never calls the API, and exits `0` even when nothing is
+  configured (`authenticated: false`). When an agent hits a `401`, this is the
+  command that still responds.
+
+  It names the winning source (`--token` > `ASANA_ACCESS_TOKEN` > `ASANA_TOKEN`)
+  and lists the sources being shadowed — a stale env var silently overriding a
+  newer one was previously indistinguishable from a bad token. Tokens are shown
+  masked, in text, `--json`, and `--toon`.
+
+- 7ea5eaf: Add `cyber-asana auth token` and `cyber-asana auth logout`.
+
+  `auth token` prints the stored access token for piping into other tools, and
+  refreshes it first when it is within a minute of expiring — so what it prints
+  is always usable, and the refreshed token is persisted rather than discarded.
+  Text output is the bare token and nothing else, so `$(...)` substitution works.
+
+  `auth logout` revokes the grant with Asana and then deletes the local
+  credentials. The order is load-bearing: Asana revokes only refresh tokens, so
+  once the file is gone there is nothing left to revoke with. If revocation
+  fails the credentials are still deleted and the output says the grant may
+  still be live, with the link to remove it. `--local` skips revocation, and
+  logging out twice reports "not logged in" rather than failing.
+
 ## 0.6.0
 
 ### Minor Changes
