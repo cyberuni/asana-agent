@@ -6,3 +6,4 @@ dist/
 TODO.local.md
 apps/web/.astro
 .turbo/
+.cyberfleet/
