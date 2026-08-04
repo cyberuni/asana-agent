@@ -40,7 +40,7 @@ describe('tasks/cli', () => {
 			name: 'task delete',
 			argv: ['task', 'delete', 't1'],
 			method: 'deleteTask',
-			payload: { deleted: true, resource: 'task', gid: 't1' },
+			payload: { deleted: true, resource: 'task', gid: 't1', already_absent: false },
 		},
 		{
 			name: 'task project add',

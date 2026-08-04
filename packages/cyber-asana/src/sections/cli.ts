@@ -7,6 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { SectionApi } from './api.js'
 import { createSection, deleteSection, getSection, listSections, updateSection } from './api.js'
@@ -95,8 +96,8 @@ export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 		.command('delete <gid>')
 		.description('Delete a section')
 		.action(async (gid: string) => {
-			await resolveSectionApi(api).deleteSection(gid)
-			output({ deleted: true, resource: 'section', gid }, () => console.log(`Deleted section ${gid}`))
+			const result = await deleteIdempotently('section', gid, () => resolveSectionApi(api).deleteSection(gid))
+			output(result, () => console.log(deleteMessage(result, 'Section')))
 		})
 
 	return cmd

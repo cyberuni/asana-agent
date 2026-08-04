@@ -83,7 +83,9 @@ describe('goals/cli', () => {
 
 		await program.parseAsync(['node', 'test', '--json', 'goal', 'delete', 'goal1'], { from: 'node' })
 
-		expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ deleted: true, resource: 'goal', gid: 'goal1' }, null, 2))
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'goal', gid: 'goal1', already_absent: false }, null, 2),
+		)
 		logSpy.mockRestore()
 	})
 

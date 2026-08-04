@@ -7,6 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import { isFull, truncate } from '../truncate.js'
 import type { StatusApi } from './api.js'
@@ -108,8 +109,8 @@ export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 		.command('delete <gid>')
 		.description('Delete a status update')
 		.action(async (gid: string) => {
-			await resolveStatusApi(api).deleteStatus(gid)
-			output({ deleted: true, resource: 'status_update', gid }, () => console.log(`Deleted status update ${gid}`))
+			const result = await deleteIdempotently('status_update', gid, () => resolveStatusApi(api).deleteStatus(gid))
+			output(result, () => console.log(deleteMessage(result, 'Status update')))
 		})
 
 	return cmd

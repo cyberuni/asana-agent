@@ -8,6 +8,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printEmpty, printFields, printNextSteps, printSummary, printTable } from '../output.js'
 import { isFull, truncate } from '../truncate.js'
 import {
@@ -382,8 +383,8 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.command('delete <gid>')
 		.description('Delete a task')
 		.action(async (gid: string) => {
-			await resolveTaskApi(api).deleteTask(gid)
-			output({ deleted: true, resource: 'task', gid }, () => console.log(`Deleted task ${gid}`))
+			const result = await deleteIdempotently('task', gid, () => resolveTaskApi(api).deleteTask(gid))
+			output(result, () => console.log(deleteMessage(result, 'Task')))
 		})
 
 	const subtaskCmd = cmd.command('subtask').description('Manage subtasks')

@@ -8,6 +8,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable, selectFormat } from '../output.js'
 import { encodeToon } from '../toon.js'
 import { isFull, truncate } from '../truncate.js'
@@ -344,8 +345,8 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		.command('delete <gid>')
 		.description('Delete a project')
 		.action(async (gid: string) => {
-			await resolveProjectApi(api).deleteProject(gid)
-			output({ deleted: true, resource: 'project', gid }, () => console.log(`Deleted project ${gid}`))
+			const result = await deleteIdempotently('project', gid, () => resolveProjectApi(api).deleteProject(gid))
+			output(result, () => console.log(deleteMessage(result, 'Project')))
 		})
 
 	cmd

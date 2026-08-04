@@ -7,6 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { PortfolioApi } from './api.js'
 import {
@@ -140,8 +141,8 @@ export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 		.command('delete <gid>')
 		.description('Delete a portfolio')
 		.action(async (gid: string) => {
-			await resolvePortfolioApi(api).deletePortfolio(gid)
-			output({ deleted: true, resource: 'portfolio', gid }, () => console.log(`Deleted portfolio ${gid}`))
+			const result = await deleteIdempotently('portfolio', gid, () => resolvePortfolioApi(api).deletePortfolio(gid))
+			output(result, () => console.log(deleteMessage(result, 'Portfolio')))
 		})
 
 	return cmd

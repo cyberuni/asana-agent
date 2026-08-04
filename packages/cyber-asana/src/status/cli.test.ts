@@ -96,7 +96,7 @@ describe('status/cli', () => {
 		await program.parseAsync(['node', 'test', '--json', 'status', 'delete', 'st1'], { from: 'node' })
 
 		expect(logSpy).toHaveBeenCalledWith(
-			JSON.stringify({ deleted: true, resource: 'status_update', gid: 'st1' }, null, 2),
+			JSON.stringify({ deleted: true, resource: 'status_update', gid: 'st1', already_absent: false }, null, 2),
 		)
 		logSpy.mockRestore()
 	})

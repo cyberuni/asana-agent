@@ -7,6 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { GoalApi } from './api.js'
 import { createGoal, deleteGoal, getGoal, listGoals, updateGoal } from './api.js'
@@ -124,8 +125,8 @@ export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 		.command('delete <gid>')
 		.description('Delete a goal')
 		.action(async (gid: string) => {
-			await resolveGoalApi(api).deleteGoal(gid)
-			output({ deleted: true, resource: 'goal', gid }, () => console.log(`Deleted goal ${gid}`))
+			const result = await deleteIdempotently('goal', gid, () => resolveGoalApi(api).deleteGoal(gid))
+			output(result, () => console.log(deleteMessage(result, 'Goal')))
 		})
 
 	return cmd

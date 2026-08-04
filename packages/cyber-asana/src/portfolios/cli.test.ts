@@ -107,7 +107,9 @@ describe('portfolios/cli', () => {
 
 		await program.parseAsync(['node', 'test', '--json', 'portfolio', 'delete', 'pf1'], { from: 'node' })
 
-		expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ deleted: true, resource: 'portfolio', gid: 'pf1' }, null, 2))
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'portfolio', gid: 'pf1', already_absent: false }, null, 2),
+		)
 		logSpy.mockRestore()
 	})
 

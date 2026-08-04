@@ -133,7 +133,9 @@ describe('projects/cli', () => {
 
 		await program.parseAsync(['node', 'test', '--json', 'project', 'delete', 'p1'], { from: 'node' })
 
-		expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ deleted: true, resource: 'project', gid: 'p1' }, null, 2))
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'project', gid: 'p1', already_absent: false }, null, 2),
+		)
 	})
 
 	it('project search forwards text and filters to searchProjects', async () => {

@@ -7,6 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { TagApi } from './api.js'
 import {
@@ -149,8 +150,8 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 		.command('delete <gid>')
 		.description('Delete a tag')
 		.action(async (gid: string) => {
-			await resolveTagApi(api).deleteTag(gid)
-			output({ deleted: true, resource: 'tag', gid }, () => console.log(`Deleted tag ${gid}`))
+			const result = await deleteIdempotently('tag', gid, () => resolveTagApi(api).deleteTag(gid))
+			output(result, () => console.log(deleteMessage(result, 'Tag')))
 		})
 
 	const taskCmd = cmd.command('task').description('Manage task tag relationships')

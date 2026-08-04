@@ -81,8 +81,49 @@ describe('sections/cli', () => {
 
 		await program.parseAsync(['node', 'test', '--json', 'section', 'delete', 'sec1'], { from: 'node' })
 
-		expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ deleted: true, resource: 'section', gid: 'sec1' }, null, 2))
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'section', gid: 'sec1', already_absent: false }, null, 2),
+		)
 		logSpy.mockRestore()
+	})
+
+	it('section delete is idempotent — a repeat is a no-op, not a 404', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(
+			sectionCommand({
+				listSections: vi.fn(),
+				getSection: vi.fn(),
+				createSection: vi.fn(),
+				updateSection: vi.fn(),
+				deleteSection: vi.fn().mockRejectedValue({ response: { status: 404, body: { errors: [{ message: 'x' }] } } }),
+			}),
+		)
+
+		await expect(
+			program.parseAsync(['node', 'test', '--json', 'section', 'delete', 'sec1'], { from: 'node' }),
+		).resolves.toBeDefined()
+
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'section', gid: 'sec1', already_absent: true }, null, 2),
+		)
+		logSpy.mockRestore()
+	})
+
+	it('section delete still surfaces a non-404 failure', async () => {
+		const program = new Command().addCommand(
+			sectionCommand({
+				listSections: vi.fn(),
+				getSection: vi.fn(),
+				createSection: vi.fn(),
+				updateSection: vi.fn(),
+				deleteSection: vi.fn().mockRejectedValue({ response: { status: 403, body: { errors: [{ message: 'x' }] } } }),
+			}),
+		)
+
+		await expect(
+			program.parseAsync(['node', 'test', 'section', 'delete', 'sec1'], { from: 'node' }),
+		).rejects.toBeDefined()
 	})
 
 	it('section create forwards project gid and name', async () => {
