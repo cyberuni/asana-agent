@@ -17,10 +17,76 @@ const { goalCommand } = await import('./cli.js')
 
 describe('goals/cli', () => {
 	const originalEnv = { ...process.env }
+	const originalArgv = [...process.argv]
 
 	afterEach(() => {
 		vi.clearAllMocks()
 		process.env = { ...originalEnv }
+		process.argv = [...originalArgv]
+	})
+
+	it('goal list applies a minimal default field set, a count summary, and next steps', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listGoals = vi.fn().mockResolvedValue([{ gid: 'goal1', name: 'Ship v1' }])
+		const program = new Command().addCommand(
+			goalCommand({
+				listGoals,
+				getGoal: vi.fn(),
+				createGoal: vi.fn(),
+				updateGoal: vi.fn(),
+				deleteGoal: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'goal', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(listGoals).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'gid,name,due_on' }))
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n1 goal(s)')
+		expect(lines.some((l) => l.includes('cyber-asana goal get <gid>'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
+	it('goal list respects an explicit --opt-fields override', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listGoals = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			goalCommand({
+				listGoals,
+				getGoal: vi.fn(),
+				createGoal: vi.fn(),
+				updateGoal: vi.fn(),
+				deleteGoal: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'goal', 'list', '--workspace-gid', 'ws1', '--opt-fields', 'name'], {
+			from: 'node',
+		})
+
+		expect(listGoals).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'name' }))
+		vi.restoreAllMocks()
+	})
+
+	it('goal delete emits a structured acknowledgement with --json', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(
+			goalCommand({
+				listGoals: vi.fn(),
+				getGoal: vi.fn(),
+				createGoal: vi.fn(),
+				updateGoal: vi.fn(),
+				deleteGoal: vi.fn().mockResolvedValue(undefined),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', '--json', 'goal', 'delete', 'goal1'], { from: 'node' })
+
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'goal', gid: 'goal1', already_absent: false }, null, 2),
+		)
+		logSpy.mockRestore()
 	})
 
 	it('goal create forwards workspace gid, name, and options', async () => {
