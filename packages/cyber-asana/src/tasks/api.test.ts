@@ -178,19 +178,19 @@ describe('tasks/api', () => {
 		})
 	})
 
-	it('createTask adds followers after creating the task', async () => {
+	it('createTask carries followers on the create body without a second follower request', async () => {
 		vi.spyOn(Asana.TasksApi.prototype, 'createTask').mockResolvedValue({ data: mockTask } as never)
 		vi.spyOn(Asana.TasksApi.prototype, 'addFollowersForTask').mockResolvedValue({
 			data: { ...mockTask, followers: [{ gid: 'u1' }, { gid: 'u2' }] },
 		} as never)
 
-		await createTask('ws1', 'Test Task', { followers: ['u1', 'u2'] })
+		const result = await createTask('ws1', 'Test Task', { followers: ['u1', 'u2'] })
 
-		expect(Asana.TasksApi.prototype.addFollowersForTask).toHaveBeenCalledWith(
-			{ data: { followers: ['u1', 'u2'] } },
-			'456',
-			{},
-		)
+		expect(Asana.TasksApi.prototype.createTask).toHaveBeenCalledWith({
+			data: { name: 'Test Task', workspace: 'ws1', followers: ['u1', 'u2'] },
+		})
+		expect(Asana.TasksApi.prototype.addFollowersForTask).not.toHaveBeenCalled()
+		expect(result).toEqual(mockTask)
 	})
 
 	it('updateTask calls updateTask', async () => {

@@ -62,6 +62,22 @@ describe('parseAsanaUrl', () => {
 		})
 	})
 
+	it.each([
+		['a non-digit workspace or project GID', 'https://app.asana.com/1/abc/project/xyz'],
+		['a non-digit task GID', 'https://app.asana.com/1/8801234500011/project/8801234500022/task/my-task'],
+		['a non-digit list-view GID', 'https://app.asana.com/1/8801234500011/project/8801234500022/list/board'],
+		['a non-digit GID in a legacy path', 'https://app.asana.com/0/8801234500011/inbox'],
+	])('returns unknown for %s', (_label, url) => {
+		expect(parseAsanaUrl(url)).toEqual({
+			kind: 'unknown',
+			url,
+			workspace_gid: null,
+			project_gid: null,
+			task_gid: null,
+			list_view_gid: null,
+		})
+	})
+
 	it('returns unknown for unrecognized URLs', () => {
 		expect(parseAsanaUrl('https://example.com/not-asana')).toEqual({
 			kind: 'unknown',

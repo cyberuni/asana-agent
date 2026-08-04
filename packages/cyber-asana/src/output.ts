@@ -25,9 +25,13 @@ export function printFields(fields: Record<string, string | null | undefined>) {
 	}
 }
 
-export function printTable<T>(items: T[], cols: { label: string; get: (item: T) => string }[]) {
+export function printTable<T>(
+	items: T[],
+	cols: { label: string; get: (item: T) => string }[],
+	opts?: { entity?: string },
+) {
 	if (items.length === 0) {
-		printEmpty()
+		printEmpty(opts?.entity)
 		return
 	}
 	const widths = cols.map((c) => Math.max(c.label.length, ...items.map((i) => c.get(i).length)))
@@ -42,6 +46,16 @@ export function printTable<T>(items: T[], cols: { label: string; get: (item: T) 
 export function printSummary(line: string, argv: string[] = process.argv) {
 	if (selectFormat(argv) !== 'text') return
 	console.log(line)
+}
+
+/**
+ * Pre-computed count aggregate — principle 4. Text mode only.
+ * `noun` carries its own plural marker, e.g. 'project(s)'. Empty results say
+ * nothing here; the empty state (principle 5) has already spoken.
+ */
+export function printCountSummary(count: number, noun: string, argv: string[] = process.argv) {
+	if (count === 0) return
+	printSummary(`\n${count} ${noun}`, argv)
 }
 
 /** Contextual next-step suggestions — principle 9. Text mode only. */

@@ -49,13 +49,27 @@ describe('stories/api', () => {
 	})
 
 	it('createStory surfaces actionable diagnostics for formatted text rejections', async () => {
-		vi.spyOn(Asana.StoriesApi.prototype, 'createStoryForTask').mockRejectedValue(
-			new Error('html_text: malformed rich text payload'),
-		)
+		const createStoryForTask = vi
+			.spyOn(Asana.StoriesApi.prototype, 'createStoryForTask')
+			.mockRejectedValue(new Error('html_text: malformed rich text payload'))
 
-		await expect(createStory('task1', { html_text: '<body><strong>Rich</body>' })).rejects.toThrow(
+		await expect(createStory('task1', { html_text: '<body><strong>Rich</strong></body>' })).rejects.toThrow(
 			'Asana rejected html_text',
 		)
+		expect(createStoryForTask).toHaveBeenCalled()
+	})
+
+	it('createStory reports locally-rejected html_text without blaming Asana', async () => {
+		const createStoryForTask = vi.spyOn(Asana.StoriesApi.prototype, 'createStoryForTask')
+
+		const unbalanced = await createStory('task1', { html_text: '<body><strong>Rich</body>' }).catch(
+			(error: Error) => error,
+		)
+		const noBody = await createStory('task1', { html_text: '<div>Rich</div>' }).catch((error: Error) => error)
+
+		expect(unbalanced?.message).toBe('html_text has unbalanced closing tags')
+		expect(noBody?.message).toBe('html_text must be wrapped in a single <body>...</body> root element')
+		expect(createStoryForTask).not.toHaveBeenCalled()
 	})
 })
 

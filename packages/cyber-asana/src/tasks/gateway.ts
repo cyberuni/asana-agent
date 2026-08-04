@@ -201,10 +201,8 @@ export function createAsanaTaskGateway(client: Asana.ApiClient): TaskGateway {
 			return results
 		},
 		async createTask(workspaceGid, name, opts) {
+			// followers ride the create body; a separate addFollowers call would repeat the same work
 			const res = await tasksApi.createTask({ data: { name, workspace: workspaceGid, ...opts } })
-			if (opts?.followers?.length) {
-				return await this.addFollowersToTask(res.data.gid, opts.followers)
-			}
 			return res.data
 		},
 		async updateTask(taskGid, fields) {

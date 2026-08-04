@@ -32,6 +32,125 @@ describe('projects/cli', () => {
 		process.argv = [...originalArgv]
 	})
 
+	it('project list requests a minimal default field set, and respects an override', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const projectCommand = await loadProjectCommand()
+		const deps = {
+			listProjects,
+			getProject: vi.fn(),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		}
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+		expect(listProjects).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'gid,name' }))
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1', '--opt-fields', 'name,notes'], {
+				from: 'node',
+			})
+		expect(listProjects).toHaveBeenLastCalledWith('ws1', expect.objectContaining({ optFields: 'name,notes' }))
+	})
+
+	it('project list prints a count summary and next-step suggestions', async () => {
+		const projectCommand = await loadProjectCommand()
+		const program = new Command().addCommand(
+			projectCommand({
+				listProjects: vi.fn().mockResolvedValue([
+					{ gid: '1', name: 'A' },
+					{ gid: '2', name: 'B' },
+				]),
+				getProject: vi.fn(),
+				getProjectTaskCounts: vi.fn(),
+				createProject: vi.fn(),
+				updateProject: vi.fn(),
+				deleteProject: vi.fn(),
+				searchProjects: vi.fn(),
+				exportProject: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n2 project(s)')
+		expect(lines).toContain('\nNext steps:')
+		expect(lines.some((l) => l.includes('cyber-asana project get <gid>'))).toBe(true)
+	})
+
+	it('project get truncates long notes by default and shows them all with --full', async () => {
+		const projectCommand = await loadProjectCommand()
+		const deps = {
+			listProjects: vi.fn(),
+			getProject: vi.fn().mockResolvedValue({ gid: 'p1', name: 'Launch', notes: 'x'.repeat(600) }),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		}
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'get', 'p1'], { from: 'node' })
+		const truncated = logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Notes'))
+		expect(truncated).toContain('[truncated, 600 chars total; use --full for the rest]')
+
+		logSpy.mockClear()
+		process.argv = ['node', 'test', '--full']
+		await new Command()
+			.option('--full')
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', '--full', 'project', 'get', 'p1'], { from: 'node' })
+		const full = logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Notes'))
+		expect(full).not.toContain('[truncated')
+		expect(full).toContain('x'.repeat(600))
+	})
+
+	it('project --help carries usage examples covering its subcommands', async () => {
+		const projectCommand = await loadProjectCommand()
+		let help = ''
+		const cmd = projectCommand()
+		cmd.configureOutput({ writeOut: (s) => (help += s) })
+		cmd.outputHelp()
+
+		expect(help).toContain('Examples:')
+		expect(help).toContain('cyber-asana project list --workspace-gid <gid>')
+		expect(help).toContain('cyber-asana project create "New project"')
+		expect(help).toContain('Every subcommand supports --help for its own options.')
+	})
+
+	it('project delete emits a structured acknowledgement with --json', async () => {
+		const projectCommand = await loadProjectCommand()
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(
+			projectCommand({
+				listProjects: vi.fn(),
+				getProject: vi.fn(),
+				getProjectTaskCounts: vi.fn(),
+				createProject: vi.fn(),
+				updateProject: vi.fn(),
+				deleteProject: vi.fn().mockResolvedValue(undefined),
+				searchProjects: vi.fn(),
+				exportProject: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', '--json', 'project', 'delete', 'p1'], { from: 'node' })
+
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'project', gid: 'p1', already_absent: false }, null, 2),
+		)
+	})
+
 	it('project search forwards text and filters to searchProjects', async () => {
 		searchProjectsMock.mockResolvedValue([{ gid: '1', name: 'Launch Roadmap' }])
 		const projectCommand = await loadProjectCommand()

@@ -8,6 +8,8 @@ const removeFollowersFromTaskMock = vi.fn()
 const getTasksByGidMock = vi.fn()
 const getTaskMock = vi.fn()
 const listTasksMock = vi.fn()
+const getMyTasksMock = vi.fn()
+const listSubtasksMock = vi.fn()
 
 vi.mock('./api.js', async () => {
 	const actual = await vi.importActual<typeof import('./api.js')>('./api.js')
@@ -20,6 +22,8 @@ vi.mock('./api.js', async () => {
 		getTasksByGid: getTasksByGidMock,
 		getTask: getTaskMock,
 		listTasks: listTasksMock,
+		getMyTasks: getMyTasksMock,
+		listSubtasks: listSubtasksMock,
 	}
 })
 
@@ -32,6 +36,74 @@ describe('tasks/cli', () => {
 	afterEach(() => {
 		vi.clearAllMocks()
 		process.argv = [...originalArgv]
+	})
+
+	// Mutation acknowledgements must honor --json/--toon like every other command.
+	describe.each([
+		{
+			name: 'task delete',
+			argv: ['task', 'delete', 't1'],
+			method: 'deleteTask',
+			payload: { deleted: true, resource: 'task', gid: 't1', already_absent: false },
+		},
+		{
+			name: 'task project add',
+			argv: ['task', 'project', 'add', 't1', 'p1'],
+			method: 'addTaskToProject',
+			payload: { task: 't1', project: 'p1', status: 'added' },
+		},
+		{
+			name: 'task project remove',
+			argv: ['task', 'project', 'remove', 't1', 'p1'],
+			method: 'removeTaskFromProject',
+			payload: { task: 't1', project: 'p1', status: 'removed' },
+		},
+		{
+			name: 'task follower add',
+			argv: ['task', 'follower', 'add', 't1', 'u1', 'u2'],
+			method: 'addFollowersToTask',
+			payload: { task: 't1', followers: ['u1', 'u2'], status: 'added' },
+		},
+		{
+			name: 'task follower remove',
+			argv: ['task', 'follower', 'remove', 't1', 'u1'],
+			method: 'removeFollowersFromTask',
+			payload: { task: 't1', followers: ['u1'], status: 'removed' },
+		},
+		{
+			name: 'task dependency add',
+			argv: ['task', 'dependency', 'add', 't1', 'd1'],
+			method: 'addDependencies',
+			payload: { task: 't1', dependencies: ['d1'], status: 'added' },
+		},
+		{
+			name: 'task dependency remove',
+			argv: ['task', 'dependency', 'remove', 't1', 'd1'],
+			method: 'removeDependencies',
+			payload: { task: 't1', dependencies: ['d1'], status: 'removed' },
+		},
+		{
+			name: 'task dependent add',
+			argv: ['task', 'dependent', 'add', 't1', 'd1'],
+			method: 'addDependents',
+			payload: { task: 't1', dependents: ['d1'], status: 'added' },
+		},
+		{
+			name: 'task dependent remove',
+			argv: ['task', 'dependent', 'remove', 't1', 'd1'],
+			method: 'removeDependents',
+			payload: { task: 't1', dependents: ['d1'], status: 'removed' },
+		},
+	])('$name', ({ argv, method, payload }) => {
+		it('emits a structured acknowledgement with --json', async () => {
+			process.argv = ['node', 'test', '--json']
+			const api = { [method]: vi.fn().mockResolvedValue(undefined) } as never
+			const program = new Command().option('--json').addCommand(taskCommand(api))
+
+			await program.parseAsync(['node', 'test', '--json', ...argv], { from: 'node' })
+
+			expect(logSpy).toHaveBeenCalledWith(JSON.stringify(payload, null, 2))
+		})
 	})
 
 	it('task create normalizes multi-project, followers, html notes, and custom fields', async () => {
@@ -172,6 +244,84 @@ describe('tasks/cli', () => {
 		})
 
 		expect(listTasksMock).toHaveBeenCalledWith('p1', expect.objectContaining({ optFields: 'name,notes' }))
+	})
+
+	it('task my-tasks list requests a minimal default field set when none is given', async () => {
+		getMyTasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'my-tasks', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(getMyTasksMock).toHaveBeenCalledWith(
+			'ws1',
+			expect.objectContaining({ optFields: 'gid,name,completed,due_on' }),
+		)
+	})
+
+	it('task my-tasks list respects an explicit --opt-fields override', async () => {
+		getMyTasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'task', 'my-tasks', 'list', '--workspace-gid', 'ws1', '--opt-fields', 'name,notes'],
+			{ from: 'node' },
+		)
+
+		expect(getMyTasksMock).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'name,notes' }))
+	})
+
+	it('task subtask list requests a minimal default field set when none is given', async () => {
+		listSubtasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'subtask', 'list', '123'], { from: 'node' })
+
+		expect(listSubtasksMock).toHaveBeenCalledWith(
+			'123',
+			expect.objectContaining({ optFields: 'gid,name,completed,due_on' }),
+		)
+	})
+
+	it('task subtask list adds include-flag fields to the default field set', async () => {
+		listSubtasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'subtask', 'list', '123', '--assignee-email'], { from: 'node' })
+
+		expect(listSubtasksMock).toHaveBeenCalledWith(
+			'123',
+			expect.objectContaining({ optFields: 'gid,name,completed,due_on,assignee,assignee.email' }),
+		)
+	})
+
+	it('task subtask list composes include flags with an explicit --opt-fields override', async () => {
+		listSubtasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'task', 'subtask', 'list', '123', '--opt-fields', 'gid,name', '--num-subtasks'],
+			{ from: 'node' },
+		)
+
+		expect(listSubtasksMock).toHaveBeenCalledWith(
+			'123',
+			expect.objectContaining({ optFields: 'gid,name,num_subtasks' }),
+		)
+	})
+
+	it('task subtask list does not repeat a field named by both the default and an include flag', async () => {
+		listSubtasksMock.mockResolvedValue([])
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'task', 'subtask', 'list', '123', '--opt-fields', 'gid,assignee', '--assignee-email'],
+			{ from: 'node' },
+		)
+
+		expect(listSubtasksMock).toHaveBeenCalledWith(
+			'123',
+			expect.objectContaining({ optFields: 'gid,assignee,assignee.email' }),
+		)
 	})
 
 	it('task list prints an aggregate summary and next-step suggestions', async () => {
