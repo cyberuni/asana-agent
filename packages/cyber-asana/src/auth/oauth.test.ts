@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { buildAuthorizeUrl, createPkcePair, exchangeCode, refreshAccessToken } from './oauth.js'
+import { buildAuthorizeUrl, createPkcePair, exchangeCode, refreshAccessToken, revokeRefreshToken } from './oauth.js'
 
 function jsonResponse(body: unknown, status = 200) {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -131,6 +131,24 @@ describe('exchangeCode', () => {
 		expect(tokens.expiresAt).toBe(10_000 + 3600 * 1000)
 	})
 
+	it('captures the account Asana returns alongside the tokens', async () => {
+		const { fetchImpl } = recordingFetch(
+			jsonResponse({ ...success, data: { gid: '1201', name: 'Homa Wong', email: 'homa@example.com' } }),
+		)
+
+		const tokens = await exchangeCode(params, { fetch: fetchImpl, now: () => 1000 })
+
+		expect(tokens.user).toEqual({ gid: '1201', name: 'Homa Wong', email: 'homa@example.com' })
+	})
+
+	it('omits the account when Asana returns no user data', async () => {
+		const { fetchImpl } = recordingFetch(jsonResponse(success))
+
+		const tokens = await exchangeCode(params, { fetch: fetchImpl, now: () => 1000 })
+
+		expect(tokens.user).toBeUndefined()
+	})
+
 	it('reports the provider error description when the exchange is rejected', async () => {
 		const { fetchImpl } = recordingFetch(
 			jsonResponse({ error: 'invalid_grant', error_description: 'Authorization code expired' }, 400),
@@ -179,5 +197,27 @@ describe('refreshAccessToken', () => {
 		const tokens = await refreshAccessToken(params, { fetch: fetchImpl, now: () => 1000 })
 
 		expect(tokens.refreshToken).toBe('rotated')
+	})
+})
+
+describe('revokeRefreshToken', () => {
+	const params = { clientId: 'client-123', clientSecret: 'secret-456', refreshToken: 'refresh-token' }
+
+	it('posts the refresh token to the revocation endpoint', async () => {
+		const { calls, fetchImpl } = recordingFetch(jsonResponse({}))
+
+		await revokeRefreshToken(params, { fetch: fetchImpl, now: () => 1000 })
+
+		expect(calls[0].url).toBe('https://app.asana.com/-/oauth_revoke')
+		const body = bodyOf(calls[0].init)
+		expect(body.get('token')).toBe('refresh-token')
+		expect(body.get('client_id')).toBe('client-123')
+		expect(body.get('client_secret')).toBe('secret-456')
+	})
+
+	it('reports why revocation failed so logout can say what it could not undo', async () => {
+		const { fetchImpl } = recordingFetch(jsonResponse({ error: 'invalid_client' }, 401))
+
+		await expect(revokeRefreshToken(params, { fetch: fetchImpl, now: () => 1000 })).rejects.toThrow(/invalid_client/)
 	})
 })

@@ -6,6 +6,7 @@ import { createHash, randomBytes } from 'node:crypto'
 
 const AUTHORIZE_ENDPOINT = 'https://app.asana.com/-/oauth_authorize'
 const TOKEN_ENDPOINT = 'https://app.asana.com/-/oauth_token'
+const REVOKE_ENDPOINT = 'https://app.asana.com/-/oauth_revoke'
 
 /** 32 random bytes → 43 base64url characters, the shortest verifier the spec allows. */
 const VERIFIER_BYTES = 32
@@ -43,19 +44,29 @@ export type OAuthDeps = {
 	now: () => number
 }
 
+/** The account Asana reports with the grant, so callers need no extra API call. */
+export type OAuthUser = { gid: string; name?: string; email?: string }
+
 export type Tokens = {
 	accessToken: string
 	refreshToken?: string
 	/** Epoch milliseconds — an absolute deadline survives being written to disk. */
 	expiresAt: number
+	user?: OAuthUser
 }
 
 type TokenResponse = {
 	access_token?: string
 	refresh_token?: string
 	expires_in?: number
+	data?: { gid?: string; name?: string; email?: string }
 	error?: string
 	error_description?: string
+}
+
+function userFrom(payload: TokenResponse): OAuthUser | undefined {
+	const { gid, name, email } = payload.data ?? {}
+	return gid ? { gid, name, email } : undefined
 }
 
 async function requestTokens(form: URLSearchParams, deps: OAuthDeps): Promise<TokenResponse> {
@@ -102,6 +113,7 @@ export async function exchangeCode(
 		accessToken: payload.access_token as string,
 		refreshToken: payload.refresh_token,
 		expiresAt: expiryFrom(payload, deps),
+		user: userFrom(payload),
 	}
 }
 
@@ -128,5 +140,27 @@ export async function refreshAccessToken(
 		// Asana may rotate the refresh token; when it does not, the old one stays valid.
 		refreshToken: payload.refresh_token ?? refreshToken,
 		expiresAt: expiryFrom(payload, deps),
+		user: userFrom(payload),
 	}
+}
+
+// Asana revokes only refresh tokens — it rejects access tokens outright, which
+// is why logout has to revoke before it forgets the refresh token.
+export async function revokeRefreshToken(
+	{ clientId, clientSecret, refreshToken }: RefreshParams,
+	deps: OAuthDeps,
+): Promise<void> {
+	const form = new URLSearchParams({ client_id: clientId, token: refreshToken })
+	if (clientSecret) form.set('client_secret', clientSecret)
+
+	const res = await deps.fetch(REVOKE_ENDPOINT, {
+		method: 'POST',
+		headers: { 'content-type': 'application/x-www-form-urlencoded' },
+		body: form.toString(),
+	})
+	if (res.ok) return
+
+	const payload = (await res.json().catch(() => ({}))) as TokenResponse
+	const reason = payload.error_description ?? payload.error ?? `HTTP ${res.status}`
+	throw new Error(`Asana rejected the token revocation: ${reason}`)
 }
