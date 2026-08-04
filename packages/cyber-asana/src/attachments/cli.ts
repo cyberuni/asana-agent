@@ -7,7 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { AttachmentApi } from './api.js'
 import { getAttachment, listAttachments } from './api.js'
 
@@ -23,22 +23,44 @@ function resolveAttachmentApi(api?: AttachmentApi | (() => AttachmentApi)): Atta
 	)
 }
 
+// Minimal default schema for attachment lists — principle 2. The download URL
+// is signed and long, so a list omits it; `attachment get <gid>` returns it.
+const ATTACHMENT_LIST_FIELDS = 'gid,name,resource_type'
+
 export function attachmentCommand(api?: AttachmentApi | (() => AttachmentApi)) {
 	const cmd = new Command('attachment').description('Manage Asana attachments')
+
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana attachment list --task-gid <gid>',
+			'  cyber-asana attachment get <gid> --toon',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
 
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List attachments for a task'), 'task', 'Task GID'),
 	).action(async (opts: { task?: string; taskGid?: string; limit?: number; offset?: string; optFields?: string }) => {
-		const data = await resolveAttachmentApi(api).listAttachments(
-			requiredGid(opts, 'task', 'Task GID'),
-			paginationOptionsFromCli(opts),
-		)
+		const pagination = paginationOptionsFromCli(opts)
+		pagination.optFields ??= ATTACHMENT_LIST_FIELDS
+		const data = await resolveAttachmentApi(api).listAttachments(requiredGid(opts, 'task', 'Task GID'), pagination)
 		output(data, () => {
-			printTable(itemsForOutput(data), [
-				{ label: 'Name', get: (a: Attachment) => a.name },
-				{ label: 'ID', get: (a: Attachment) => a.gid },
-			])
+			const items = itemsForOutput(data)
+			printTable(
+				items,
+				[
+					{ label: 'Name', get: (a: Attachment) => a.name },
+					{ label: 'ID', get: (a: Attachment) => a.gid },
+				],
+				{ entity: 'attachments' },
+			)
+			printCountSummary(items.length, 'attachment(s)')
 			printNextPageHint(data)
+			printNextSteps(['cyber-asana attachment get <gid> — view an attachment and its download URL'])
 		})
 	})
 

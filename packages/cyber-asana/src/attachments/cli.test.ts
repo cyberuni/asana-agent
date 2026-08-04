@@ -35,6 +35,23 @@ describe('attachments/cli', () => {
 		})
 	})
 
+	it('attachment list applies a minimal default field set, a count summary, and next steps', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		listAttachmentsMock.mockResolvedValue([{ gid: 'att1', name: 'file.pdf' }])
+		const program = new Command().addCommand(attachmentCommand())
+
+		await program.parseAsync(['node', 'test', 'attachment', 'list', '--task-gid', 'task1'], { from: 'node' })
+
+		expect(listAttachmentsMock).toHaveBeenCalledWith(
+			'task1',
+			expect.objectContaining({ optFields: 'gid,name,resource_type' }),
+		)
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n1 attachment(s)')
+		expect(lines.some((l) => l.includes('cyber-asana attachment get <gid>'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
 	it('attachment get forwards gid', async () => {
 		getAttachmentMock.mockResolvedValue({ gid: 'att1', name: 'file.pdf' })
 		const program = new Command().addCommand(attachmentCommand())

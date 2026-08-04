@@ -7,7 +7,8 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { SectionApi } from './api.js'
 import { createSection, deleteSection, getSection, listSections, updateSection } from './api.js'
 
@@ -30,23 +31,52 @@ function resolveSectionApi(api?: SectionApi | (() => SectionApi)): SectionApi {
 	)
 }
 
+// Minimal default schema for section lists — principle 2.
+const SECTION_LIST_FIELDS = 'gid,name'
+
+const SECTION_LIST_NEXT_STEPS = [
+	'cyber-asana section get <gid> — view a section',
+	'cyber-asana task list --project-gid <gid> — list the project’s tasks',
+]
+
 export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 	const cmd = new Command('section').description('Manage Asana sections')
+
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana section list --project-gid <gid>',
+			'  cyber-asana section get <gid> --toon',
+			'  cyber-asana section create "In Progress" --project-gid <gid>',
+			'  cyber-asana section update <gid> --name "Done"',
+			'  cyber-asana section delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
 
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List sections in a project'), 'project', 'Project GID'),
 	).action(
 		async (opts: { project?: string; projectGid?: string; limit?: number; offset?: string; optFields?: string }) => {
-			const data = await resolveSectionApi(api).listSections(
-				requiredGid(opts, 'project', 'Project GID'),
-				paginationOptionsFromCli(opts),
-			)
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= SECTION_LIST_FIELDS
+			const data = await resolveSectionApi(api).listSections(requiredGid(opts, 'project', 'Project GID'), pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
-					{ label: 'Name', get: (s: Section) => s.name },
-					{ label: 'ID', get: (s: Section) => s.gid },
-				])
+				const items = itemsForOutput(data)
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (s: Section) => s.name },
+						{ label: 'ID', get: (s: Section) => s.gid },
+					],
+					{ entity: 'sections' },
+				)
+				printCountSummary(items.length, 'section(s)')
 				printNextPageHint(data)
+				printNextSteps(SECTION_LIST_NEXT_STEPS)
 			})
 		},
 	)
@@ -81,8 +111,8 @@ export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 		.command('delete <gid>')
 		.description('Delete a section')
 		.action(async (gid: string) => {
-			await resolveSectionApi(api).deleteSection(gid)
-			console.log(`Deleted section ${gid}`)
+			const result = await deleteIdempotently('section', gid, () => resolveSectionApi(api).deleteSection(gid))
+			output(result, () => console.log(deleteMessage(result, 'Section')))
 		})
 
 	return cmd

@@ -29,11 +29,11 @@ export function createStoryApi(gateway: StoryGateway) {
 			return gateway.listStories(taskGid, opts)
 		},
 		async createStory(taskGid: string, fields: StoryCreateFields) {
+			// Local shape checks run outside the try: their messages mention html_text, and the
+			// catch below would otherwise attribute a never-sent payload to Asana (#99).
+			const payload = buildStoryCreateFields({ text: fields.text, htmlText: fields.html_text })
 			try {
-				return await gateway.createStory(
-					taskGid,
-					buildStoryCreateFields({ text: fields.text, htmlText: fields.html_text }),
-				)
+				return await gateway.createStory(taskGid, payload)
 			} catch (error) {
 				normalizeStoryCreateError(error)
 			}

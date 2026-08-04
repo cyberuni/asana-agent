@@ -7,7 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { UserApi } from './api.js'
 import { getMe, getUser, listUsers } from './api.js'
 
@@ -18,11 +18,15 @@ function fmtUser(u: User) {
 }
 
 function fmtUserList(users: User[]) {
-	printTable(users, [
-		{ label: 'Name', get: (u) => u.name },
-		{ label: 'ID', get: (u) => u.gid },
-		{ label: 'Email', get: (u) => u.email ?? '' },
-	])
+	printTable(
+		users,
+		[
+			{ label: 'Name', get: (u) => u.name },
+			{ label: 'ID', get: (u) => u.gid },
+			{ label: 'Email', get: (u) => u.email ?? '' },
+		],
+		{ entity: 'users' },
+	)
 }
 
 function resolveUserApi(api?: UserApi | (() => UserApi)): UserApi {
@@ -36,8 +40,24 @@ function resolveUserApi(api?: UserApi | (() => UserApi)): UserApi {
 	)
 }
 
+// Minimal default schema for user lists — principle 2.
+const USER_LIST_FIELDS = 'gid,name,email'
+
 export function userCommand(api?: UserApi | (() => UserApi)) {
 	const cmd = new Command('user').description('Manage Asana users')
+
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana user list --workspace-gid <gid>',
+			'  cyber-asana user get <gid> --toon',
+			'  cyber-asana user me',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
 
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List users in a workspace'), 'workspace', 'Workspace GID', {
@@ -47,13 +67,15 @@ export function userCommand(api?: UserApi | (() => UserApi)) {
 			limit: false,
 		},
 	).action(async (opts: { workspace?: string; workspaceGid?: string; offset?: string; optFields?: string }) => {
-		const data = await resolveUserApi(api).listUsers(
-			requiredGid(opts, 'workspace', 'Workspace GID'),
-			paginationOptionsFromCli(opts),
-		)
+		const pagination = paginationOptionsFromCli(opts)
+		pagination.optFields ??= USER_LIST_FIELDS
+		const data = await resolveUserApi(api).listUsers(requiredGid(opts, 'workspace', 'Workspace GID'), pagination)
 		output(data, () => {
-			fmtUserList(itemsForOutput(data))
+			const items = itemsForOutput(data)
+			fmtUserList(items)
+			printCountSummary(items.length, 'user(s)')
 			printNextPageHint(data)
+			printNextSteps(['cyber-asana user get <gid> — view a user'])
 		})
 	})
 

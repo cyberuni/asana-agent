@@ -1,5 +1,6 @@
 import { type Command, InvalidArgumentError, Option } from 'commander'
 import { envValue } from './env.js'
+import { selectFormat } from './output.js'
 import type { ListResult, PaginationOptions } from './pagination.js'
 import { listItems, nextPageOffset } from './pagination.js'
 
@@ -58,7 +59,9 @@ export function itemsForOutput<T = any>(result: ListResult<T>) {
 	return listItems(result)
 }
 
-export function printNextPageHint<T>(result: ListResult<T>) {
+/** Pagination cursor hint — text mode only, like printSummary and printNextSteps. */
+export function printNextPageHint<T>(result: ListResult<T>, argv: string[] = process.argv) {
+	if (selectFormat(argv) !== 'text') return
 	const offset = nextPageOffset(result)
 	if (offset) console.log(`\nNext offset: ${offset}`)
 }
