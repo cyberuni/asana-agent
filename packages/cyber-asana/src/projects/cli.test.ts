@@ -85,6 +85,36 @@ describe('projects/cli', () => {
 		expect(lines.some((l) => l.includes('cyber-asana project get <gid>'))).toBe(true)
 	})
 
+	it('project get truncates long notes by default and shows them all with --full', async () => {
+		const projectCommand = await loadProjectCommand()
+		const deps = {
+			listProjects: vi.fn(),
+			getProject: vi.fn().mockResolvedValue({ gid: 'p1', name: 'Launch', notes: 'x'.repeat(600) }),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		}
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'get', 'p1'], { from: 'node' })
+		const truncated = logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Notes'))
+		expect(truncated).toContain('[truncated, 600 chars total; use --full for the rest]')
+
+		logSpy.mockClear()
+		process.argv = ['node', 'test', '--full']
+		await new Command()
+			.option('--full')
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', '--full', 'project', 'get', 'p1'], { from: 'node' })
+		const full = logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Notes'))
+		expect(full).not.toContain('[truncated')
+		expect(full).toContain('x'.repeat(600))
+	})
+
 	it('project delete emits a structured acknowledgement with --json', async () => {
 		const projectCommand = await loadProjectCommand()
 		process.argv = ['node', 'test', '--json']

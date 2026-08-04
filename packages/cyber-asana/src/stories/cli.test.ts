@@ -16,8 +16,33 @@ vi.mock('./api.js', async () => {
 const { storyCommand } = await import('./cli.js')
 
 describe('stories/cli', () => {
+	const originalArgv = [...process.argv]
+
 	afterEach(() => {
 		vi.clearAllMocks()
+		process.argv = [...originalArgv]
+	})
+
+	it('story create truncates a long comment body by default and shows it all with --full', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const createStory = vi.fn().mockResolvedValue({ gid: 'story1', text: 'x'.repeat(600) })
+		const deps = { listStories: vi.fn(), createStory, getTaskTemplateData: vi.fn() }
+
+		await new Command()
+			.addCommand(storyCommand('story', deps))
+			.parseAsync(['node', 'test', 'story', 'create', 'hi', '--task-gid', 'task1'], { from: 'node' })
+		expect(logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Text'))).toContain(
+			'[truncated, 600 chars total; use --full for the rest]',
+		)
+
+		logSpy.mockClear()
+		process.argv = ['node', 'test', '--full']
+		await new Command()
+			.option('--full')
+			.addCommand(storyCommand('story', deps))
+			.parseAsync(['node', 'test', '--full', 'story', 'create', 'hi', '--task-gid', 'task1'], { from: 'node' })
+		expect(logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Text'))).not.toContain('[truncated')
+		logSpy.mockRestore()
 	})
 
 	it('story list applies a minimal default field set, a count summary, and next steps', async () => {

@@ -8,6 +8,7 @@ import {
 	requiredGid,
 } from '../cli-options.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
+import { isFull, truncate } from '../truncate.js'
 import type { StatusApi } from './api.js'
 import { createStatus, deleteStatus, getStatus, listStatuses } from './api.js'
 
@@ -19,7 +20,7 @@ function fmtStatus(s: Status) {
 		Type: s.status_type ?? null,
 		Title: s.title ?? null,
 		At: s.created_at ?? null,
-		Text: s.text ?? null,
+		Text: truncate(s.text, { full: isFull() }) || null,
 	})
 }
 

@@ -59,6 +59,28 @@ describe('status/cli', () => {
 		vi.restoreAllMocks()
 	})
 
+	it('status get truncates a long update body by default and shows it all with --full', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const getStatus = vi.fn().mockResolvedValue({ gid: 'st1', status_type: 'on_track', text: 'x'.repeat(600) })
+		const deps = { listStatuses: vi.fn(), getStatus, createStatus: vi.fn(), deleteStatus: vi.fn() }
+
+		await new Command()
+			.addCommand(statusCommand(deps))
+			.parseAsync(['node', 'test', 'status', 'get', 'st1'], { from: 'node' })
+		expect(logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Text'))).toContain(
+			'[truncated, 600 chars total; use --full for the rest]',
+		)
+
+		logSpy.mockClear()
+		process.argv = ['node', 'test', '--full']
+		await new Command()
+			.option('--full')
+			.addCommand(statusCommand(deps))
+			.parseAsync(['node', 'test', '--full', 'status', 'get', 'st1'], { from: 'node' })
+		expect(logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Text'))).not.toContain('[truncated')
+		logSpy.mockRestore()
+	})
+
 	it('status delete emits a structured acknowledgement with --json', async () => {
 		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 		process.argv = ['node', 'test', '--json']

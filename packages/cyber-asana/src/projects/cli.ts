@@ -10,6 +10,7 @@ import {
 } from '../cli-options.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable, selectFormat } from '../output.js'
 import { encodeToon } from '../toon.js'
+import { isFull, truncate } from '../truncate.js'
 import {
 	createProject,
 	deleteProject,
@@ -43,7 +44,13 @@ function resolveProjectApi(api?: ProjectApi | (() => ProjectApi)): ProjectApi {
 type Project = { gid: string; name: string; permalink_url?: string; color?: string; notes?: string }
 
 function fmtProject(p: Project) {
-	printFields({ Name: p.name, ID: p.gid, URL: p.permalink_url, Color: p.color || null, Notes: p.notes || null })
+	printFields({
+		Name: p.name,
+		ID: p.gid,
+		URL: p.permalink_url,
+		Color: p.color || null,
+		Notes: truncate(p.notes, { full: isFull() }) || null,
+	})
 }
 
 function fmtProjectList(projects: Project[]) {

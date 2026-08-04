@@ -8,6 +8,7 @@ import {
 	requiredGid,
 } from '../cli-options.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
+import { isFull, truncate } from '../truncate.js'
 import type { StoryApi } from './api.js'
 import { createStory, getTaskTemplateData, interpolateTemplate, listStories } from './api.js'
 
@@ -19,7 +20,7 @@ function fmtStory(s: Story) {
 		Type: s.type ?? null,
 		By: s.created_by?.name ?? null,
 		At: s.created_at ?? null,
-		Text: s.text ?? null,
+		Text: truncate(s.text, { full: isFull() }) || null,
 	})
 }
 
