@@ -1,3 +1,4 @@
+import { buildUsageErrorBody, isUsageError, renderUsageErrorText } from './cli-usage.js'
 import { buildMcpToolErrorBody } from './mcp-error.js'
 import type { OutputFormat } from './output.js'
 import { encodeToon } from './toon.js'
@@ -6,6 +7,7 @@ import { encodeToon } from './toon.js'
 // 0 success, 1 generic failure, then specific recoverable conditions agents can
 // branch on without parsing the message.
 export function exitCodeFor(error: unknown): number {
+	if (isUsageError(error)) return 2 // the caller can fix the command line and retry
 	const body = buildMcpToolErrorBody(error)
 	if (body.error.kind === 'config') return 3
 	switch (body.error.status) {
@@ -23,6 +25,12 @@ export function exitCodeFor(error: unknown): number {
 }
 
 export function renderCliError(error: unknown, format: OutputFormat): string {
+	if (isUsageError(error)) {
+		const usage = buildUsageErrorBody(error)
+		if (format === 'json') return JSON.stringify(usage, null, 2)
+		if (format === 'toon') return encodeToon(usage)
+		return renderUsageErrorText(error)
+	}
 	const body = buildMcpToolErrorBody(error)
 	if (format === 'json') return JSON.stringify(body, null, 2)
 	if (format === 'toon') return encodeToon(body)
