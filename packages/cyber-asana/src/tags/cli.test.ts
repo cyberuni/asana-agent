@@ -25,12 +25,68 @@ vi.mock('./api.js', async () => {
 
 const { tagCommand } = await import('./cli.js')
 
+function tagApiStub() {
+	return {
+		listTags: vi.fn(),
+		getTag: vi.fn(),
+		createTag: vi.fn(),
+		updateTag: vi.fn(),
+		deleteTag: vi.fn(),
+		listTagsForTask: vi.fn(),
+		listTasksForTag: vi.fn(),
+		addTagToTask: vi.fn(),
+		removeTagFromTask: vi.fn(),
+	}
+}
+
 describe('tags/cli', () => {
 	const originalArgv = [...process.argv]
 
 	afterEach(() => {
 		vi.clearAllMocks()
 		process.argv = [...originalArgv]
+	})
+
+	it('tag list applies a minimal default field set, a count summary, and next steps', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listTags = vi.fn().mockResolvedValue([{ gid: 'tag1', name: 'Urgent' }])
+		const program = new Command().addCommand(tagCommand({ ...tagApiStub(), listTags }))
+
+		await program.parseAsync(['node', 'test', 'tag', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(listTags).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'gid,name,color' }))
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n1 tag(s)')
+		expect(lines.some((l) => l.includes('cyber-asana tag tasks <gid>'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
+	it('tag tasks applies the task default field set and a count summary', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listTasksForTag = vi.fn().mockResolvedValue([{ gid: 't1', name: 'Fix it' }])
+		const program = new Command().addCommand(tagCommand({ ...tagApiStub(), listTasksForTag }))
+
+		await program.parseAsync(['node', 'test', 'tag', 'tasks', 'tag1'], { from: 'node' })
+
+		expect(listTasksForTag).toHaveBeenCalledWith(
+			'tag1',
+			expect.objectContaining({ optFields: 'gid,name,completed,due_on' }),
+		)
+		expect(logSpy.mock.calls.map((c) => String(c[0]))).toContain('\n1 task(s)')
+		logSpy.mockRestore()
+	})
+
+	it('tag list respects an explicit --opt-fields override', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listTags = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(tagCommand({ ...tagApiStub(), listTags }))
+
+		await program.parseAsync(['node', 'test', 'tag', 'list', '--workspace-gid', 'ws1', '--opt-fields', 'name'], {
+			from: 'node',
+		})
+
+		expect(listTags).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'name' }))
+		vi.restoreAllMocks()
 	})
 
 	it('tag delete emits a structured acknowledgement with --json', async () => {

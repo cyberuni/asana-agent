@@ -7,7 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { TagApi } from './api.js'
 import {
 	addTagToTask,
@@ -54,6 +54,15 @@ function resolveTagApi(api?: TagApi | (() => TagApi)): TagApi {
 	)
 }
 
+// Minimal default schemas — principle 2. Just the fields the tables render.
+const TAG_LIST_FIELDS = 'gid,name,color'
+const TAGGED_TASK_LIST_FIELDS = 'gid,name,completed,due_on'
+
+const TAG_LIST_NEXT_STEPS = [
+	'cyber-asana tag tasks <gid> — list the tasks carrying a tag',
+	'cyber-asana tag get <gid> — view a tag',
+]
+
 export function tagCommand(api?: TagApi | (() => TagApi)) {
 	const cmd = new Command('tag').description('Manage Asana tags')
 
@@ -69,17 +78,19 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 			offset?: string
 			optFields?: string
 		}) => {
-			const data = await resolveTagApi(api).listTags(
-				requiredGid(opts, 'workspace', 'Workspace GID'),
-				paginationOptionsFromCli(opts),
-			)
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= TAG_LIST_FIELDS
+			const data = await resolveTagApi(api).listTags(requiredGid(opts, 'workspace', 'Workspace GID'), pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
+				const items = itemsForOutput(data)
+				printTable(items, [
 					{ label: 'Name', get: (t: Tag) => t.name },
 					{ label: 'ID', get: (t: Tag) => t.gid },
 					{ label: 'Color', get: (t: Tag) => t.color ?? '' },
 				])
+				printCountSummary(items.length, 'tag(s)')
 				printNextPageHint(data)
+				printNextSteps(TAG_LIST_NEXT_STEPS)
 			})
 		},
 	)
@@ -138,14 +149,19 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 
 	addPaginationOptions(taskCmd.command('list <task-gid>').description('List tags for a task')).action(
 		async (taskGid: string, opts: { limit?: number; offset?: string; optFields?: string }) => {
-			const data = await resolveTagApi(api).listTagsForTask(taskGid, paginationOptionsFromCli(opts))
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= TAG_LIST_FIELDS
+			const data = await resolveTagApi(api).listTagsForTask(taskGid, pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
+				const items = itemsForOutput(data)
+				printTable(items, [
 					{ label: 'Name', get: (t: Tag) => t.name },
 					{ label: 'ID', get: (t: Tag) => t.gid },
 					{ label: 'Color', get: (t: Tag) => t.color ?? '' },
 				])
+				printCountSummary(items.length, 'tag(s)')
 				printNextPageHint(data)
+				printNextSteps([`cyber-asana tag task remove ${taskGid} <tag-gid> — untag this task`])
 			})
 		},
 	)
@@ -168,10 +184,15 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 
 	addPaginationOptions(cmd.command('tasks <tag-gid>').description('List tasks for a tag')).action(
 		async (tagGid: string, opts: { limit?: number; offset?: string; optFields?: string }) => {
-			const data = await resolveTagApi(api).listTasksForTag(tagGid, paginationOptionsFromCli(opts))
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= TAGGED_TASK_LIST_FIELDS
+			const data = await resolveTagApi(api).listTasksForTag(tagGid, pagination)
 			output(data, () => {
-				fmtTaskList(itemsForOutput(data))
+				const items = itemsForOutput(data)
+				fmtTaskList(items)
+				printCountSummary(items.length, 'task(s)')
 				printNextPageHint(data)
+				printNextSteps(['cyber-asana task get <gid> — view a task'])
 			})
 		},
 	)
