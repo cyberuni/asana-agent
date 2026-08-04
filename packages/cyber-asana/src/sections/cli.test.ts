@@ -16,8 +16,114 @@ vi.mock('./api.js', async () => {
 const { sectionCommand } = await import('./cli.js')
 
 describe('sections/cli', () => {
+	const originalArgv = [...process.argv]
+
 	afterEach(() => {
 		vi.clearAllMocks()
+		process.argv = [...originalArgv]
+	})
+
+	it('section list applies a minimal default field set, a count summary, and next steps', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listSections = vi.fn().mockResolvedValue([{ gid: 'sec1', name: 'To Do' }])
+		const program = new Command().addCommand(
+			sectionCommand({
+				listSections,
+				getSection: vi.fn(),
+				createSection: vi.fn(),
+				updateSection: vi.fn(),
+				deleteSection: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'section', 'list', '--project-gid', 'proj1'], { from: 'node' })
+
+		expect(listSections).toHaveBeenCalledWith('proj1', expect.objectContaining({ optFields: 'gid,name' }))
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n1 section(s)')
+		expect(lines.some((l) => l.includes('cyber-asana section get <gid>'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
+	it('section list respects an explicit --opt-fields override', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listSections = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			sectionCommand({
+				listSections,
+				getSection: vi.fn(),
+				createSection: vi.fn(),
+				updateSection: vi.fn(),
+				deleteSection: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'section', 'list', '--project-gid', 'proj1', '--opt-fields', 'name'], {
+			from: 'node',
+		})
+
+		expect(listSections).toHaveBeenCalledWith('proj1', expect.objectContaining({ optFields: 'name' }))
+		vi.restoreAllMocks()
+	})
+
+	it('section delete emits a structured acknowledgement with --json', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(
+			sectionCommand({
+				listSections: vi.fn(),
+				getSection: vi.fn(),
+				createSection: vi.fn(),
+				updateSection: vi.fn(),
+				deleteSection: vi.fn().mockResolvedValue(undefined),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', '--json', 'section', 'delete', 'sec1'], { from: 'node' })
+
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'section', gid: 'sec1', already_absent: false }, null, 2),
+		)
+		logSpy.mockRestore()
+	})
+
+	it('section delete is idempotent — a repeat is a no-op, not a 404', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(
+			sectionCommand({
+				listSections: vi.fn(),
+				getSection: vi.fn(),
+				createSection: vi.fn(),
+				updateSection: vi.fn(),
+				deleteSection: vi.fn().mockRejectedValue({ response: { status: 404, body: { errors: [{ message: 'x' }] } } }),
+			}),
+		)
+
+		await expect(
+			program.parseAsync(['node', 'test', '--json', 'section', 'delete', 'sec1'], { from: 'node' }),
+		).resolves.toBeDefined()
+
+		expect(logSpy).toHaveBeenCalledWith(
+			JSON.stringify({ deleted: true, resource: 'section', gid: 'sec1', already_absent: true }, null, 2),
+		)
+		logSpy.mockRestore()
+	})
+
+	it('section delete still surfaces a non-404 failure', async () => {
+		const program = new Command().addCommand(
+			sectionCommand({
+				listSections: vi.fn(),
+				getSection: vi.fn(),
+				createSection: vi.fn(),
+				updateSection: vi.fn(),
+				deleteSection: vi.fn().mockRejectedValue({ response: { status: 403, body: { errors: [{ message: 'x' }] } } }),
+			}),
+		)
+
+		await expect(
+			program.parseAsync(['node', 'test', 'section', 'delete', 'sec1'], { from: 'node' }),
+		).rejects.toBeDefined()
 	})
 
 	it('section create forwards project gid and name', async () => {

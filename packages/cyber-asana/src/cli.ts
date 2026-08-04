@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
 import { exitCodeFor, renderCliError } from './cli-error.js'
+import { installUsageErrors, isCleanCommanderExit } from './cli-usage.js'
 import { setTokenOverride } from './client.js'
 import { createRuntimeContext, type RuntimeContext, registerCliCommands } from './composition.js'
 import { runDefaultCommand } from './default-command.js'
@@ -46,8 +47,11 @@ program
 	})
 
 registerCliCommands(program, getRuntimeContext)
+installUsageErrors(program)
 
 program.parseAsync(process.argv).catch((err: unknown) => {
+	// --help and --version reach here as Commander "exits", not failures.
+	if (isCleanCommanderExit(err)) process.exit(err.exitCode ?? 0)
 	console.error(renderCliError(err, selectFormat()))
 	process.exit(exitCodeFor(err))
 })

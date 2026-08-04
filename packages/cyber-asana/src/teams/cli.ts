@@ -7,7 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { TeamApi } from './api.js'
 import { getTeam, listTeams } from './api.js'
 
@@ -23,8 +23,23 @@ function resolveTeamApi(api?: TeamApi | (() => TeamApi)): TeamApi {
 	)
 }
 
+// Minimal default schema for team lists — principle 2.
+const TEAM_LIST_FIELDS = 'gid,name'
+
 export function teamCommand(api?: TeamApi | (() => TeamApi)) {
 	const cmd = new Command('team').description('Manage Asana teams')
+
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana team list --workspace-gid <gid>',
+			'  cyber-asana team get <gid> --toon',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
 
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List teams in a workspace'), 'workspace', 'Workspace GID', {
@@ -38,16 +53,22 @@ export function teamCommand(api?: TeamApi | (() => TeamApi)) {
 			offset?: string
 			optFields?: string
 		}) => {
-			const data = await resolveTeamApi(api).listTeams(
-				requiredGid(opts, 'workspace', 'Workspace GID'),
-				paginationOptionsFromCli(opts),
-			)
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= TEAM_LIST_FIELDS
+			const data = await resolveTeamApi(api).listTeams(requiredGid(opts, 'workspace', 'Workspace GID'), pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
-					{ label: 'Name', get: (t: Team) => t.name },
-					{ label: 'ID', get: (t: Team) => t.gid },
-				])
+				const items = itemsForOutput(data)
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (t: Team) => t.name },
+						{ label: 'ID', get: (t: Team) => t.gid },
+					],
+					{ entity: 'teams' },
+				)
+				printCountSummary(items.length, 'team(s)')
 				printNextPageHint(data)
+				printNextSteps(['cyber-asana team get <gid> — view a team'])
 			})
 		},
 	)
