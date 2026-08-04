@@ -48,21 +48,24 @@ export async function writeSettings(dir: string, settings: AppSettings): Promise
 export type AppCredentials = {
 	clientId: string
 	clientSecret?: string
-	source: 'environment' | 'settings.json'
+	source: 'flags' | 'environment' | 'settings.json'
 }
 
 export function resolveAppCredentials({
 	settings,
 	env = process.env,
+	overrides,
 }: {
 	settings: AppSettings
 	env?: Record<string, string | undefined>
+	/** Values passed on the command line — highest precedence. */
+	overrides?: { clientId?: string; clientSecret?: string }
 }): AppCredentials | undefined {
-	const clientId = env.ASANA_CLIENT_ID || settings.client_id
+	const clientId = overrides?.clientId || env.ASANA_CLIENT_ID || settings.client_id
 	if (!clientId) return undefined
 	return {
 		clientId,
-		clientSecret: env.ASANA_CLIENT_SECRET || settings.client_secret,
-		source: env.ASANA_CLIENT_ID ? 'environment' : 'settings.json',
+		clientSecret: overrides?.clientSecret || env.ASANA_CLIENT_SECRET || settings.client_secret,
+		source: overrides?.clientId ? 'flags' : env.ASANA_CLIENT_ID ? 'environment' : 'settings.json',
 	}
 }

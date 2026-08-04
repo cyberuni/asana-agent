@@ -101,6 +101,35 @@ describe('resolveAppCredentials', () => {
 		expect(resolveAppCredentials({ settings: {}, env: {} })).toBeUndefined()
 	})
 
+	it('prefers explicitly passed credentials over the environment and the file', () => {
+		const result = resolveAppCredentials({
+			settings: { client_id: 'file-id', client_secret: 'file-secret' },
+			env: { ASANA_CLIENT_ID: 'env-id', ASANA_CLIENT_SECRET: 'env-secret' },
+			overrides: { clientId: 'flag-id', clientSecret: 'flag-secret' },
+		})
+		expect(result).toEqual({ clientId: 'flag-id', clientSecret: 'flag-secret', source: 'flags' })
+	})
+
+	it('lets a passed client id combine with a secret from the environment', () => {
+		const result = resolveAppCredentials({
+			settings: {},
+			env: { ASANA_CLIENT_SECRET: 'env-secret' },
+			overrides: { clientId: 'flag-id' },
+		})
+		expect(result?.clientId).toBe('flag-id')
+		expect(result?.clientSecret).toBe('env-secret')
+	})
+
+	it('ignores empty passed credentials', () => {
+		const result = resolveAppCredentials({
+			settings: { client_id: 'file-id' },
+			env: {},
+			overrides: { clientId: '' },
+		})
+		expect(result?.clientId).toBe('file-id')
+		expect(result?.source).toBe('settings.json')
+	})
+
 	it('takes each field from the highest-precedence source that has it', () => {
 		const result = resolveAppCredentials({
 			settings: { client_id: 'file-id', client_secret: 'file-secret' },

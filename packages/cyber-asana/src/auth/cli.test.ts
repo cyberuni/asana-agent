@@ -169,6 +169,18 @@ describe('auth login', () => {
 		expect(out.trim()).toBe('access-token')
 	})
 
+	it('accepts the app registration on the command line', async () => {
+		const deps = loginDeps({ readSettings: vi.fn().mockResolvedValue({}) })
+
+		await runLogin(deps, ['--client-id', 'flag-id', '--client-secret', 'flag-secret'])
+
+		expect(deps.login).toHaveBeenCalledWith(
+			expect.objectContaining({
+				app: expect.objectContaining({ clientId: 'flag-id', clientSecret: 'flag-secret' }),
+			}),
+		)
+	})
+
 	it('explains how to register an app when no client id is configured', async () => {
 		const deps = loginDeps({ readSettings: vi.fn().mockResolvedValue({}) })
 
@@ -271,6 +283,24 @@ describe('auth token', () => {
 		)
 	})
 
+	it('refreshes with an app registration passed on the command line', async () => {
+		const deps = tokenDeps({
+			readSettings: vi.fn().mockResolvedValue({}),
+			readCredentials: vi.fn().mockResolvedValue({
+				accessToken: 'stale-token',
+				refreshToken: 'refresh-token',
+				expiresAt: NOW + 5_000,
+			}),
+		})
+
+		await runToken(deps, ['--client-id', 'flag-id', '--client-secret', 'flag-secret'])
+
+		expect(deps.refreshAccessToken).toHaveBeenCalledWith(
+			expect.objectContaining({ clientId: 'flag-id', clientSecret: 'flag-secret' }),
+			expect.anything(),
+		)
+	})
+
 	it('tells the user to log in when nothing is stored', async () => {
 		const deps = tokenDeps({ readCredentials: vi.fn().mockResolvedValue(undefined) })
 
@@ -332,6 +362,17 @@ describe('auth logout', () => {
 		await runLogout(deps)
 
 		expect(order).toEqual(['revoke', 'delete'])
+	})
+
+	it('revokes with an app registration passed on the command line', async () => {
+		const deps = logoutDeps({ readSettings: vi.fn().mockResolvedValue({}) })
+
+		await runLogout(deps, ['--client-id', 'flag-id', '--client-secret', 'flag-secret'])
+
+		expect(deps.revokeRefreshToken).toHaveBeenCalledWith(
+			expect.objectContaining({ clientId: 'flag-id', clientSecret: 'flag-secret' }),
+			expect.anything(),
+		)
 	})
 
 	it('deletes the local credentials without revoking when asked to stay local', async () => {

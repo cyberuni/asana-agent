@@ -43,6 +43,14 @@ export ASANA_CLIENT_SECRET=<client-secret>
 cyber-asana auth login
 ```
 
+`auth login`, `auth token`, and `auth logout` also accept `--client-id` and `--client-secret` directly, which is handy for a one-off or a first try without editing anything:
+
+```sh
+cyber-asana auth login --client-id <client-id> --client-secret <client-secret>
+```
+
+A secret passed as an argument lands in your shell history and is visible in the process list to anyone else on the machine, so prefer the env vars or `settings.json` for anything ongoing.
+
 `auth login` opens the browser, captures the redirect on a loopback server bound to `127.0.0.1`, and stores the tokens. It is a one-time human step — agents inherit the stored credentials the same way they inherit a PAT.
 
 After that, every command uses the stored credentials automatically, refreshing the access token when it is within a minute of expiring. Precedence is `--token` > `ASANA_ACCESS_TOKEN` > `ASANA_TOKEN` > stored credentials, so an env var still wins — and `auth status` names which one is in effect and lists the rest as ignored.

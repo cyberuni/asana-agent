@@ -71,6 +71,15 @@ function defaultDeps(): AuthCommandDeps {
 	}
 }
 
+type AppOptions = { clientId?: string; clientSecret?: string }
+
+/** The two flags every command that needs an app registration accepts. */
+function addAppOptions(cmd: Command): Command {
+	return cmd
+		.option('--client-id <id>', 'OAuth client ID (overrides ASANA_CLIENT_ID and settings.json)')
+		.option('--client-secret <secret>', 'OAuth client secret (visible in shell history — prefer the env var)')
+}
+
 function parseScopes(value: string | undefined): string[] | undefined {
 	if (!value) return undefined
 	const scopes = value
@@ -143,24 +152,24 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 			)
 		})
 
-	cmd
-		.command('login')
-		.description('Authorize through OAuth in the browser and store the credentials')
+	addAppOptions(cmd.command('login').description('Authorize through OAuth in the browser and store the credentials'))
 		.option('--no-store', 'Print the token instead of saving it')
 		.option('--include-refresh-token', 'Also print the long-lived refresh token (implies --no-store)')
 		.option('--raw', 'Print only the token, for shell substitution')
 		.option('--scope <list>', 'Comma-separated scopes to request')
 		.option('--port <port>', `Callback port (default: ${DEFAULT_CALLBACK_PORT})`)
 		.action(
-			async (opts: {
-				store?: boolean
-				includeRefreshToken?: boolean
-				raw?: boolean
-				scope?: string
-				port?: string
-			}) => {
+			async (
+				opts: AppOptions & {
+					store?: boolean
+					includeRefreshToken?: boolean
+					raw?: boolean
+					scope?: string
+					port?: string
+				},
+			) => {
 				const dir = deps.configDir()
-				const app = resolveAppCredentials({ settings: await deps.readSettings(dir) })
+				const app = resolveAppCredentials({ settings: await deps.readSettings(dir), overrides: opts })
 				if (!app) throw new Error(REGISTRATION_HELP)
 
 				const tokens = await deps.login({
@@ -218,41 +227,38 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 			},
 		)
 
-	cmd
-		.command('token')
-		.description('Print the stored access token, refreshing it first when it is about to expire')
-		.action(async () => {
-			const dir = deps.configDir()
-			const stored = await deps.readCredentials(dir)
-			if (!stored) throw new Error('Not logged in. Run `cyber-asana auth login` first.')
+	addAppOptions(
+		cmd.command('token').description('Print the stored access token, refreshing it first when it is about to expire'),
+	).action(async (opts: AppOptions) => {
+		const dir = deps.configDir()
+		const stored = await deps.readCredentials(dir)
+		if (!stored) throw new Error('Not logged in. Run `cyber-asana auth login` first.')
 
-			let tokens = stored
-			if (tokens.expiresAt - deps.now() < REFRESH_WINDOW_MS) {
-				const app = resolveAppCredentials({ settings: await deps.readSettings(dir) })
-				if (!tokens.refreshToken || !app) {
-					throw new Error(
-						'The stored access token has expired and cannot be refreshed. Run `cyber-asana auth login` again.',
-					)
-				}
-				tokens = await deps.refreshAccessToken(
-					{ clientId: app.clientId, clientSecret: app.clientSecret, refreshToken: tokens.refreshToken },
-					{ fetch: globalThis.fetch, now: deps.now },
+		let tokens = stored
+		if (tokens.expiresAt - deps.now() < REFRESH_WINDOW_MS) {
+			const app = resolveAppCredentials({ settings: await deps.readSettings(dir), overrides: opts })
+			if (!tokens.refreshToken || !app) {
+				throw new Error(
+					'The stored access token has expired and cannot be refreshed. Run `cyber-asana auth login` again.',
 				)
-				await deps.writeCredentials(dir, tokens)
 			}
+			tokens = await deps.refreshAccessToken(
+				{ clientId: app.clientId, clientSecret: app.clientSecret, refreshToken: tokens.refreshToken },
+				{ fetch: globalThis.fetch, now: deps.now },
+			)
+			await deps.writeCredentials(dir, tokens)
+		}
 
-			// This command exists to be piped into other tools, so text output is
-			// the bare token and nothing else.
-			output({ access_token: tokens.accessToken, expires_at: new Date(tokens.expiresAt).toISOString() }, () => {
-				console.log(tokens.accessToken)
-			})
+		// This command exists to be piped into other tools, so text output is
+		// the bare token and nothing else.
+		output({ access_token: tokens.accessToken, expires_at: new Date(tokens.expiresAt).toISOString() }, () => {
+			console.log(tokens.accessToken)
 		})
+	})
 
-	cmd
-		.command('logout')
-		.description('Revoke the stored grant and delete the local credentials')
+	addAppOptions(cmd.command('logout').description('Revoke the stored grant and delete the local credentials'))
 		.option('--local', 'Delete the local credentials without revoking the grant')
-		.action(async (opts: { local?: boolean }) => {
+		.action(async (opts: AppOptions & { local?: boolean }) => {
 			const dir = deps.configDir()
 			const stored = await deps.readCredentials(dir)
 
@@ -260,7 +266,7 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 			// the file is deleted — afterwards there is nothing left to revoke with.
 			let revocationError: string | undefined
 			if (stored?.refreshToken && !opts.local) {
-				const app = resolveAppCredentials({ settings: await deps.readSettings(dir) })
+				const app = resolveAppCredentials({ settings: await deps.readSettings(dir), overrides: opts })
 				if (app) {
 					try {
 						await deps.revokeRefreshToken(
