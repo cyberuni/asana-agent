@@ -48,6 +48,21 @@ const GOAL_LIST_NEXT_STEPS = [
 export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 	const cmd = new Command('goal').description('Manage Asana goals')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana goal list --workspace-gid <gid>',
+			'  cyber-asana goal get <gid> --toon',
+			'  cyber-asana goal create "Ship v1" --workspace-gid <gid> --due-on 2026-12-31',
+			'  cyber-asana goal update <gid> --name "Ship v2"',
+			'  cyber-asana goal delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List goals in a workspace'), 'workspace', 'Workspace GID', {
 			env: 'ASANA_WORKSPACE',

@@ -49,6 +49,22 @@ function projectNameFromApi(data: { name?: string }): string {
 export function configCommand(getProjects: () => ProjectApi) {
 	const cmd = new Command('config').description('Manage repo-local Asana project registry (.agents/cyber-asana.json)')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana config show',
+			'  cyber-asana config path',
+			'  cyber-asana config add <project-gid>',
+			'  cyber-asana config resolve-project "My Project"',
+			'  cyber-asana config remove <gid-or-name>',
+			'  cyber-asana config sync',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	cmd
 		.command('show')
 		.description('Show the repo config')

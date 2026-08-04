@@ -115,6 +115,19 @@ describe('projects/cli', () => {
 		expect(full).toContain('x'.repeat(600))
 	})
 
+	it('project --help carries usage examples covering its subcommands', async () => {
+		const projectCommand = await loadProjectCommand()
+		let help = ''
+		const cmd = projectCommand()
+		cmd.configureOutput({ writeOut: (s) => (help += s) })
+		cmd.outputHelp()
+
+		expect(help).toContain('Examples:')
+		expect(help).toContain('cyber-asana project list --workspace-gid <gid>')
+		expect(help).toContain('cyber-asana project create "New project"')
+		expect(help).toContain('Every subcommand supports --help for its own options.')
+	})
+
 	it('project delete emits a structured acknowledgement with --json', async () => {
 		const projectCommand = await loadProjectCommand()
 		process.argv = ['node', 'test', '--json']

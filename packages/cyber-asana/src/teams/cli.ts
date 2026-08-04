@@ -29,6 +29,18 @@ const TEAM_LIST_FIELDS = 'gid,name'
 export function teamCommand(api?: TeamApi | (() => TeamApi)) {
 	const cmd = new Command('team').description('Manage Asana teams')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana team list --workspace-gid <gid>',
+			'  cyber-asana team get <gid> --toon',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List teams in a workspace'), 'workspace', 'Workspace GID', {
 			env: 'ASANA_WORKSPACE',

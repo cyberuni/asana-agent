@@ -93,6 +93,24 @@ const PROJECT_LIST_NEXT_STEPS = [
 export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 	const cmd = new Command('project').description('Manage Asana projects')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana project list --workspace-gid <gid>',
+			'  cyber-asana project get <gid> --toon',
+			'  cyber-asana project counts <gid>',
+			'  cyber-asana project search "launch" --workspace-gid <gid> --no-completed',
+			'  cyber-asana project create "New project" --workspace-gid <gid> --notes "..."',
+			'  cyber-asana project update <gid> --name "Renamed"',
+			'  cyber-asana project export <gid> --output project.md',
+			'  cyber-asana project delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List projects in a workspace'), 'workspace', 'Workspace GID', {
 			env: 'ASANA_WORKSPACE',

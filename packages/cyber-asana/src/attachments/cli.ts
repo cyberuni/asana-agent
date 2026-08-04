@@ -30,6 +30,18 @@ const ATTACHMENT_LIST_FIELDS = 'gid,name,resource_type'
 export function attachmentCommand(api?: AttachmentApi | (() => AttachmentApi)) {
 	const cmd = new Command('attachment').description('Manage Asana attachments')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana attachment list --task-gid <gid>',
+			'  cyber-asana attachment get <gid> --toon',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List attachments for a task'), 'task', 'Task GID'),
 	).action(async (opts: { task?: string; taskGid?: string; limit?: number; offset?: string; optFields?: string }) => {

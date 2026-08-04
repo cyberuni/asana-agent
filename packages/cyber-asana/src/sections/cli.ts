@@ -42,6 +42,21 @@ const SECTION_LIST_NEXT_STEPS = [
 export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 	const cmd = new Command('section').description('Manage Asana sections')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana section list --project-gid <gid>',
+			'  cyber-asana section get <gid> --toon',
+			'  cyber-asana section create "In Progress" --project-gid <gid>',
+			'  cyber-asana section update <gid> --name "Done"',
+			'  cyber-asana section delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List sections in a project'), 'project', 'Project GID'),
 	).action(

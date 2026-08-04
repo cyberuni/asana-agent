@@ -46,6 +46,19 @@ const USER_LIST_FIELDS = 'gid,name,email'
 export function userCommand(api?: UserApi | (() => UserApi)) {
 	const cmd = new Command('user').description('Manage Asana users')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana user list --workspace-gid <gid>',
+			'  cyber-asana user get <gid> --toon',
+			'  cyber-asana user me',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List users in a workspace'), 'workspace', 'Workspace GID', {
 			env: 'ASANA_WORKSPACE',

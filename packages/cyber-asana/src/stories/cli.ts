@@ -36,6 +36,20 @@ const STORY_LIST_FIELDS = 'gid,type,text,created_at,created_by.name'
 export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) {
 	const cmd = new Command(name).description('Manage Asana stories (comments)')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana story list --task-gid <gid>',
+			'  cyber-asana story list --task-gid <gid> --toon',
+			'  cyber-asana story create "Looks good" --task-gid <gid>',
+			'  cyber-asana story create "<p>Rich</p>" --task-gid <gid> --html-text "<body><p>Rich</p></body>"',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List stories for a task'), 'task', 'Task GID'),
 	).action(async (opts: { task?: string; taskGid?: string; limit?: number; offset?: string; optFields?: string }) => {

@@ -50,6 +50,22 @@ const PORTFOLIO_LIST_NEXT_STEPS = [
 export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 	const cmd = new Command('portfolio').description('Manage Asana portfolios')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana portfolio list --workspace-gid <gid>',
+			'  cyber-asana portfolio items <gid>',
+			'  cyber-asana portfolio get <gid> --toon',
+			'  cyber-asana portfolio create "Roadmap" --workspace-gid <gid>',
+			'  cyber-asana portfolio update <gid> --name "Renamed"',
+			'  cyber-asana portfolio delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List portfolios in a workspace'), 'workspace', 'Workspace GID', {
 			env: 'ASANA_WORKSPACE',

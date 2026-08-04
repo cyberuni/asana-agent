@@ -39,6 +39,20 @@ const STATUS_LIST_NEXT_STEPS = ['cyber-asana status get <gid> — read a status 
 export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 	const cmd = new Command('status').description('Manage Asana status updates on projects, portfolios, and goals')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana status list --parent-gid <project|portfolio|goal gid>',
+			'  cyber-asana status get <gid> --full',
+			'  cyber-asana status create --parent-gid <gid> --status-type on_track --text "..."',
+			'  cyber-asana status delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(
 			cmd.command('list').description('List status updates for a project, portfolio, or goal'),

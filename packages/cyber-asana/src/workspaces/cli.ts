@@ -22,6 +22,18 @@ const WORKSPACE_LIST_FIELDS = 'gid,name'
 export function workspaceCommand(api?: WorkspaceApi | (() => WorkspaceApi)) {
 	const cmd = new Command('workspace').description('Manage Asana workspaces')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana workspace list',
+			'  cyber-asana workspace get <gid> --toon',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(cmd.command('list').description('List all workspaces')).action(
 		async (opts: { limit?: number; offset?: string; optFields?: string }) => {
 			const pagination = paginationOptionsFromCli(opts)

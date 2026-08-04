@@ -71,6 +71,24 @@ const TAG_LIST_NEXT_STEPS = [
 export function tagCommand(api?: TagApi | (() => TagApi)) {
 	const cmd = new Command('tag').description('Manage Asana tags')
 
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana tag list --workspace-gid <gid>',
+			'  cyber-asana tag get <gid> --toon',
+			'  cyber-asana tag create "Urgent" --workspace-gid <gid> --color red',
+			'  cyber-asana tag update <gid> --name "Critical"',
+			'  cyber-asana tag tasks <tag-gid>',
+			'  cyber-asana tag task list <task-gid>',
+			'  cyber-asana tag task add <task-gid> <tag-gid>',
+			'  cyber-asana tag delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
+
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List tags in a workspace'), 'workspace', 'Workspace GID', {
 			env: 'ASANA_WORKSPACE',
