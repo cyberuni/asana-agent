@@ -101,6 +101,28 @@ describe('composition wiring', () => {
 		vi.spyOn(console, 'log').mockImplementation(() => {})
 	})
 
+	it('CLI auth status reports the credential without calling the Asana API', async () => {
+		const ctx = mockRuntimeContext()
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+		const previous = process.env.ASANA_ACCESS_TOKEN
+		process.env.ASANA_ACCESS_TOKEN = 'wiring-token'
+
+		try {
+			await program.parseAsync(['node', 'test', 'auth', 'status'], { from: 'node' })
+		} finally {
+			if (previous === undefined) delete process.env.ASANA_ACCESS_TOKEN
+			else process.env.ASANA_ACCESS_TOKEN = previous
+		}
+
+		const logged = vi
+			.mocked(console.log)
+			.mock.calls.map((call) => String(call[0]))
+			.join('\n')
+		expect(logged).toContain('ASANA_ACCESS_TOKEN')
+		expect(ctx.users.getMe).not.toHaveBeenCalled()
+	})
+
 	it('CLI workspace get uses runtime context workspaces api', async () => {
 		const ctx = mockRuntimeContext()
 		ctx.workspaces.getWorkspace = vi.fn().mockResolvedValue({ gid: 'ws1', name: 'Acme' })

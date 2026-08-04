@@ -2,13 +2,27 @@ import Asana from 'asana'
 import { envValue } from './env.js'
 
 let tokenOverride: string | undefined
+let ambientToken: string | undefined
 
 export function setTokenOverride(token: string | undefined) {
 	tokenOverride = token
 }
 
+/**
+ * A token loaded from stored OAuth credentials. It sits below the flag and the
+ * environment variables so `auth status` can still name the real source — a
+ * stored token reported as `--token` would defeat the whole diagnostic.
+ */
+export function setAmbientToken(token: string | undefined) {
+	ambientToken = token
+}
+
+export function getTokenOverride(): string | undefined {
+	return tokenOverride
+}
+
 export function createClient(): Asana.ApiClient {
-	const token = tokenOverride ?? envValue('ASANA_TOKEN')
+	const token = tokenOverride ?? envValue('ASANA_TOKEN') ?? ambientToken
 	if (!token)
 		throw new Error(
 			`ASANA_TOKEN environment variable is not set.

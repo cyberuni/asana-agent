@@ -23,6 +23,75 @@ export ASANA_WORKSPACE_GID=<workspace-gid>   # optional default workspace
 
 `ASANA_TOKEN` and `ASANA_WORKSPACE` still work as deprecated fallbacks. Or pass `--token <pat>` and `--workspace <gid>` per command.
 
+To see which credential is actually in effect — including any source being shadowed by a higher-precedence one:
+
+```sh
+cyber-asana auth status
+```
+
+It reads local state only, never calls the API, and exits `0` even when no credential is set — so it still answers when every other command is failing with `401`. The token is shown masked. Precedence is `--token` > `ASANA_ACCESS_TOKEN` > `ASANA_TOKEN`.
+
+### OAuth
+
+A PAT is the simpler choice for a single user. OAuth is worth the setup when several people use the same install, or when you want a credential that refreshes itself instead of living forever in your shell profile.
+
+cyber-asana uses **your own** Asana app, so no third-party registration ever sees your data. Create one at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps), then:
+
+```sh
+export ASANA_CLIENT_ID=<client-id>
+export ASANA_CLIENT_SECRET=<client-secret>
+cyber-asana auth login
+```
+
+### Which redirect URL to register
+
+Asana requires redirect URLs to be `https`, with `urn:ietf:wg:oauth:2.0:oob` as the documented option for native and command-line apps. Two ways to run the flow:
+
+| Your app's redirect URL | Command |
+| --- | --- |
+| `urn:ietf:wg:oauth:2.0:oob` | `cyber-asana auth login --manual` — Asana shows a code, you paste it |
+| `http://localhost:7654/callback` (if your app accepts it) | `cyber-asana auth login` — the redirect is caught automatically |
+
+`--manual` needs no local port and works over SSH. If you registered a different URL or port, pass `--redirect-uri <url>`; the callback listener binds the port from that URL.
+
+`auth login`, `auth token`, and `auth logout` also accept `--client-id` and `--client-secret` directly, which is handy for a one-off or a first try without editing anything:
+
+```sh
+cyber-asana auth login --client-id <client-id> --client-secret <client-secret>
+```
+
+A secret passed as an argument lands in your shell history and is visible in the process list to anyone else on the machine, so prefer the env vars or `settings.json` for anything ongoing.
+
+`auth login` opens the browser, captures the redirect on a loopback server bound to `127.0.0.1`, and stores the tokens. It is a one-time human step — agents inherit the stored credentials the same way they inherit a PAT.
+
+After that, every command uses the stored credentials automatically, refreshing the access token when it is within a minute of expiring. Precedence is `--token` > `ASANA_ACCESS_TOKEN` > `ASANA_TOKEN` > stored credentials, so an env var still wins — and `auth status` names which one is in effect and lists the rest as ignored.
+
+Credentials live under `$XDG_CONFIG_HOME/cyber-asana` (or `~/.config/cyber-asana`), split by who owns them:
+
+| File | Contents | Written by |
+| --- | --- | --- |
+| `settings.json` | `client_id`, `client_secret` | you, by hand |
+| `credentials.json` | access token, refresh token, expiry | the CLI, on every refresh |
+
+Both are `0600`. `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` override `settings.json` per field.
+
+To get a token without storing it — for a one-off shell, a CI step, or a container:
+
+```sh
+cyber-asana auth login --no-store            # prints the access token
+export ASANA_ACCESS_TOKEN=$(cyber-asana auth login --no-store --raw)
+```
+
+`--no-store` prints only the access token, which expires in an hour. The long-lived refresh token requires `--include-refresh-token`. Both put a live credential on stdout, where shell history, CI logs, and agent transcripts will capture it.
+
+To feed the *stored* token to another tool without re-authorizing, use `auth token` — it refreshes first if the token is within a minute of expiring, so what it prints is always usable:
+
+```sh
+curl -H "Authorization: Bearer $(cyber-asana auth token)" https://app.asana.com/api/1.0/users/me
+```
+
+`auth logout` revokes the grant with Asana and then deletes the local credentials. Revoking first matters: Asana revokes only refresh tokens, so once the file is gone there is nothing left to revoke with. If revocation fails the credentials are still deleted, and the output tells you the grant may still be live so you can remove it at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps). `--local` skips revocation, and logging out twice is not an error.
+
 ## Agent skills
 
 `cyber-asana` ships workflow skills under [`skills/`](skills/) for Cursor, Claude Code, and other agents. **Start here** — skills encode when to use MCP tools vs CLI, how to resolve projects from repo config, and common workflows (standups, sprint reports, task creation).

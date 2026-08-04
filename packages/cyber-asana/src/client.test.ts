@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { createClient, setTokenOverride } from './client.js'
+import { createClient, getTokenOverride, setAmbientToken, setTokenOverride } from './client.js'
 
 describe('createClient', () => {
 	const original = process.env.ASANA_TOKEN
@@ -17,6 +17,7 @@ describe('createClient', () => {
 		else delete process.env.ASANA_ACCESS_TOKEN
 		// reset override between tests
 		setTokenOverride(undefined)
+		setAmbientToken(undefined)
 	})
 
 	it('throws with setup instructions when ASANA_TOKEN is not set', () => {
@@ -42,6 +43,35 @@ describe('createClient', () => {
 		process.env.ASANA_ACCESS_TOKEN = 'preferred-token'
 		const client = createClient()
 		expect(client.authentications['token'].accessToken).toBe('preferred-token')
+	})
+
+	it('reports no token override until one is set', () => {
+		expect(getTokenOverride()).toBeUndefined()
+	})
+
+	it('reports the token override that was set', () => {
+		setTokenOverride('override-token')
+		expect(getTokenOverride()).toBe('override-token')
+	})
+
+	it('uses an ambient token when no flag or environment variable is set', () => {
+		setAmbientToken('ambient-token')
+		const client = createClient()
+		expect(client.authentications['token'].accessToken).toBe('ambient-token')
+	})
+
+	it('prefers an environment variable over an ambient token', () => {
+		process.env.ASANA_ACCESS_TOKEN = 'env-token'
+		setAmbientToken('ambient-token')
+		const client = createClient()
+		expect(client.authentications['token'].accessToken).toBe('env-token')
+	})
+
+	it('prefers the --token flag over an ambient token', () => {
+		setAmbientToken('ambient-token')
+		setTokenOverride('flag-token')
+		const client = createClient()
+		expect(client.authentications['token'].accessToken).toBe('flag-token')
 	})
 
 	it('prefers setTokenOverride over ASANA_TOKEN env var', () => {

@@ -4,6 +4,7 @@ import { type AttachmentApi, createAttachmentApi } from './attachments/api.js'
 import { attachmentCommand } from './attachments/cli.js'
 import { createAsanaAttachmentGateway } from './attachments/gateway.js'
 import { registerAttachmentTools } from './attachments/mcp.js'
+import { authCommand } from './auth/cli.js'
 import { createClient } from './client.js'
 import { configCommand } from './config-cli.js'
 import { createGoalApi, type GoalApi } from './goals/api.js'
@@ -102,6 +103,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(statusCommand(() => getContext().status))
 	program.addCommand(storyCommand('story', () => getContext().stories))
 	program.addCommand(storyCommand('comment', () => getContext().stories))
+	program.addCommand(authCommand())
 	program.addCommand(configCommand(() => getContext().projects))
 	program.addCommand(setupCommand())
 	program.addCommand(urlCommand())
