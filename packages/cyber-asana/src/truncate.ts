@@ -2,7 +2,7 @@
 // Large free-text fields (task notes, comment bodies) are trimmed for
 // human-readable output, with an explicit size hint and a --full escape hatch.
 
-export const DEFAULT_TEXT_LIMIT = 500
+const DEFAULT_TEXT_LIMIT = 500
 
 export function isFull(argv: string[] = process.argv): boolean {
 	return argv.includes('--full')

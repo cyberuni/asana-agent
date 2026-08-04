@@ -2,15 +2,13 @@
 	"$schema": "https://unpkg.com/knip@6/schema.json",
 	"workspaces": {
 		"packages/cyber-asana": {
-			"entry": ["src/index.ts", "src/cli.ts", "src/mcp.ts"],
 			"project": ["src/**/*.ts"]
 		},
 		"apps/web": {
-			"entry": ["astro.config.mjs", "src/**/*.{astro,ts}"],
-			"project": ["src/**/*.{astro,ts}"]
+			"entry": ["src/**/*.{astro,ts,mdx}"],
+			"project": ["src/**/*.{astro,ts,mdx}"]
 		},
 		"tools/gap-analysis": {
-			"entry": ["src/catalog.ts", "src/diff-official.ts", "src/fetch-official.ts", "src/report.ts"],
 			"project": ["src/**/*.ts"]
 		}
 	}

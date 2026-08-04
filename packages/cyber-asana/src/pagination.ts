@@ -6,7 +6,7 @@ export type PaginationOptions = {
 	maxPages?: number
 }
 
-export type NextPage = {
+type NextPage = {
 	offset?: string
 	path?: string
 	uri?: string
@@ -22,8 +22,8 @@ export type PaginatedResult<T> = {
 
 export type ListResult<T> = T[] | PaginatedResult<T>
 
-export const DEFAULT_PAGE_SIZE = 100
-export const DEFAULT_MAX_PAGES = 10
+const DEFAULT_PAGE_SIZE = 100
+const DEFAULT_MAX_PAGES = 10
 
 export function toAsanaPaginationOptions(opts?: PaginationOptions, config?: { limit?: boolean }) {
 	const asanaOpts: { limit?: number; offset?: string; opt_fields?: string } = {}
@@ -33,7 +33,7 @@ export function toAsanaPaginationOptions(opts?: PaginationOptions, config?: { li
 	return asanaOpts
 }
 
-export function shouldReturnPageMetadata(opts?: PaginationOptions) {
+function shouldReturnPageMetadata(opts?: PaginationOptions) {
 	return opts?.fetchAll === true || opts?.limit !== undefined || opts?.offset !== undefined || opts === undefined
 }
 
@@ -72,7 +72,7 @@ export async function collectListResponse<T = any>(
 	}
 }
 
-export function unwrapListResponse<T = any>(
+function unwrapListResponse<T = any>(
 	res: { data: T[] | null; _response?: { next_page?: NextPage | null } },
 	opts?: PaginationOptions,
 	config?: { limit?: boolean },
