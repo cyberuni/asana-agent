@@ -7,7 +7,8 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { TagApi } from './api.js'
 import {
 	addTagToTask,
@@ -29,12 +30,16 @@ function fmtTag(t: Tag) {
 }
 
 function fmtTaskList(tasks: Task[]) {
-	printTable(tasks, [
-		{ label: 'Name', get: (t) => t.name },
-		{ label: 'ID', get: (t) => t.gid },
-		{ label: 'Done', get: (t) => (t.completed ? 'yes' : 'no') },
-		{ label: 'Due', get: (t) => t.due_on ?? '' },
-	])
+	printTable(
+		tasks,
+		[
+			{ label: 'Name', get: (t) => t.name },
+			{ label: 'ID', get: (t) => t.gid },
+			{ label: 'Done', get: (t) => (t.completed ? 'yes' : 'no') },
+			{ label: 'Due', get: (t) => t.due_on ?? '' },
+		],
+		{ entity: 'tasks' },
+	)
 }
 
 function resolveTagApi(api?: TagApi | (() => TagApi)): TagApi {
@@ -54,8 +59,35 @@ function resolveTagApi(api?: TagApi | (() => TagApi)): TagApi {
 	)
 }
 
+// Minimal default schemas — principle 2. Just the fields the tables render.
+const TAG_LIST_FIELDS = 'gid,name,color'
+const TAGGED_TASK_LIST_FIELDS = 'gid,name,completed,due_on'
+
+const TAG_LIST_NEXT_STEPS = [
+	'cyber-asana tag tasks <gid> — list the tasks carrying a tag',
+	'cyber-asana tag get <gid> — view a tag',
+]
+
 export function tagCommand(api?: TagApi | (() => TagApi)) {
 	const cmd = new Command('tag').description('Manage Asana tags')
+
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana tag list --workspace-gid <gid>',
+			'  cyber-asana tag get <gid> --toon',
+			'  cyber-asana tag create "Urgent" --workspace-gid <gid> --color red',
+			'  cyber-asana tag update <gid> --name "Critical"',
+			'  cyber-asana tag tasks <tag-gid>',
+			'  cyber-asana tag task list <task-gid>',
+			'  cyber-asana tag task add <task-gid> <tag-gid>',
+			'  cyber-asana tag delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
 
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List tags in a workspace'), 'workspace', 'Workspace GID', {
@@ -69,17 +101,23 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 			offset?: string
 			optFields?: string
 		}) => {
-			const data = await resolveTagApi(api).listTags(
-				requiredGid(opts, 'workspace', 'Workspace GID'),
-				paginationOptionsFromCli(opts),
-			)
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= TAG_LIST_FIELDS
+			const data = await resolveTagApi(api).listTags(requiredGid(opts, 'workspace', 'Workspace GID'), pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
-					{ label: 'Name', get: (t: Tag) => t.name },
-					{ label: 'ID', get: (t: Tag) => t.gid },
-					{ label: 'Color', get: (t: Tag) => t.color ?? '' },
-				])
+				const items = itemsForOutput(data)
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (t: Tag) => t.name },
+						{ label: 'ID', get: (t: Tag) => t.gid },
+						{ label: 'Color', get: (t: Tag) => t.color ?? '' },
+					],
+					{ entity: 'tags' },
+				)
+				printCountSummary(items.length, 'tag(s)')
 				printNextPageHint(data)
+				printNextSteps(TAG_LIST_NEXT_STEPS)
 			})
 		},
 	)
@@ -130,22 +168,31 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 		.command('delete <gid>')
 		.description('Delete a tag')
 		.action(async (gid: string) => {
-			await resolveTagApi(api).deleteTag(gid)
-			console.log(`Deleted tag ${gid}`)
+			const result = await deleteIdempotently('tag', gid, () => resolveTagApi(api).deleteTag(gid))
+			output(result, () => console.log(deleteMessage(result, 'Tag')))
 		})
 
 	const taskCmd = cmd.command('task').description('Manage task tag relationships')
 
 	addPaginationOptions(taskCmd.command('list <task-gid>').description('List tags for a task')).action(
 		async (taskGid: string, opts: { limit?: number; offset?: string; optFields?: string }) => {
-			const data = await resolveTagApi(api).listTagsForTask(taskGid, paginationOptionsFromCli(opts))
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= TAG_LIST_FIELDS
+			const data = await resolveTagApi(api).listTagsForTask(taskGid, pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
-					{ label: 'Name', get: (t: Tag) => t.name },
-					{ label: 'ID', get: (t: Tag) => t.gid },
-					{ label: 'Color', get: (t: Tag) => t.color ?? '' },
-				])
+				const items = itemsForOutput(data)
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (t: Tag) => t.name },
+						{ label: 'ID', get: (t: Tag) => t.gid },
+						{ label: 'Color', get: (t: Tag) => t.color ?? '' },
+					],
+					{ entity: 'tags' },
+				)
+				printCountSummary(items.length, 'tag(s)')
 				printNextPageHint(data)
+				printNextSteps([`cyber-asana tag task remove ${taskGid} <tag-gid> — untag this task`])
 			})
 		},
 	)
@@ -168,10 +215,15 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 
 	addPaginationOptions(cmd.command('tasks <tag-gid>').description('List tasks for a tag')).action(
 		async (tagGid: string, opts: { limit?: number; offset?: string; optFields?: string }) => {
-			const data = await resolveTagApi(api).listTasksForTag(tagGid, paginationOptionsFromCli(opts))
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= TAGGED_TASK_LIST_FIELDS
+			const data = await resolveTagApi(api).listTasksForTag(tagGid, pagination)
 			output(data, () => {
-				fmtTaskList(itemsForOutput(data))
+				const items = itemsForOutput(data)
+				fmtTaskList(items)
+				printCountSummary(items.length, 'task(s)')
 				printNextPageHint(data)
+				printNextSteps(['cyber-asana task get <gid> — view a task'])
 			})
 		},
 	)

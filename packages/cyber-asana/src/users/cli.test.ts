@@ -37,6 +37,20 @@ describe('users/cli', () => {
 		})
 	})
 
+	it('user list applies a minimal default field set, a count summary, and next steps', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		listUsersMock.mockResolvedValue([{ gid: 'user1', name: 'Alice' }])
+		const program = new Command().addCommand(userCommand())
+
+		await program.parseAsync(['node', 'test', 'user', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(listUsersMock).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'gid,name,email' }))
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n1 user(s)')
+		expect(lines.some((l) => l.includes('cyber-asana user get <gid>'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
 	it('user get forwards gid', async () => {
 		getUserMock.mockResolvedValue({ gid: 'user1', name: 'Alice' })
 		const program = new Command().addCommand(userCommand())

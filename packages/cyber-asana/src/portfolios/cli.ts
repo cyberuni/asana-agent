@@ -7,7 +7,8 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { PortfolioApi } from './api.js'
 import {
 	createPortfolio,
@@ -38,8 +39,32 @@ function resolvePortfolioApi(api?: PortfolioApi | (() => PortfolioApi)): Portfol
 	)
 }
 
+// Minimal default schema for portfolio lists — principle 2.
+const PORTFOLIO_LIST_FIELDS = 'gid,name'
+
+const PORTFOLIO_LIST_NEXT_STEPS = [
+	'cyber-asana portfolio items <gid> — list the projects in a portfolio',
+	'cyber-asana portfolio get <gid> — view a portfolio',
+]
+
 export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 	const cmd = new Command('portfolio').description('Manage Asana portfolios')
+
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana portfolio list --workspace-gid <gid>',
+			'  cyber-asana portfolio items <gid>',
+			'  cyber-asana portfolio get <gid> --toon',
+			'  cyber-asana portfolio create "Roadmap" --workspace-gid <gid>',
+			'  cyber-asana portfolio update <gid> --name "Renamed"',
+			'  cyber-asana portfolio delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
 
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List portfolios in a workspace'), 'workspace', 'Workspace GID', {
@@ -53,29 +78,47 @@ export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 			offset?: string
 			optFields?: string
 		}) => {
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= PORTFOLIO_LIST_FIELDS
 			const data = await resolvePortfolioApi(api).listPortfolios(
 				requiredGid(opts, 'workspace', 'Workspace GID'),
-				paginationOptionsFromCli(opts),
+				pagination,
 			)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
-					{ label: 'Name', get: (p: Portfolio) => p.name },
-					{ label: 'ID', get: (p: Portfolio) => p.gid },
-				])
+				const items = itemsForOutput(data)
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (p: Portfolio) => p.name },
+						{ label: 'ID', get: (p: Portfolio) => p.gid },
+					],
+					{ entity: 'portfolios' },
+				)
+				printCountSummary(items.length, 'portfolio(s)')
 				printNextPageHint(data)
+				printNextSteps(PORTFOLIO_LIST_NEXT_STEPS)
 			})
 		},
 	)
 
 	addPaginationOptions(cmd.command('items <gid>').description('List the items (projects) in a portfolio')).action(
 		async (gid: string, opts: { limit?: number; offset?: string; optFields?: string }) => {
-			const data = await resolvePortfolioApi(api).listPortfolioItems(gid, paginationOptionsFromCli(opts))
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= PORTFOLIO_LIST_FIELDS
+			const data = await resolvePortfolioApi(api).listPortfolioItems(gid, pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
-					{ label: 'Name', get: (p: Portfolio) => p.name },
-					{ label: 'ID', get: (p: Portfolio) => p.gid },
-				])
+				const items = itemsForOutput(data)
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (p: Portfolio) => p.name },
+						{ label: 'ID', get: (p: Portfolio) => p.gid },
+					],
+					{ entity: 'portfolio items' },
+				)
+				printCountSummary(items.length, 'item(s)')
 				printNextPageHint(data)
+				printNextSteps(['cyber-asana project get <gid> — view a project in this portfolio'])
 			})
 		},
 	)
@@ -114,8 +157,8 @@ export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 		.command('delete <gid>')
 		.description('Delete a portfolio')
 		.action(async (gid: string) => {
-			await resolvePortfolioApi(api).deletePortfolio(gid)
-			console.log(`Deleted portfolio ${gid}`)
+			const result = await deleteIdempotently('portfolio', gid, () => resolvePortfolioApi(api).deletePortfolio(gid))
+			output(result, () => console.log(deleteMessage(result, 'Portfolio')))
 		})
 
 	return cmd

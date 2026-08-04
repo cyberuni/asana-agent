@@ -7,7 +7,9 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
+import { isFull, truncate } from '../truncate.js'
 import type { StatusApi } from './api.js'
 import { createStatus, deleteStatus, getStatus, listStatuses } from './api.js'
 
@@ -19,7 +21,7 @@ function fmtStatus(s: Status) {
 		Type: s.status_type ?? null,
 		Title: s.title ?? null,
 		At: s.created_at ?? null,
-		Text: s.text ?? null,
+		Text: truncate(s.text, { full: isFull() }) || null,
 	})
 }
 
@@ -28,8 +30,28 @@ function resolveStatusApi(api?: StatusApi | (() => StatusApi)): StatusApi {
 	return api ?? { listStatuses, getStatus, createStatus, deleteStatus }
 }
 
+// Minimal default schema for status lists — principle 2. The body text is
+// deliberately excluded; `status get <gid>` fetches it on demand.
+const STATUS_LIST_FIELDS = 'gid,status_type,title,created_at'
+
+const STATUS_LIST_NEXT_STEPS = ['cyber-asana status get <gid> — read a status update in full']
+
 export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 	const cmd = new Command('status').description('Manage Asana status updates on projects, portfolios, and goals')
+
+	cmd.addHelpText(
+		'after',
+		[
+			'',
+			'Examples:',
+			'  cyber-asana status list --parent-gid <project|portfolio|goal gid>',
+			'  cyber-asana status get <gid> --full',
+			'  cyber-asana status create --parent-gid <gid> --status-type on_track --text "..."',
+			'  cyber-asana status delete <gid>',
+			'',
+			'Every subcommand supports --help for its own options.',
+		].join('\n'),
+	)
 
 	addPaginationOptions(
 		addGidOption(
@@ -39,17 +61,23 @@ export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 		),
 	).action(
 		async (opts: { parent?: string; parentGid?: string; limit?: number; offset?: string; optFields?: string }) => {
-			const data = await resolveStatusApi(api).listStatuses(
-				requiredGid(opts, 'parent', 'Parent GID'),
-				paginationOptionsFromCli(opts),
-			)
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= STATUS_LIST_FIELDS
+			const data = await resolveStatusApi(api).listStatuses(requiredGid(opts, 'parent', 'Parent GID'), pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
-					{ label: 'ID', get: (s: Status) => s.gid },
-					{ label: 'Type', get: (s: Status) => s.status_type ?? '' },
-					{ label: 'Title', get: (s: Status) => s.title ?? '' },
-				])
+				const items = itemsForOutput(data)
+				printTable(
+					items,
+					[
+						{ label: 'ID', get: (s: Status) => s.gid },
+						{ label: 'Type', get: (s: Status) => s.status_type ?? '' },
+						{ label: 'Title', get: (s: Status) => s.title ?? '' },
+					],
+					{ entity: 'status updates' },
+				)
+				printCountSummary(items.length, 'status update(s)')
 				printNextPageHint(data)
+				printNextSteps(STATUS_LIST_NEXT_STEPS)
 			})
 		},
 	)
@@ -95,8 +123,8 @@ export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 		.command('delete <gid>')
 		.description('Delete a status update')
 		.action(async (gid: string) => {
-			await resolveStatusApi(api).deleteStatus(gid)
-			console.log(`Deleted status update ${gid}`)
+			const result = await deleteIdempotently('status_update', gid, () => resolveStatusApi(api).deleteStatus(gid))
+			output(result, () => console.log(deleteMessage(result, 'Status update')))
 		})
 
 	return cmd

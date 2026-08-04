@@ -16,8 +16,105 @@ vi.mock('./api.js', async () => {
 const { storyCommand } = await import('./cli.js')
 
 describe('stories/cli', () => {
+	const originalArgv = [...process.argv]
+
 	afterEach(() => {
 		vi.clearAllMocks()
+		process.argv = [...originalArgv]
+	})
+
+	it('story create truncates a long comment body by default and shows it all with --full', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const createStory = vi.fn().mockResolvedValue({ gid: 'story1', text: 'x'.repeat(600) })
+		const deps = { listStories: vi.fn(), createStory, getTaskTemplateData: vi.fn() }
+
+		await new Command()
+			.addCommand(storyCommand('story', deps))
+			.parseAsync(['node', 'test', 'story', 'create', 'hi', '--task-gid', 'task1'], { from: 'node' })
+		expect(logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Text'))).toContain(
+			'[truncated, 600 chars total; use --full for the rest]',
+		)
+
+		logSpy.mockClear()
+		process.argv = ['node', 'test', '--full']
+		await new Command()
+			.option('--full')
+			.addCommand(storyCommand('story', deps))
+			.parseAsync(['node', 'test', '--full', 'story', 'create', 'hi', '--task-gid', 'task1'], { from: 'node' })
+		expect(logSpy.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('Text'))).not.toContain('[truncated')
+	})
+
+	it('story list applies a minimal default field set, a count summary, and next steps', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listStories = vi.fn().mockResolvedValue([{ gid: 'story1', type: 'comment', text: 'Hi' }])
+		const program = new Command().addCommand(
+			storyCommand('story', { listStories, createStory: vi.fn(), getTaskTemplateData: vi.fn() }),
+		)
+
+		await program.parseAsync(['node', 'test', 'story', 'list', '--task-gid', 'task1'], { from: 'node' })
+
+		expect(listStories).toHaveBeenCalledWith(
+			'task1',
+			expect.objectContaining({ optFields: 'gid,type,text,created_at,created_by.name' }),
+		)
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n1 story(s)')
+		expect(lines.some((l) => l.includes('cyber-asana story create --task-gid task1'))).toBe(true)
+	})
+
+	it('story list respects an explicit --opt-fields override', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listStories = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			storyCommand('story', { listStories, createStory: vi.fn(), getTaskTemplateData: vi.fn() }),
+		)
+
+		await program.parseAsync(['node', 'test', 'story', 'list', '--task-gid', 'task1', '--opt-fields', 'gid,text'], {
+			from: 'node',
+		})
+
+		expect(listStories).toHaveBeenCalledWith('task1', expect.objectContaining({ optFields: 'gid,text' }))
+	})
+
+	describe('story list Text column', () => {
+		const longText = `${'g'.repeat(60)}-overflow`
+		const originalArgv = [...process.argv]
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+		afterEach(() => {
+			process.argv = [...originalArgv]
+		})
+
+		function listProgram() {
+			return new Command().option('--full').addCommand(
+				storyCommand('story', {
+					listStories: vi.fn().mockResolvedValue({ data: [{ gid: '5501', type: 'comment', text: longText }] }),
+					createStory: vi.fn(),
+					getTaskTemplateData: vi.fn(),
+				}),
+			)
+		}
+
+		it('truncates a long story text with a size hint by default', async () => {
+			await listProgram().parseAsync(['node', 'test', 'story', 'list', '--task-gid', 'task1'], { from: 'node' })
+
+			const row = logSpy.mock.calls.map((c) => String(c[0])).find((line) => line.includes('5501'))
+			expect(row).toContain('g'.repeat(60))
+			expect(row).not.toContain('-overflow')
+			expect(row).toContain(`[truncated, ${longText.length} chars total; use --full for the rest]`)
+		})
+
+		it('shows the full story text with --full', async () => {
+			process.argv = ['node', 'test', '--full']
+
+			await listProgram().parseAsync(['node', 'test', '--full', 'story', 'list', '--task-gid', 'task1'], {
+				from: 'node',
+			})
+
+			const row = logSpy.mock.calls.map((c) => String(c[0])).find((line) => line.includes('5501'))
+			expect(row).toContain(longText)
+			expect(row).not.toContain('[truncated')
+		})
 	})
 
 	it('story create forwards html_text', async () => {

@@ -79,7 +79,7 @@ graph TD
   T -->|yes — never defaulted from the environment| V{verb}
 
   V -->|list| LP[read the task's stories]
-  LP --> LR[render ID / Type / By / Text table<br/>Text column cut at 60 characters]
+  LP --> LR[render ID / Type / By / Text table<br/>Text column cut at 60 characters<br/>with a size hint, unless --full]
 
   V -->|create| C{--template given?}
   C -->|yes| CT[read the task, substitute<br/>every occurrence of each placeholder<br/>empty string when the field is unset]
@@ -135,6 +135,9 @@ The load-bearing edges:
 | render ID / Type / By / Text table | text mode, a comment and an activity record on one task | `list renders each story's id, type, author and text in text mode` |
 | Text column cut at 60 characters | text mode, a story whose text runs past 60 characters | `list cuts a long story's text at sixty characters in the table` |
 
+The cut goes through the shared `truncate()` helper, so the cut text carries a size hint and `--full`
+prints the whole comment — the same escape hatch every other free-text field in the package offers.
+
 ### `story create` / `asana_story_create`
 
 | Edge | Path (Given) | Scenario |
@@ -170,11 +173,6 @@ The load-bearing edges:
   leaves unwrapped, and that a comment is posted as either `text` or `html_text`.
 
 ## Known bugs
-
-**The `Text` column's 60-character cut should go through the shared `truncate()` helper and does
-not.** The cut was written before `src/truncate.ts` existed and was never migrated to it, so the
-column ignores the global `--full` flag and emits no size hint — the one free-text column in the
-package that does neither, against the rule in AGENTS.md.
 
 **A locally-detected `html_text` shape failure is reported as though Asana rejected it.** The
 pre-send shape check runs inside the same `try` that wraps the Asana call, and the rewrap keys off

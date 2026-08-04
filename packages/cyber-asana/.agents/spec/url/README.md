@@ -122,6 +122,10 @@ coverage of the V1 grammar, not a decision.
 | `/0/W/T` → legacy_task | a legacy two-number path under /0/ | `a legacy task URL yields the workspace and task GIDs and no project GID` |
 | no shape matches → unknown | a path naming a resource other than project or task | `a portfolio URL is reported as unknown with every GID empty` |
 | no shape matches → unknown | a task path carrying one extra trailing segment | `a task URL with an extra trailing segment is reported as unknown` |
+| GID slots are digit-only | a modern path whose workspace and project slots hold letters | `a non-digit workspace or project GID is reported as unknown` |
+| GID slots are digit-only | a task path whose task slot holds letters | `a non-digit task GID is reported as unknown` |
+| GID slots are digit-only | a list-view path whose list-view slot holds letters | `a non-digit list-view GID is reported as unknown` |
+| GID slots are digit-only | a legacy path whose task slot holds letters | `a non-digit GID in a legacy path is reported as unknown` |
 | not an absolute URL → unknown | a string that starts at the host, with no scheme | `a scheme-less Asana path is reported as unknown` |
 | strip trailing slashes | a project path written with a trailing slash | `a trailing slash does not change the parse` |
 | drop query and fragment | a list-view path carrying a query string and a fragment | `a query string and a fragment are ignored` |

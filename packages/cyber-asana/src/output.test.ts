@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { output, printEmpty, printNextSteps, printSummary, printTable, selectFormat } from './output.js'
+import {
+	output,
+	printCountSummary,
+	printEmpty,
+	printNextSteps,
+	printSummary,
+	printTable,
+	selectFormat,
+} from './output.js'
 import { encodeToon } from './toon.js'
 
 describe('selectFormat', () => {
@@ -104,6 +112,51 @@ describe('printEmpty', () => {
 	it('includes the entity name when provided', () => {
 		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
 		printEmpty('tasks')
+		expect(spy).toHaveBeenCalledWith('0 tasks found')
+	})
+})
+
+describe('printCountSummary', () => {
+	afterEach(() => vi.restoreAllMocks())
+
+	it('prints a count line in text mode', () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		printCountSummary(3, 'project(s)', ['node', 'cli'])
+		expect(spy).toHaveBeenCalledWith('\n3 project(s)')
+	})
+
+	it('stays silent in structured modes', () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		printCountSummary(3, 'project(s)', ['node', 'cli', '--json'])
+		printCountSummary(3, 'project(s)', ['node', 'cli', '--toon'])
+		expect(spy).not.toHaveBeenCalled()
+	})
+
+	it('says nothing for an empty result — the empty state already did', () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		printCountSummary(0, 'project(s)', ['node', 'cli'])
+		expect(spy).not.toHaveBeenCalled()
+	})
+})
+
+describe('printEmpty', () => {
+	afterEach(() => vi.restoreAllMocks())
+
+	it('names the entity when one is given', () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		printEmpty('projects')
+		expect(spy).toHaveBeenCalledWith('0 projects found')
+	})
+
+	it('falls back to a bare count when no entity is given', () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		printEmpty()
+		expect(spy).toHaveBeenCalledWith('0 results')
+	})
+
+	it('printTable forwards its entity name to the empty state', () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		printTable([], [{ label: 'Name', get: () => '' }], { entity: 'tasks' })
 		expect(spy).toHaveBeenCalledWith('0 tasks found')
 	})
 })

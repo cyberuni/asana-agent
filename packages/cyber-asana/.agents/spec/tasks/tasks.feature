@@ -22,10 +22,15 @@ Feature: tasks
     When the task list entry point runs for the project GID "7201" naming the fields "gid,permalink_url"
     Then the request reaching the tasks-for-project endpoint carries the opt_fields value "gid,permalink_url"
 
-  Scenario: a subtask include flag supplies the field set in place of the default
+  Scenario: a subtask include flag adds to the default field set
     Given a task named "Regrind the theodolite lens" with GID "7301"
     When the subtask list entry point runs for the task GID "7301" with the assignee-email include flag and no fields named
-    Then the request reaching the subtasks endpoint carries the opt_fields value "assignee,assignee.email"
+    Then the request reaching the subtasks endpoint carries the opt_fields value "gid,name,completed,due_on,assignee,assignee.email"
+
+  Scenario: a subtask include flag adds to an explicitly named field set
+    Given a task named "Regrind the theodolite lens" with GID "7301"
+    When the subtask list entry point runs for the task GID "7301" with the num-subtasks include flag naming the fields "gid,name"
+    Then the request reaching the subtasks endpoint carries the opt_fields value "gid,name,num_subtasks"
 
   Scenario: the MCP task list tool sends no default field set
     Given a project named "Coastal Survey 1908" with GID "7201"

@@ -35,6 +35,20 @@ describe('teams/cli', () => {
 		})
 	})
 
+	it('team list applies a minimal default field set, a count summary, and next steps', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		listTeamsMock.mockResolvedValue([{ gid: 'team1', name: 'Engineering' }])
+		const program = new Command().addCommand(teamCommand())
+
+		await program.parseAsync(['node', 'test', 'team', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(listTeamsMock).toHaveBeenCalledWith('ws1', expect.objectContaining({ optFields: 'gid,name' }))
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines).toContain('\n1 team(s)')
+		expect(lines.some((l) => l.includes('cyber-asana team get <gid>'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
 	it('team get forwards gid', async () => {
 		getTeamMock.mockResolvedValue({ gid: 'team1', name: 'Engineering' })
 		const program = new Command().addCommand(teamCommand())
