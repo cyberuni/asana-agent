@@ -7,7 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { PortfolioApi } from './api.js'
 import {
 	createPortfolio,
@@ -38,6 +38,14 @@ function resolvePortfolioApi(api?: PortfolioApi | (() => PortfolioApi)): Portfol
 	)
 }
 
+// Minimal default schema for portfolio lists — principle 2.
+const PORTFOLIO_LIST_FIELDS = 'gid,name'
+
+const PORTFOLIO_LIST_NEXT_STEPS = [
+	'cyber-asana portfolio items <gid> — list the projects in a portfolio',
+	'cyber-asana portfolio get <gid> — view a portfolio',
+]
+
 export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 	const cmd = new Command('portfolio').description('Manage Asana portfolios')
 
@@ -53,29 +61,39 @@ export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 			offset?: string
 			optFields?: string
 		}) => {
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= PORTFOLIO_LIST_FIELDS
 			const data = await resolvePortfolioApi(api).listPortfolios(
 				requiredGid(opts, 'workspace', 'Workspace GID'),
-				paginationOptionsFromCli(opts),
+				pagination,
 			)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
+				const items = itemsForOutput(data)
+				printTable(items, [
 					{ label: 'Name', get: (p: Portfolio) => p.name },
 					{ label: 'ID', get: (p: Portfolio) => p.gid },
 				])
+				printCountSummary(items.length, 'portfolio(s)')
 				printNextPageHint(data)
+				printNextSteps(PORTFOLIO_LIST_NEXT_STEPS)
 			})
 		},
 	)
 
 	addPaginationOptions(cmd.command('items <gid>').description('List the items (projects) in a portfolio')).action(
 		async (gid: string, opts: { limit?: number; offset?: string; optFields?: string }) => {
-			const data = await resolvePortfolioApi(api).listPortfolioItems(gid, paginationOptionsFromCli(opts))
+			const pagination = paginationOptionsFromCli(opts)
+			pagination.optFields ??= PORTFOLIO_LIST_FIELDS
+			const data = await resolvePortfolioApi(api).listPortfolioItems(gid, pagination)
 			output(data, () => {
-				printTable(itemsForOutput(data), [
+				const items = itemsForOutput(data)
+				printTable(items, [
 					{ label: 'Name', get: (p: Portfolio) => p.name },
 					{ label: 'ID', get: (p: Portfolio) => p.gid },
 				])
+				printCountSummary(items.length, 'item(s)')
 				printNextPageHint(data)
+				printNextSteps(['cyber-asana project get <gid> — view a project in this portfolio'])
 			})
 		},
 	)
