@@ -111,6 +111,11 @@ function printTaskSummary(tasks: Task[]) {
 // table renders, instead of Asana's larger default payload.
 const TASK_LIST_FIELDS = 'gid,name,completed,due_on'
 
+function mergeFields(...fieldSets: string[]) {
+	const fields = fieldSets.flatMap((set) => set.split(',')).filter(Boolean)
+	return [...new Set(fields)].join(',')
+}
+
 const TASK_LIST_NEXT_STEPS = [
 	'cyber-asana task get <gid> — view a task',
 	'cyber-asana task update <gid> --completed — complete a task',
@@ -416,10 +421,9 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 				.filter(Boolean)
 				.join(',')
 			const pagination = paginationOptionsFromCli(opts)
-			if (extraFields) {
-				pagination.optFields = [pagination.optFields, extraFields].filter(Boolean).join(',')
-			}
-			pagination.optFields ||= TASK_LIST_FIELDS
+			// Include flags compose with the field set — they add to the caller's fields, or to the
+			// default when the caller named none. Never a replacement (see issue #97).
+			pagination.optFields = mergeFields(pagination.optFields ?? TASK_LIST_FIELDS, extraFields)
 			const data = await resolveTaskApi(api).listSubtasks(taskGid, {
 				completedSince: opts.incomplete ? 'now' : undefined,
 				...pagination,
