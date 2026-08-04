@@ -44,6 +44,16 @@ export function printSummary(line: string, argv: string[] = process.argv) {
 	console.log(line)
 }
 
+/**
+ * Pre-computed count aggregate — principle 4. Text mode only.
+ * `noun` carries its own plural marker, e.g. 'project(s)'. Empty results say
+ * nothing here; the empty state (principle 5) has already spoken.
+ */
+export function printCountSummary(count: number, noun: string, argv: string[] = process.argv) {
+	if (count === 0) return
+	printSummary(`\n${count} ${noun}`, argv)
+}
+
 /** Contextual next-step suggestions — principle 9. Text mode only. */
 export function printNextSteps(steps: string[], argv: string[] = process.argv) {
 	if (steps.length === 0 || selectFormat(argv) !== 'text') return
