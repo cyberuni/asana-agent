@@ -171,7 +171,7 @@ graph TD
   LCP --> LI{completion filter}
   LCS --> LF{include flags given?}
   LCM2 --> LI
-  LF -->|yes| LFA[the named field groups become the field set<br/>the default is not added]
+  LF -->|yes| LFA[the named field groups are added to the field set<br/>the caller's fields, or the default when none were named]
   LF -->|no| LI
   LFA --> LI
   LI -->|--incomplete| LIN[completed_since = now<br/>wins over any explicit date]
@@ -199,15 +199,16 @@ The load-bearing edges:
 - **`LD`'s CLI and MCP branches deliberately differ.** Only the CLI applies the default; the MCP
   tools forward whatever `opt_fields` they were given, including none. A tool caller composes its
   own field set and a surprise default would silently drop fields it expected.
-- **`LF` short-circuits the default.** A subtask include flag such as `--assignee-email` contributes
-  its own field group, and once any field is present the default is not added — so asking for
-  assignee emails narrows the response to exactly the assignee fields. That is a real consequence of
-  the ordering, and the suite pins it.
-  That short-circuit is a defect, not a design. The include flags were introduced as composing with
-  `--opt-fields`; the four-field default arrived a month later and was placed *after* the flag merge,
-  so a flag supplied alone satisfies the "already chosen" test and the default never lands — leaving
-  the Done and Due columns blank, which is the exact symptom the default was introduced to fix. The
-  suite pins the current behavior so the regression stays visible rather than silent.
+- **`LF` composes, never replaces.** A subtask include flag such as `--assignee-email` contributes
+  its own field group on top of the field set already in play — the caller's `--opt-fields` when they
+  named some, the four-field default when they did not. Duplicates are collapsed. So asking for
+  assignee emails alone still renders a full table plus the assignee fields.
+  This was a defect until #97: the include flags were introduced as composing with `--opt-fields`,
+  the four-field default arrived a month later and was placed *after* the flag merge, so a flag
+  supplied alone satisfied the "already chosen" test and the default never landed — leaving the Done
+  and Due columns blank, the exact symptom the default was introduced to fix. The default is now
+  unioned in rather than short-circuited, and the suite pins both the flag-alone and the
+  flag-plus-explicit-fields shapes.
 - **`LCM2` is why My Tasks is not just another list.** Asana addresses a personal task list by its
   own GID, which is not the user GID and not the workspace GID, so the read costs two calls: resolve
   the list for `me` in that workspace, then read it.
@@ -386,7 +387,8 @@ The load-bearing edges:
 |---|---|---|
 | no field set named → apply the four-field default | a project list, a my-tasks list, and a subtask list, none naming fields | `a task list asks Asana for only the four fields the table renders` |
 | fields named → the default is not added | a project list naming two fields | `an explicit field list replaces the default task field set` |
-| include flag supplies the field set | a subtask list with an assignee-email include flag and no named fields | `a subtask include flag supplies the field set in place of the default` |
+| include flag adds to the default | a subtask list with an assignee-email include flag and no named fields | `a subtask include flag adds to the default field set` |
+| include flag adds to named fields | a subtask list with a num-subtasks include flag and named fields | `a subtask include flag adds to an explicitly named field set` |
 | no field set named → send none | the MCP task-list tool called with no field parameter | `the MCP task list tool sends no default field set` |
 | completion filter → completed_since now | the incomplete flag given alongside an explicit completed-since date | `the incomplete flag lists only tasks completed since now` |
 | container GID required → usage error | a project list with no project GID | `a task list without a project GID is a usage error` |
