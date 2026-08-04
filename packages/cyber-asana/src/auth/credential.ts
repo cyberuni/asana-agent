@@ -6,6 +6,13 @@
 const TOKEN_ENV_VARS = ['ASANA_ACCESS_TOKEN', 'ASANA_TOKEN'] as const
 
 const FLAG_SOURCE = '--token'
+const STORED_SOURCE = 'credentials.json'
+
+export type StoredCredential = {
+	accessToken: string
+	expiresAt: number
+	user?: { gid: string; name?: string; email?: string }
+}
 
 export type Credential = {
 	authenticated: boolean
@@ -14,6 +21,9 @@ export type Credential = {
 	token?: string
 	/** Labels of sources that hold a token but lost to `source`. */
 	shadowed: string[]
+	/** Only stored OAuth credentials carry an expiry; a PAT never expires. */
+	expiresAt?: number
+	user?: StoredCredential['user']
 }
 
 /** A token rendered for display — enough to recognize, not enough to use. */
@@ -24,15 +34,19 @@ export function maskToken(token: string): string {
 export type ResolveCredentialInput = {
 	tokenOverride?: string
 	env?: Record<string, string | undefined>
+	stored?: StoredCredential
 }
 
-export function resolveCredential({ tokenOverride, env = process.env }: ResolveCredentialInput): Credential {
-	const candidates: Array<{ source: string; token: string }> = []
+export function resolveCredential({ tokenOverride, env = process.env, stored }: ResolveCredentialInput): Credential {
+	const candidates: Array<{ source: string; token: string; stored?: StoredCredential }> = []
 	if (tokenOverride) candidates.push({ source: FLAG_SOURCE, token: tokenOverride })
 	for (const name of TOKEN_ENV_VARS) {
 		const token = env[name]
 		if (token) candidates.push({ source: name, token })
 	}
+	// Last: an explicit flag or env var is a deliberate override of whatever
+	// `auth login` stored, and saying which one won is the point of `status`.
+	if (stored?.accessToken) candidates.push({ source: STORED_SOURCE, token: stored.accessToken, stored })
 
 	const [winner, ...rest] = candidates
 	if (!winner) return { authenticated: false, shadowed: [] }
@@ -41,5 +55,7 @@ export function resolveCredential({ tokenOverride, env = process.env }: ResolveC
 		source: winner.source,
 		token: winner.token,
 		shadowed: rest.map((c) => c.source),
+		expiresAt: winner.stored?.expiresAt,
+		user: winner.stored?.user,
 	}
 }

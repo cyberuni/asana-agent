@@ -1,7 +1,8 @@
 import { Command } from 'commander'
 import { getTokenOverride } from '../client.js'
 import { output, printFields, printNextSteps } from '../output.js'
-import { type Credential, maskToken, resolveCredential } from './credential.js'
+import { defaultAmbientDeps, ensureStoredCredential } from './ambient.js'
+import { type Credential, maskToken, resolveCredential, type StoredCredential } from './credential.js'
 import { defaultLoginDeps, type LoginParams, performLogin } from './login.js'
 import { refreshAccessToken, revokeRefreshToken, type Tokens } from './oauth.js'
 import { type AppSettings, configDir, readSettings, resolveAppCredentials } from './settings.js'
@@ -40,7 +41,9 @@ https://app.asana.com/0/my-apps`
 const REFRESH_WINDOW_MS = 60_000
 
 export type AuthCommandDeps = {
-	readCredential: () => Credential
+	readCredential: (input?: { stored?: StoredCredential }) => Credential
+	/** Stored OAuth credentials, refreshed when stale — undefined when not logged in. */
+	readStoredCredential: () => Promise<Tokens | undefined>
 	configDir: () => string
 	readSettings: (dir: string) => Promise<AppSettings>
 	login: (params: LoginParams) => Promise<Tokens>
@@ -54,7 +57,8 @@ export type AuthCommandDeps = {
 
 function defaultDeps(): AuthCommandDeps {
 	return {
-		readCredential: () => resolveCredential({ tokenOverride: getTokenOverride() }),
+		readCredential: (input) => resolveCredential({ tokenOverride: getTokenOverride(), stored: input?.stored }),
+		readStoredCredential: async () => (await ensureStoredCredential(defaultAmbientDeps())).tokens,
 		configDir: () => configDir(),
 		readSettings,
 		login: (params) => performLogin(params, defaultLoginDeps()),
@@ -101,14 +105,22 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 	cmd
 		.command('status')
 		.description('Show which credential this CLI will use, without calling the Asana API')
-		.action(() => {
-			const credential = deps.readCredential()
+		.action(async () => {
+			const stored = await deps.readStoredCredential()
+			const credential = deps.readCredential({
+				stored: stored
+					? { accessToken: stored.accessToken, expiresAt: stored.expiresAt, user: stored.user }
+					: undefined,
+			})
+			const expires = credential.expiresAt ? new Date(credential.expiresAt).toISOString() : null
 			output(
 				{
 					authenticated: credential.authenticated,
 					source: credential.source ?? null,
 					masked_token: credential.token ? maskToken(credential.token) : null,
 					shadowed: credential.shadowed,
+					expires_at: expires,
+					user: credential.user ?? null,
 				},
 				() => {
 					if (!credential.authenticated) {
@@ -122,7 +134,9 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 					printFields({
 						Status: 'authenticated',
 						Source: credential.source,
+						Account: describeUser(credential.user),
 						Token: credential.token ? maskToken(credential.token) : null,
+						Expires: expires,
 						Ignored: credential.shadowed.length > 0 ? credential.shadowed.join(', ') : null,
 					})
 				},

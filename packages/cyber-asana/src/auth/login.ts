@@ -13,6 +13,8 @@ export type LoginDeps = {
 	exchangeCode: typeof exchangeCode
 	createPkcePair: typeof createPkcePair
 	createState: () => string
+	/** Progress for a human, kept off stdout so --raw stays pipeable. */
+	announce: (message: string) => void
 }
 
 export type LoginParams = {
@@ -32,6 +34,7 @@ export function defaultLoginDeps(): LoginDeps {
 		exchangeCode,
 		createPkcePair,
 		createState,
+		announce: (message) => process.stderr.write(`${message}\n`),
 	}
 }
 
@@ -41,15 +44,17 @@ export async function performLogin({ app, port, scopes }: LoginParams, deps: Log
 	const server = await deps.startCallbackServer({ port, expectedState: state })
 
 	try {
-		await deps.openBrowser(
-			buildAuthorizeUrl({
-				clientId: app.clientId,
-				redirectUri: server.redirectUri,
-				state,
-				challenge,
-				scopes,
-			}),
-		)
+		const authorizeUrl = buildAuthorizeUrl({
+			clientId: app.clientId,
+			redirectUri: server.redirectUri,
+			state,
+			challenge,
+			scopes,
+		})
+		// Announce before opening: on WSL and headless boxes the opener is a
+		// no-op, and without the URL on screen the command just appears to hang.
+		deps.announce(`Opening your browser to authorize. If it does not open, visit:\n\n${authorizeUrl}\n`)
+		await deps.openBrowser(authorizeUrl)
 		const code = await server.waitForCode
 		return await deps.exchangeCode(
 			{

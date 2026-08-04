@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
+import { defaultAmbientDeps, ensureStoredCredential } from './auth/ambient.js'
 import { exitCodeFor, renderCliError } from './cli-error.js'
 import { installUsageErrors, isCleanCommanderExit } from './cli-usage.js'
-import { setTokenOverride } from './client.js'
+import { setAmbientToken, setTokenOverride } from './client.js'
 import { createRuntimeContext, type RuntimeContext, registerCliCommands } from './composition.js'
 import { runDefaultCommand } from './default-command.js'
+import { envValue } from './env.js'
 import { selectFormat } from './output.js'
 import { getMe } from './users/api.js'
 import { VERSION } from './version.js'
@@ -38,9 +40,19 @@ program
 			'  cyber-asana <resource> --help     # concise per-resource reference',
 		].join('\n'),
 	)
-	.hook('preAction', () => {
+	.hook('preAction', async () => {
 		const { token } = program.opts<{ token?: string }>()
-		if (token) setTokenOverride(token)
+		if (token) {
+			setTokenOverride(token)
+			return
+		}
+		// An explicit env var wins over whatever `auth login` stored, so there is
+		// nothing to load — and no reason to touch the disk or refresh a token.
+		if (envValue('ASANA_TOKEN')) return
+
+		const { tokens, refreshError } = await ensureStoredCredential(defaultAmbientDeps())
+		if (refreshError) console.error(`cyber-asana: ${refreshError}`)
+		if (tokens) setAmbientToken(tokens.accessToken)
 	})
 	.action(async () => {
 		await runDefaultCommand({ getMe })

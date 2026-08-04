@@ -45,6 +45,8 @@ cyber-asana auth login
 
 `auth login` opens the browser, captures the redirect on a loopback server bound to `127.0.0.1`, and stores the tokens. It is a one-time human step — agents inherit the stored credentials the same way they inherit a PAT.
 
+After that, every command uses the stored credentials automatically, refreshing the access token when it is within a minute of expiring. Precedence is `--token` > `ASANA_ACCESS_TOKEN` > `ASANA_TOKEN` > stored credentials, so an env var still wins — and `auth status` names which one is in effect and lists the rest as ignored.
+
 Credentials live under `$XDG_CONFIG_HOME/cyber-asana` (or `~/.config/cyber-asana`), split by who owns them:
 
 | File | Contents | Written by |

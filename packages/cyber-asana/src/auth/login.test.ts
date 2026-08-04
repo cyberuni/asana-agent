@@ -25,6 +25,7 @@ function deps(overrides: Partial<Parameters<typeof performLogin>[1]> = {}) {
 			}),
 			createPkcePair: () => ({ verifier: 'verifier-789', challenge: 'challenge-xyz' }),
 			createState: () => 'state-abc',
+			announce: () => {},
 			...overrides,
 		} as Parameters<typeof performLogin>[1],
 	}
@@ -76,6 +77,29 @@ describe('performLogin', () => {
 
 		expect(tokens.accessToken).toBe('access-token')
 		expect(tokens.user?.name).toBe('Homa Wong')
+	})
+
+	it('announces the authorize URL so a browser that never opens is recoverable', async () => {
+		const announced: string[] = []
+		const d = deps({ announce: (message: string) => announced.push(message) })
+
+		await performLogin({ app, port: 7654 }, d.value)
+
+		expect(announced.join('\n')).toContain(d.opened[0])
+	})
+
+	it('announces the URL before opening the browser, in case opening hangs', async () => {
+		const order: string[] = []
+		const d = deps({
+			announce: () => order.push('announce'),
+			openBrowser: async () => {
+				order.push('open')
+			},
+		})
+
+		await performLogin({ app, port: 7654 }, d.value)
+
+		expect(order).toEqual(['announce', 'open'])
 	})
 
 	it('requests the scopes the caller asked for', async () => {

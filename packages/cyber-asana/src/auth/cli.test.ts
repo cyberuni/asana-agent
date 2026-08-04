@@ -1,6 +1,7 @@
 import { Command } from 'commander'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { authCommand } from './cli.js'
+import { resolveCredential } from './credential.js'
 
 describe('auth/cli', () => {
 	const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -17,6 +18,27 @@ describe('auth/cli', () => {
 		await program.parseAsync(['node', 'test', 'auth', 'status'], { from: 'node' })
 		return logSpy.mock.calls.map((call) => String(call[0])).join('\n')
 	}
+
+	it('reports stored OAuth credentials, including the account and expiry', async () => {
+		const program = new Command().addCommand(
+			authCommand({
+				readCredential: (input?: { stored?: unknown }) =>
+					resolveCredential({ env: {}, stored: input?.stored as never }),
+				readStoredCredential: async () => ({
+					accessToken: 'stored-token',
+					expiresAt: Date.parse('2026-08-04T12:00:00.000Z'),
+					user: { gid: '1201', name: 'Homa Wong', email: 'homa@example.com' },
+				}),
+			} as never),
+		)
+		process.argv = ['node', 'test']
+		await program.parseAsync(['node', 'test', 'auth', 'status'], { from: 'node' })
+
+		const out = logSpy.mock.calls.map((call) => String(call[0])).join('\n')
+		expect(out).toContain('credentials.json')
+		expect(out).toContain('Homa Wong')
+		expect(out).toContain('2026-08-04')
+	})
 
 	it('names the source the credential came from', async () => {
 		const out = await runStatus({

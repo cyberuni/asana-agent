@@ -65,6 +65,39 @@ describe('resolveCredential', () => {
 		expect(result.source).toBe('ASANA_TOKEN')
 	})
 
+	it('falls back to stored OAuth credentials when nothing else is set', () => {
+		const result = resolveCredential({
+			env: {},
+			stored: { accessToken: 'stored-token', expiresAt: 123, user: { gid: '1201', name: 'Homa Wong' } },
+		})
+		expect(result.authenticated).toBe(true)
+		expect(result.token).toBe('stored-token')
+		expect(result.source).toBe('credentials.json')
+	})
+
+	it('carries the stored expiry and account through for display', () => {
+		const result = resolveCredential({
+			env: {},
+			stored: { accessToken: 'stored-token', expiresAt: 123, user: { gid: '1201', name: 'Homa Wong' } },
+		})
+		expect(result.expiresAt).toBe(123)
+		expect(result.user?.name).toBe('Homa Wong')
+	})
+
+	it('lets an environment variable shadow stored credentials, and says so', () => {
+		const result = resolveCredential({
+			env: { ASANA_ACCESS_TOKEN: 'env-token' },
+			stored: { accessToken: 'stored-token', expiresAt: 123 },
+		})
+		expect(result.source).toBe('ASANA_ACCESS_TOKEN')
+		expect(result.shadowed).toEqual(['credentials.json'])
+	})
+
+	it('reports no expiry for a token that came from the environment', () => {
+		const result = resolveCredential({ env: { ASANA_ACCESS_TOKEN: 'env-token' } })
+		expect(result.expiresAt).toBeUndefined()
+	})
+
 	it('reads process.env when no environment is injected', () => {
 		const result = resolveCredential({})
 		expect(result).toHaveProperty('authenticated')
