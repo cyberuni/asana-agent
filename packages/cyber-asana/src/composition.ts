@@ -23,6 +23,7 @@ import { createSectionApi, type SectionApi } from './sections/api.js'
 import { sectionCommand } from './sections/cli.js'
 import { createAsanaSectionGateway } from './sections/gateway.js'
 import { registerSectionTools } from './sections/mcp.js'
+import { setupCommand } from './setup-cli.js'
 import { createStatusApi, type StatusApi } from './status/api.js'
 import { statusCommand } from './status/cli.js'
 import { createAsanaStatusGateway } from './status/gateway.js'
@@ -102,6 +103,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(storyCommand('story', () => getContext().stories))
 	program.addCommand(storyCommand('comment', () => getContext().stories))
 	program.addCommand(configCommand(() => getContext().projects))
+	program.addCommand(setupCommand())
 	program.addCommand(urlCommand())
 	program.addCommand(mcpCommand(getContext))
 }
