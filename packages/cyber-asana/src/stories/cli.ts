@@ -7,7 +7,7 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
-import { output, printFields, printTable } from '../output.js'
+import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { StoryApi } from './api.js'
 import { createStory, getTaskTemplateData, interpolateTemplate, listStories } from './api.js'
 
@@ -28,24 +28,32 @@ function resolveStoryApi(api?: StoryApi | (() => StoryApi)): StoryApi {
 	return api ?? { listStories, createStory, getTaskTemplateData }
 }
 
+// Minimal default schema for story lists — principle 2. Just the fields the
+// table renders, instead of Asana's larger default payload.
+const STORY_LIST_FIELDS = 'gid,type,text,created_at,created_by.name'
+
 export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) {
 	const cmd = new Command(name).description('Manage Asana stories (comments)')
 
 	addPaginationOptions(
 		addGidOption(cmd.command('list').description('List stories for a task'), 'task', 'Task GID'),
 	).action(async (opts: { task?: string; taskGid?: string; limit?: number; offset?: string; optFields?: string }) => {
-		const data = await resolveStoryApi(api).listStories(
-			requiredGid(opts, 'task', 'Task GID'),
-			paginationOptionsFromCli(opts),
-		)
+		const pagination = paginationOptionsFromCli(opts)
+		pagination.optFields ??= STORY_LIST_FIELDS
+		const data = await resolveStoryApi(api).listStories(requiredGid(opts, 'task', 'Task GID'), pagination)
 		output(data, () => {
-			printTable(itemsForOutput(data), [
+			const items = itemsForOutput(data)
+			printTable(items, [
 				{ label: 'ID', get: (s: Story) => s.gid },
 				{ label: 'Type', get: (s: Story) => s.type ?? '' },
 				{ label: 'By', get: (s: Story) => s.created_by?.name ?? '' },
 				{ label: 'Text', get: (s: Story) => (s.text ?? '').slice(0, 60) },
 			])
+			printCountSummary(items.length, 'story(s)')
 			printNextPageHint(data)
+			printNextSteps([
+				`cyber-asana story create --task-gid ${requiredGid(opts, 'task', 'Task GID')} "<text>" — comment`,
+			])
 		})
 	})
 
