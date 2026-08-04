@@ -21,7 +21,7 @@ export type LoginParams = {
 	scopes?: string[]
 }
 
-export function createState(): string {
+function createState(): string {
 	return randomBytes(16).toString('base64url')
 }
 

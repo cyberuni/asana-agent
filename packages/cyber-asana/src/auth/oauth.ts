@@ -45,7 +45,7 @@ export type OAuthDeps = {
 }
 
 /** The account Asana reports with the grant, so callers need no extra API call. */
-export type OAuthUser = { gid: string; name?: string; email?: string }
+type OAuthUser = { gid: string; name?: string; email?: string }
 
 export type Tokens = {
 	accessToken: string
