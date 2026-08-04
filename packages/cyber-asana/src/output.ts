@@ -25,9 +25,13 @@ export function printFields(fields: Record<string, string | null | undefined>) {
 	}
 }
 
-export function printTable<T>(items: T[], cols: { label: string; get: (item: T) => string }[]) {
+export function printTable<T>(
+	items: T[],
+	cols: { label: string; get: (item: T) => string }[],
+	opts?: { entity?: string },
+) {
 	if (items.length === 0) {
-		printEmpty()
+		printEmpty(opts?.entity)
 		return
 	}
 	const widths = cols.map((c) => Math.max(c.label.length, ...items.map((i) => c.get(i).length)))

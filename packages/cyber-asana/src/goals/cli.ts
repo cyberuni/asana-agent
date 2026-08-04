@@ -64,11 +64,15 @@ export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 			const data = await resolveGoalApi(api).listGoals(requiredGid(opts, 'workspace', 'Workspace GID'), pagination)
 			output(data, () => {
 				const items = itemsForOutput(data)
-				printTable(items, [
-					{ label: 'Name', get: (g: Goal) => g.name },
-					{ label: 'ID', get: (g: Goal) => g.gid },
-					{ label: 'Due', get: (g: Goal) => g.due_on ?? '' },
-				])
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (g: Goal) => g.name },
+						{ label: 'ID', get: (g: Goal) => g.gid },
+						{ label: 'Due', get: (g: Goal) => g.due_on ?? '' },
+					],
+					{ entity: 'goals' },
+				)
 				printCountSummary(items.length, 'goal(s)')
 				printNextPageHint(data)
 				printNextSteps(GOAL_LIST_NEXT_STEPS)

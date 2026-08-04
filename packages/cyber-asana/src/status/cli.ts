@@ -51,11 +51,15 @@ export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 			const data = await resolveStatusApi(api).listStatuses(requiredGid(opts, 'parent', 'Parent GID'), pagination)
 			output(data, () => {
 				const items = itemsForOutput(data)
-				printTable(items, [
-					{ label: 'ID', get: (s: Status) => s.gid },
-					{ label: 'Type', get: (s: Status) => s.status_type ?? '' },
-					{ label: 'Title', get: (s: Status) => s.title ?? '' },
-				])
+				printTable(
+					items,
+					[
+						{ label: 'ID', get: (s: Status) => s.gid },
+						{ label: 'Type', get: (s: Status) => s.status_type ?? '' },
+						{ label: 'Title', get: (s: Status) => s.title ?? '' },
+					],
+					{ entity: 'status updates' },
+				)
 				printCountSummary(items.length, 'status update(s)')
 				printNextPageHint(data)
 				printNextSteps(STATUS_LIST_NEXT_STEPS)

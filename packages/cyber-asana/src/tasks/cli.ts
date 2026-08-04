@@ -92,12 +92,16 @@ function fmtTask(t: Task) {
 }
 
 function fmtTaskList(tasks: Task[]) {
-	printTable(tasks, [
-		{ label: 'Name', get: (t) => t.name },
-		{ label: 'ID', get: (t) => t.gid },
-		{ label: 'Done', get: (t) => (t.completed ? 'yes' : 'no') },
-		{ label: 'Due', get: (t) => t.due_on ?? '' },
-	])
+	printTable(
+		tasks,
+		[
+			{ label: 'Name', get: (t) => t.name },
+			{ label: 'ID', get: (t) => t.gid },
+			{ label: 'Done', get: (t) => (t.completed ? 'yes' : 'no') },
+			{ label: 'Due', get: (t) => t.due_on ?? '' },
+		],
+		{ entity: 'tasks' },
+	)
 }
 
 // Pre-computed aggregate over a task list — principle 4.
@@ -227,7 +231,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 			)
 			output(data, () => {
 				if (data.length === 0) {
-					printEmpty()
+					printEmpty('tasks')
 					return
 				}
 				for (const item of data) {
@@ -777,16 +781,16 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 			const exclude = opts.exclude.split(',').map((e) => e.trim())
 			const data = await scanTodos(root, { extensions, exclude })
 			output(data, () => {
-				if (data.length === 0) {
-					printEmpty()
-					return
-				}
-				printTable(data, [
-					{ label: 'File', get: (t: TodoMatch) => t.file },
-					{ label: 'Line', get: (t: TodoMatch) => String(t.line) },
-					{ label: 'Pattern', get: (t: TodoMatch) => t.pattern },
-					{ label: 'Text', get: (t: TodoMatch) => t.text },
-				])
+				printTable(
+					data,
+					[
+						{ label: 'File', get: (t: TodoMatch) => t.file },
+						{ label: 'Line', get: (t: TodoMatch) => String(t.line) },
+						{ label: 'Pattern', get: (t: TodoMatch) => t.pattern },
+						{ label: 'Text', get: (t: TodoMatch) => t.text },
+					],
+					{ entity: 'TODO comments' },
+				)
 			})
 		})
 

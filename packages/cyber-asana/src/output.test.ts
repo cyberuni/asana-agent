@@ -138,3 +138,25 @@ describe('printCountSummary', () => {
 		expect(spy).not.toHaveBeenCalled()
 	})
 })
+
+describe('printEmpty', () => {
+	afterEach(() => vi.restoreAllMocks())
+
+	it('names the entity when one is given', () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		printEmpty('projects')
+		expect(spy).toHaveBeenCalledWith('0 projects found')
+	})
+
+	it('falls back to a bare count when no entity is given', () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		printEmpty()
+		expect(spy).toHaveBeenCalledWith('0 results')
+	})
+
+	it('printTable forwards its entity name to the empty state', () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		printTable([], [{ label: 'Name', get: () => '' }], { entity: 'tasks' })
+		expect(spy).toHaveBeenCalledWith('0 tasks found')
+	})
+})

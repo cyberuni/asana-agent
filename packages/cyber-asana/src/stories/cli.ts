@@ -44,12 +44,16 @@ export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) 
 		const data = await resolveStoryApi(api).listStories(requiredGid(opts, 'task', 'Task GID'), pagination)
 		output(data, () => {
 			const items = itemsForOutput(data)
-			printTable(items, [
-				{ label: 'ID', get: (s: Story) => s.gid },
-				{ label: 'Type', get: (s: Story) => s.type ?? '' },
-				{ label: 'By', get: (s: Story) => s.created_by?.name ?? '' },
-				{ label: 'Text', get: (s: Story) => (s.text ?? '').slice(0, 60) },
-			])
+			printTable(
+				items,
+				[
+					{ label: 'ID', get: (s: Story) => s.gid },
+					{ label: 'Type', get: (s: Story) => s.type ?? '' },
+					{ label: 'By', get: (s: Story) => s.created_by?.name ?? '' },
+					{ label: 'Text', get: (s: Story) => (s.text ?? '').slice(0, 60) },
+				],
+				{ entity: 'stories' },
+			)
 			printCountSummary(items.length, 'story(s)')
 			printNextPageHint(data)
 			printNextSteps([

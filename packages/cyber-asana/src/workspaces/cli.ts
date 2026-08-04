@@ -29,10 +29,14 @@ export function workspaceCommand(api?: WorkspaceApi | (() => WorkspaceApi)) {
 			const data = await resolveWorkspaceApi(api).listWorkspaces(pagination)
 			output(data, () => {
 				const items = itemsForOutput(data)
-				printTable(items, [
-					{ label: 'Name', get: (w: Workspace) => w.name },
-					{ label: 'ID', get: (w: Workspace) => w.gid },
-				])
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (w: Workspace) => w.name },
+						{ label: 'ID', get: (w: Workspace) => w.gid },
+					],
+					{ entity: 'workspaces' },
+				)
 				printCountSummary(items.length, 'workspace(s)')
 				printNextPageHint(data)
 				printNextSteps(['cyber-asana project list --workspace-gid <gid> — list a workspace’s projects'])

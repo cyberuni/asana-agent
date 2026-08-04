@@ -54,10 +54,14 @@ function fmtProject(p: Project) {
 }
 
 function fmtProjectList(projects: Project[]) {
-	printTable(projects, [
-		{ label: 'Name', get: (p) => p.name },
-		{ label: 'ID', get: (p) => p.gid },
-	])
+	printTable(
+		projects,
+		[
+			{ label: 'Name', get: (p) => p.name },
+			{ label: 'ID', get: (p) => p.gid },
+		],
+		{ entity: 'projects' },
+	)
 }
 
 function fmtProjectCounts(projectGid: string, counts: Record<string, unknown>, usingDefaultFields: boolean) {

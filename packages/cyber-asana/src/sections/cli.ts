@@ -50,10 +50,14 @@ export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 			const data = await resolveSectionApi(api).listSections(requiredGid(opts, 'project', 'Project GID'), pagination)
 			output(data, () => {
 				const items = itemsForOutput(data)
-				printTable(items, [
-					{ label: 'Name', get: (s: Section) => s.name },
-					{ label: 'ID', get: (s: Section) => s.gid },
-				])
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (s: Section) => s.name },
+						{ label: 'ID', get: (s: Section) => s.gid },
+					],
+					{ entity: 'sections' },
+				)
 				printCountSummary(items.length, 'section(s)')
 				printNextPageHint(data)
 				printNextSteps(SECTION_LIST_NEXT_STEPS)

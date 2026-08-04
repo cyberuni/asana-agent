@@ -18,11 +18,15 @@ function fmtUser(u: User) {
 }
 
 function fmtUserList(users: User[]) {
-	printTable(users, [
-		{ label: 'Name', get: (u) => u.name },
-		{ label: 'ID', get: (u) => u.gid },
-		{ label: 'Email', get: (u) => u.email ?? '' },
-	])
+	printTable(
+		users,
+		[
+			{ label: 'Name', get: (u) => u.name },
+			{ label: 'ID', get: (u) => u.gid },
+			{ label: 'Email', get: (u) => u.email ?? '' },
+		],
+		{ entity: 'users' },
+	)
 }
 
 function resolveUserApi(api?: UserApi | (() => UserApi)): UserApi {

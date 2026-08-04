@@ -69,10 +69,14 @@ export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 			)
 			output(data, () => {
 				const items = itemsForOutput(data)
-				printTable(items, [
-					{ label: 'Name', get: (p: Portfolio) => p.name },
-					{ label: 'ID', get: (p: Portfolio) => p.gid },
-				])
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (p: Portfolio) => p.name },
+						{ label: 'ID', get: (p: Portfolio) => p.gid },
+					],
+					{ entity: 'portfolios' },
+				)
 				printCountSummary(items.length, 'portfolio(s)')
 				printNextPageHint(data)
 				printNextSteps(PORTFOLIO_LIST_NEXT_STEPS)
@@ -87,10 +91,14 @@ export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 			const data = await resolvePortfolioApi(api).listPortfolioItems(gid, pagination)
 			output(data, () => {
 				const items = itemsForOutput(data)
-				printTable(items, [
-					{ label: 'Name', get: (p: Portfolio) => p.name },
-					{ label: 'ID', get: (p: Portfolio) => p.gid },
-				])
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (p: Portfolio) => p.name },
+						{ label: 'ID', get: (p: Portfolio) => p.gid },
+					],
+					{ entity: 'portfolio items' },
+				)
 				printCountSummary(items.length, 'item(s)')
 				printNextPageHint(data)
 				printNextSteps(['cyber-asana project get <gid> — view a project in this portfolio'])

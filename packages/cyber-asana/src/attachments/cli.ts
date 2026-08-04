@@ -38,10 +38,14 @@ export function attachmentCommand(api?: AttachmentApi | (() => AttachmentApi)) {
 		const data = await resolveAttachmentApi(api).listAttachments(requiredGid(opts, 'task', 'Task GID'), pagination)
 		output(data, () => {
 			const items = itemsForOutput(data)
-			printTable(items, [
-				{ label: 'Name', get: (a: Attachment) => a.name },
-				{ label: 'ID', get: (a: Attachment) => a.gid },
-			])
+			printTable(
+				items,
+				[
+					{ label: 'Name', get: (a: Attachment) => a.name },
+					{ label: 'ID', get: (a: Attachment) => a.gid },
+				],
+				{ entity: 'attachments' },
+			)
 			printCountSummary(items.length, 'attachment(s)')
 			printNextPageHint(data)
 			printNextSteps(['cyber-asana attachment get <gid> — view an attachment and its download URL'])

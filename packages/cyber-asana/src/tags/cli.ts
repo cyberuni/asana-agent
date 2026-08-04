@@ -29,12 +29,16 @@ function fmtTag(t: Tag) {
 }
 
 function fmtTaskList(tasks: Task[]) {
-	printTable(tasks, [
-		{ label: 'Name', get: (t) => t.name },
-		{ label: 'ID', get: (t) => t.gid },
-		{ label: 'Done', get: (t) => (t.completed ? 'yes' : 'no') },
-		{ label: 'Due', get: (t) => t.due_on ?? '' },
-	])
+	printTable(
+		tasks,
+		[
+			{ label: 'Name', get: (t) => t.name },
+			{ label: 'ID', get: (t) => t.gid },
+			{ label: 'Done', get: (t) => (t.completed ? 'yes' : 'no') },
+			{ label: 'Due', get: (t) => t.due_on ?? '' },
+		],
+		{ entity: 'tasks' },
+	)
 }
 
 function resolveTagApi(api?: TagApi | (() => TagApi)): TagApi {
@@ -83,11 +87,15 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 			const data = await resolveTagApi(api).listTags(requiredGid(opts, 'workspace', 'Workspace GID'), pagination)
 			output(data, () => {
 				const items = itemsForOutput(data)
-				printTable(items, [
-					{ label: 'Name', get: (t: Tag) => t.name },
-					{ label: 'ID', get: (t: Tag) => t.gid },
-					{ label: 'Color', get: (t: Tag) => t.color ?? '' },
-				])
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (t: Tag) => t.name },
+						{ label: 'ID', get: (t: Tag) => t.gid },
+						{ label: 'Color', get: (t: Tag) => t.color ?? '' },
+					],
+					{ entity: 'tags' },
+				)
 				printCountSummary(items.length, 'tag(s)')
 				printNextPageHint(data)
 				printNextSteps(TAG_LIST_NEXT_STEPS)
@@ -154,11 +162,15 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 			const data = await resolveTagApi(api).listTagsForTask(taskGid, pagination)
 			output(data, () => {
 				const items = itemsForOutput(data)
-				printTable(items, [
-					{ label: 'Name', get: (t: Tag) => t.name },
-					{ label: 'ID', get: (t: Tag) => t.gid },
-					{ label: 'Color', get: (t: Tag) => t.color ?? '' },
-				])
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (t: Tag) => t.name },
+						{ label: 'ID', get: (t: Tag) => t.gid },
+						{ label: 'Color', get: (t: Tag) => t.color ?? '' },
+					],
+					{ entity: 'tags' },
+				)
 				printCountSummary(items.length, 'tag(s)')
 				printNextPageHint(data)
 				printNextSteps([`cyber-asana tag task remove ${taskGid} <tag-gid> — untag this task`])

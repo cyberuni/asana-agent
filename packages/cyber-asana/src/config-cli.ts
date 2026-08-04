@@ -61,10 +61,14 @@ export function configCommand(getProjects: () => ProjectApi) {
 			const config = await loadRepoConfig(path)
 			output({ path, ...config }, () => {
 				console.log(path)
-				printTable(config.projects, [
-					{ label: 'GID', get: (p) => p.gid },
-					{ label: 'Name', get: (p) => p.name },
-				])
+				printTable(
+					config.projects,
+					[
+						{ label: 'GID', get: (p) => p.gid },
+						{ label: 'Name', get: (p) => p.name },
+					],
+					{ entity: 'registered projects' },
+				)
 			})
 		})
 
@@ -80,10 +84,14 @@ export function configCommand(getProjects: () => ProjectApi) {
 			const config = await loadRepoConfig(path)
 			output({ path, ...config }, () => {
 				console.log(path)
-				printTable(config.projects, [
-					{ label: 'GID', get: (p) => p.gid },
-					{ label: 'Name', get: (p) => p.name },
-				])
+				printTable(
+					config.projects,
+					[
+						{ label: 'GID', get: (p) => p.gid },
+						{ label: 'Name', get: (p) => p.name },
+					],
+					{ entity: 'registered projects' },
+				)
 			})
 		})
 

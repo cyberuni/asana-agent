@@ -46,10 +46,14 @@ export function teamCommand(api?: TeamApi | (() => TeamApi)) {
 			const data = await resolveTeamApi(api).listTeams(requiredGid(opts, 'workspace', 'Workspace GID'), pagination)
 			output(data, () => {
 				const items = itemsForOutput(data)
-				printTable(items, [
-					{ label: 'Name', get: (t: Team) => t.name },
-					{ label: 'ID', get: (t: Team) => t.gid },
-				])
+				printTable(
+					items,
+					[
+						{ label: 'Name', get: (t: Team) => t.name },
+						{ label: 'ID', get: (t: Team) => t.gid },
+					],
+					{ entity: 'teams' },
+				)
 				printCountSummary(items.length, 'team(s)')
 				printNextPageHint(data)
 				printNextSteps(['cyber-asana team get <gid> — view a team'])
