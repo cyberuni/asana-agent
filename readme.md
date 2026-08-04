@@ -336,7 +336,7 @@ cyber-asana project list --opt-fields gid,name,permalink_url
 
 List commands request 100 results per page by default.
 When pagination is used, JSON output includes `data`, `next_page`, and `limit`.
-Readable output prints the page table and a `Next offset` hint when another page is available.
+Readable output prints the page table and a `Next offset` hint when another page is available (text mode only).
 Use `--all` to fetch multiple pages intentionally; `--max-pages` caps the number of pages fetched.
 
 ### Agent-friendly output
@@ -348,18 +348,40 @@ for AI agents to consume:
   a compact tabular format that drops repeated keys for ~40% fewer tokens than
   pretty JSON. Run with no arguments to see live data (the authenticated user)
   instead of help text.
-- **Minimal default schemas** — task lists request only `gid,name,completed,due_on`
-  by default; pass `--opt-fields` to widen.
-- **Content truncation** — large text (task notes) is truncated with a size hint;
-  pass `--full` to get the complete value.
-- **Definitive empty states** — empty results print `0 results`, never a blank line.
-- **Aggregates & next steps** — task lists print a count summary and follow-up
+- **Minimal default schemas** — every list command requests a small field set by
+  default (task lists ask for only `gid,name,completed,due_on`); pass
+  `--opt-fields` to widen.
+- **Content truncation** — large text (task notes, project notes, status update
+  and comment bodies) is truncated with a size hint; pass `--full` to get the
+  complete value.
+- **Definitive empty states** — empty results name what was empty, e.g.
+  `0 tasks found`, never a blank line.
+- **Aggregates & next steps** — list commands print a count summary and follow-up
   command suggestions in text mode (suppressed under `--toon`/`--json`).
 - **Structured errors & exit codes** — under `--json`/`--toon`, errors are
-  structured objects. Exit codes: `0` success, `1` generic, `3` auth/config,
-  `4` forbidden, `5` not found, `6` rate limited.
+  structured objects. Exit codes: `0` success, `1` generic, `2` usage (bad flag
+  or subcommand), `3` auth/config, `4` forbidden, `5` not found, `6` rate limited.
+- **Self-correcting usage errors** — an unknown flag reports the flags that
+  command actually accepts, plus a `--help` pointer, and exits `2`.
+- **Consistent help** — every resource group's `--help` ends with worked
+  examples; the bare invocation reports `bin`, `description`, and `version`
+  alongside the authenticated user.
 
 All mutations are non-interactive (no prompts), so they are safe to script.
+Mutation acknowledgements honor `--json`/`--toon` like every other command, and
+deletes are idempotent — deleting something already gone succeeds, reporting
+`already_absent: true`, instead of failing with a 404.
+
+### Ambient context
+
+Install a SessionStart hook so each agent session opens with live Asana context:
+
+```sh
+cyber-asana setup hook              # merges into .claude/settings.json
+cyber-asana setup hook --dry-run    # report without writing
+```
+
+Installing twice is a no-op, and unrelated settings are preserved.
 
 ### Resources
 
@@ -373,11 +395,12 @@ All mutations are non-interactive (no prompts), so they are safe to script.
 | `team` | `list`, `get` |
 | `portfolio` | `list`, `items`, `get`, `create`, `update`, `delete` |
 | `goal` | `list`, `get`, `create`, `update`, `delete` |
-| `tag` | `list`, `get`, `create` |
+| `tag` | `list`, `get`, `create`, `update`, `delete`, `tasks`, `task list/add/remove` |
 | `attachment` | `list`, `get` |
 | `status` | `list`, `get`, `create`, `delete` |
 | `story` | `list`, `create` |
 | `comment` | `list`, `create` (alias for `story`) |
+| `setup` | `hook` |
 
 ### GID options
 
