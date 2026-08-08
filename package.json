@@ -13,7 +13,7 @@
 		"test": "turbo run test",
 		"typecheck": "turbo run typecheck",
 		"verify": "pnpm check && turbo run build typecheck test && pnpm knip",
-		"version": "changeset version",
+		"version": "changeset version && node scripts/sync-plugin-version.mjs",
 		"web": "turbo run --filter=@cyberuni/web"
 	},
 	"devDependencies": {
