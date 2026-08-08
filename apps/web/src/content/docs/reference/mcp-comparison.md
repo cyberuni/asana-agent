@@ -73,12 +73,21 @@ for everyday use, 🟡 means the scope differs (explained under the table).
 | Create a status update | `create_project_status_update` | `asana_status_create` | 🟡 |
 | List attachments | `get_attachments` | `asana_attachment_list` | 🟡 |
 
-Where the pairs are 🟡, the scope differs:
+Where the pairs are 🟡, the scope differs — and not always in cyber-asana's favor:
 
-- **Status updates** — the official tools are project-scoped and read-oriented;
-  `asana_status_*` works on projects, portfolios, and goals, and adds `get` and `delete`.
-- **Attachments** — `get_attachments` returns a list; cyber-asana adds
-  `asana_attachment_get` for a single attachment and its download URL.
+- **List status updates** — not a like-for-like pair in either direction.
+  `get_status_overview` returns an aggregated report, found by its own internal keyword
+  search across projects and portfolios, including task summaries and flagged blockers.
+  `asana_status_list` lists the status updates on one parent you name by GID, and that
+  parent may also be a goal. Neither contains the other.
+- **Create a status update** — cyber-asana is the superset.
+  `create_project_status_update` posts to a project or portfolio;
+  `asana_status_create` adds goals, and `asana_status_get` / `asana_status_delete` round
+  out the resource.
+- **List attachments** — the official server is the superset. `get_attachments` covers
+  tasks, projects, and project briefs, and already returns download and view URLs;
+  `asana_attachment_list` is task-only. What cyber-asana adds is `asana_attachment_get`,
+  for a single attachment by GID.
 
 ## What only cyber-asana has
 
