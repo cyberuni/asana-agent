@@ -859,8 +859,8 @@ list them under `requested_dates` in `project-template get`; pass each one as
 Asana builds the project asynchronously and returns a job, so:
 
 - **By default `instantiate` waits** for the job and prints the new project's GID. The wait is
-  bounded by `--timeout <seconds>` (default 60) and polls every `--poll-interval <seconds>`
-  (default 1). Expiry is an error naming the job, not a silent success.
+  bounded by `--timeout <seconds>` (default 60), polling once a second. Expiry is an error
+  naming the job, not a silent success.
 - **A failed job is an error.** You never get an exit code 0 with a missing project GID.
 - **`--no-wait`** skips polling and prints the job GID instead, for scripts that want to poll
   themselves with `cyber-asana job get <gid>`.
