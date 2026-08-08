@@ -12,6 +12,7 @@ const createAsanaSectionGatewayMock = vi.fn()
 const createAsanaStoryGatewayMock = vi.fn()
 const createAsanaTagGatewayMock = vi.fn()
 const createAsanaTaskGatewayMock = vi.fn()
+const createAsanaTaskTemplateGatewayMock = vi.fn()
 const createAsanaTeamGatewayMock = vi.fn()
 const createAsanaUserGatewayMock = vi.fn()
 const createAsanaWorkspaceGatewayMock = vi.fn()
@@ -64,6 +65,10 @@ vi.mock('./tasks/gateway.js', () => ({
 	createAsanaTaskGateway: createAsanaTaskGatewayMock,
 }))
 
+vi.mock('./task-templates/gateway.js', () => ({
+	createAsanaTaskTemplateGateway: createAsanaTaskTemplateGatewayMock,
+}))
+
 vi.mock('./teams/gateway.js', () => ({
 	createAsanaTeamGateway: createAsanaTeamGatewayMock,
 }))
@@ -94,6 +99,7 @@ describe('composition', () => {
 			createAsanaStoryGatewayMock,
 			createAsanaTagGatewayMock,
 			createAsanaTaskGatewayMock,
+			createAsanaTaskTemplateGatewayMock,
 			createAsanaTeamGatewayMock,
 			createAsanaUserGatewayMock,
 			createAsanaWorkspaceGatewayMock,
@@ -115,6 +121,7 @@ describe('composition', () => {
 		expect(createAsanaStoryGatewayMock).toHaveBeenCalledWith(client)
 		expect(createAsanaTagGatewayMock).toHaveBeenCalledWith(client)
 		expect(createAsanaTaskGatewayMock).toHaveBeenCalledWith(client)
+		expect(createAsanaTaskTemplateGatewayMock).toHaveBeenCalledWith(client)
 		expect(createAsanaTeamGatewayMock).toHaveBeenCalledWith(client)
 		expect(createAsanaUserGatewayMock).toHaveBeenCalledWith(client)
 		expect(createAsanaWorkspaceGatewayMock).toHaveBeenCalledWith(client)
