@@ -103,6 +103,13 @@ function mockRuntimeContext(): RuntimeContext {
 			getTaskTemplate: vi.fn(),
 			instantiateTask: vi.fn(),
 		},
+		memberships: {
+			listMemberships: vi.fn(),
+			getMembership: vi.fn(),
+			createMembership: vi.fn(),
+			updateMembership: vi.fn(),
+			deleteMembership: vi.fn(),
+		},
 		status: {
 			listStatuses: vi.fn(),
 			getStatus: vi.fn(),
@@ -340,6 +347,35 @@ describe('composition wiring', () => {
 		await server.handlers.get('asana_event_list')?.({ resource_gid: 'proj1', sync: 'tok-1' })
 
 		expect(ctx.events.getEvents).toHaveBeenCalledWith('proj1', { sync: 'tok-1' })
+	})
+
+	it('CLI membership list uses runtime context memberships api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.memberships.listMemberships = vi.fn().mockResolvedValue([])
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'membership', 'list', '--parent-gid', 'proj1'], { from: 'node' })
+
+		expect(ctx.memberships.listMemberships).toHaveBeenCalledWith(
+			{ parent: 'proj1' },
+			expect.objectContaining({ optFields: 'gid,member.name,access_level' }),
+		)
+	})
+
+	it('MCP asana_membership_create uses runtime context memberships api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.memberships.createMembership = vi.fn().mockResolvedValue({ gid: 'm1' })
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_membership_create')?.({
+			parent_gid: 'proj1',
+			member_gid: 'u1',
+			access_level: 'editor',
+		})
+
+		expect(ctx.memberships.createMembership).toHaveBeenCalledWith('proj1', 'u1', { access_level: 'editor' })
 	})
 
 	it('CLI search objects uses runtime context search api', async () => {
