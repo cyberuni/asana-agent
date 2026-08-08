@@ -6,9 +6,20 @@ import {
 	toAsanaPaginationOptions,
 } from '../pagination.js'
 
+export type CreateAttachmentRequest = {
+	parent: string
+	name: string
+	/** Streamed to Asana as multipart/form-data; omitted for an external url attachment. */
+	file?: NodeJS.ReadableStream
+	url?: string
+	resourceSubtype?: string
+}
+
 export type AttachmentGateway = {
 	listAttachments(taskGid: string, opts?: PaginationOptions): Promise<ListResult<any>>
 	getAttachment(attachmentGid: string): Promise<any>
+	createAttachment(request: CreateAttachmentRequest): Promise<any>
+	deleteAttachment(attachmentGid: string): Promise<void>
 }
 
 export function createAsanaAttachmentGateway(client: Asana.ApiClient): AttachmentGateway {
@@ -22,6 +33,22 @@ export function createAsanaAttachmentGateway(client: Asana.ApiClient): Attachmen
 		async getAttachment(attachmentGid) {
 			const res = await attachmentsApi.getAttachment(attachmentGid, {})
 			return res.data
+		},
+		async createAttachment(request) {
+			const res = await attachmentsApi.createAttachmentForObject({
+				parent: request.parent,
+				name: request.name,
+				// The SDK types `file` as a string, but its ApiClient duck-types any Node
+				// readable and hands it to superagent's .attach(), so the file is streamed
+				// rather than buffered into memory.
+				...(request.file ? { file: request.file as unknown as string } : {}),
+				...(request.url ? { url: request.url } : {}),
+				...(request.resourceSubtype ? { resource_subtype: request.resourceSubtype } : {}),
+			})
+			return res.data
+		},
+		async deleteAttachment(attachmentGid) {
+			await attachmentsApi.deleteAttachment(attachmentGid)
 		},
 	}
 }

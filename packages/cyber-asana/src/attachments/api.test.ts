@@ -9,6 +9,8 @@ describe('createAttachmentApi', () => {
 		const api = createAttachmentApi({
 			listAttachments: mockListAttachments,
 			getAttachment: vi.fn(),
+			createAttachment: vi.fn(),
+			deleteAttachment: vi.fn(),
 		})
 
 		const result = await api.listAttachments('task1')

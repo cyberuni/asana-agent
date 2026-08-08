@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const listAttachmentsMock = vi.fn()
 const getAttachmentMock = vi.fn()
+const createAttachmentMock = vi.fn()
+const deleteAttachmentMock = vi.fn()
 
 vi.mock('./api.js', async () => {
 	const actual = await vi.importActual<typeof import('./api.js')>('./api.js')
@@ -10,6 +12,8 @@ vi.mock('./api.js', async () => {
 		...actual,
 		listAttachments: listAttachmentsMock,
 		getAttachment: getAttachmentMock,
+		createAttachment: createAttachmentMock,
+		deleteAttachment: deleteAttachmentMock,
 	}
 })
 
@@ -61,12 +65,58 @@ describe('attachments/cli', () => {
 		expect(getAttachmentMock).toHaveBeenCalledWith('att1')
 	})
 
+	it('attachment create forwards the parent gid and the file path', async () => {
+		createAttachmentMock.mockResolvedValue({ gid: 'att1', name: 'sprint.md' })
+		const program = new Command().addCommand(attachmentCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'attachment', 'create', './sprint.md', '--parent-gid', 'task1', '--name', 'Sprint report'],
+			{ from: 'node' },
+		)
+
+		expect(createAttachmentMock).toHaveBeenCalledWith('task1', {
+			file: './sprint.md',
+			url: undefined,
+			name: 'Sprint report',
+		})
+	})
+
+	it('attachment create forwards an external url instead of a file', async () => {
+		createAttachmentMock.mockResolvedValue({ gid: 'att1', name: 'Design doc' })
+		const program = new Command().addCommand(attachmentCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'attachment', 'create', '--parent-gid', 'task1', '--url', 'https://example.com/design'],
+			{ from: 'node' },
+		)
+
+		expect(createAttachmentMock).toHaveBeenCalledWith('task1', {
+			file: undefined,
+			url: 'https://example.com/design',
+			name: undefined,
+		})
+	})
+
+	it('attachment delete is idempotent when the attachment is already gone', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		deleteAttachmentMock.mockRejectedValue({ response: { status: 404, body: { errors: [{ message: 'Not Found' }] } } })
+		const program = new Command().addCommand(attachmentCommand())
+
+		await program.parseAsync(['node', 'test', 'attachment', 'delete', 'att1'], { from: 'node' })
+
+		expect(deleteAttachmentMock).toHaveBeenCalledWith('att1')
+		expect(logSpy.mock.calls.map((c) => String(c[0]))).toContain('Attachment att1 was already deleted')
+		logSpy.mockRestore()
+	})
+
 	it('attachment command can use injected dependencies', async () => {
 		const injectedGetAttachment = vi.fn().mockResolvedValue({ gid: 'att1', name: 'file.pdf' })
 		const program = new Command().addCommand(
 			attachmentCommand({
 				listAttachments: vi.fn(),
 				getAttachment: injectedGetAttachment,
+				createAttachment: vi.fn(),
+				deleteAttachment: vi.fn(),
 			}),
 		)
 

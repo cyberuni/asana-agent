@@ -15,6 +15,8 @@ function createPaginatingAttachmentGateway(): AttachmentGateway {
 	return {
 		listAttachments: createPaginatingScopedListMock(pages),
 		getAttachment: vi.fn(),
+		createAttachment: vi.fn(),
+		deleteAttachment: vi.fn(),
 	}
 }
 
