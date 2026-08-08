@@ -13,16 +13,19 @@ export ASANA_WORKSPACE_GID=<workspace-gid>  # optional default workspace
 ## Build and test
 
 ```sh
-pnpm verify       # typecheck + lint + test + build
-pnpm dev task list --project <gid>        # run CLI without building (tsx)
-pnpm test:system  # live API tests (requires ASANA_SYSTEM_TEST=1)
+pnpm verify                             # lint + build + typecheck + test + knip
+pnpm ca dev task list --project <gid>   # run CLI without building (tsx)
+pnpm ca test:system                     # live API tests (requires ASANA_SYSTEM_TEST=1)
 ```
+
+`pnpm ca <script>` is the root shortcut for `pnpm run --filter=./packages/cyber-asana <script>`;
+`dev`, `test:system` and `test:watch` live on the package, not the workspace root.
 
 See [AGENTS.md](AGENTS.md) for the full command list, architecture, and conventions.
 
 ## MCP server
 
-When working in this source tree, `import('cyber-asana/mcp')` does not resolve — there is no `node_modules/cyber-asana` self-link. Build first, then point MCP hosts at `dist/mcp.js`.
+When working in this source tree, `import('cyber-asana/mcp')` does not resolve — there is no `node_modules/cyber-asana` self-link. Build first, then point MCP hosts at the built entry under `packages/cyber-asana/dist/`.
 
 ```sh
 pnpm build
@@ -30,8 +33,8 @@ pnpm build
 
 | Context | `command` | `args` |
 | --- | --- | --- |
-| MCP host (Cursor, Claude Desktop, etc.) | `node` | `["dist/cli.js", "mcp"]` or `["dist/mcp.js"]` |
-| MCP Inspector | `node` | `["dist/cli.js", "mcp"]` — see [MCP Inspector](readme.md#mcp-inspector) |
+| MCP host (Cursor, Claude Desktop, etc.) | `node` | `["packages/cyber-asana/dist/cli.js", "mcp"]` or `["packages/cyber-asana/dist/mcp.js"]` |
+| MCP Inspector | `node` | `["packages/cyber-asana/dist/cli.js", "mcp"]` — see [MCP Inspector](readme.md#mcp-inspector) |
 
 ### Cursor
 
@@ -42,7 +45,7 @@ In `~/.cursor/mcp.json` or `.cursor/mcp.json`:
   "mcpServers": {
     "cyber-asana": {
       "command": "node",
-      "args": ["/absolute/path/to/cyber-asana/dist/mcp.js"],
+      "args": ["/absolute/path/to/cyber-asana/packages/cyber-asana/dist/mcp.js"],
       "env": {
         "ASANA_ACCESS_TOKEN": "${ASANA_ACCESS_TOKEN}",
         "ASANA_WORKSPACE_GID": "${ASANA_WORKSPACE_GID}"
@@ -78,7 +81,7 @@ pnpm build
 npx @modelcontextprotocol/inspector \
   -e ASANA_ACCESS_TOKEN="$ASANA_ACCESS_TOKEN" \
   -e ASANA_WORKSPACE_GID="$ASANA_WORKSPACE_GID" \
-  -- node dist/cli.js mcp
+  -- node packages/cyber-asana/dist/cli.js mcp
 ```
 
 Consumer MCP setup (installed package) is documented in [readme.md](readme.md#mcp-server).
