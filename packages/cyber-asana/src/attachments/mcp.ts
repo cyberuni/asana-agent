@@ -20,16 +20,24 @@ function resolveAttachmentApi(api?: AttachmentApi | (() => AttachmentApi)): Atta
 export function registerAttachmentTools(server: McpServer, api?: AttachmentApi | (() => AttachmentApi)) {
 	server.tool(
 		'asana_attachment_list',
-		'List Asana attachments for a task',
-		{ task_gid: z.string().describe('Task GID'), ...paginationParams },
-		async ({ task_gid, ...params }) => ({
-			content: [
-				{
-					type: 'text',
-					text: JSON.stringify(await resolveAttachmentApi(api).listAttachments(task_gid, paginationOptions(params))),
-				},
-			],
-		}),
+		'List Asana attachments for a task, project, or project brief',
+		{
+			parent_gid: z.string().optional().describe('Parent GID — a task, project, or project brief'),
+			task_gid: z.string().optional().describe('Task GID (alias for parent_gid)'),
+			...paginationParams,
+		},
+		async ({ parent_gid, task_gid, ...params }) => {
+			const parent = parent_gid ?? task_gid
+			if (!parent) throw new Error('parent_gid is required')
+			return {
+				content: [
+					{
+						type: 'text',
+						text: JSON.stringify(await resolveAttachmentApi(api).listAttachments(parent, paginationOptions(params))),
+					},
+				],
+			}
+		},
 	)
 
 	server.tool(

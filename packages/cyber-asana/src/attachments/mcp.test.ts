@@ -65,6 +65,23 @@ describe('attachments/mcp', () => {
 		expect(getAttachmentMock).toHaveBeenCalledWith('att1')
 	})
 
+	it('asana_attachment_list accepts a non-task parent gid', async () => {
+		listAttachmentsMock.mockResolvedValue({ data: [], next_page: null, limit: 100 })
+		const server = createServer()
+		registerAttachmentTools(server as any)
+
+		await server.handlers.get('asana_attachment_list')?.({ parent_gid: 'project1' })
+
+		expect(listAttachmentsMock).toHaveBeenCalledWith('project1', expect.anything())
+	})
+
+	it('asana_attachment_list rejects a call that names no parent', async () => {
+		const server = createServer()
+		registerAttachmentTools(server as any)
+
+		await expect(server.handlers.get('asana_attachment_list')?.({})).rejects.toThrow(/parent_gid/)
+	})
+
 	it('asana_attachment_create forwards the parent gid, file path, and name', async () => {
 		createAttachmentMock.mockResolvedValue({ gid: 'att1', name: 'sprint.md' })
 		const server = createServer()

@@ -65,6 +65,15 @@ describe('attachments/cli', () => {
 		expect(getAttachmentMock).toHaveBeenCalledWith('att1')
 	})
 
+	it('attachment list accepts a non-task parent gid', async () => {
+		listAttachmentsMock.mockResolvedValue({ data: [], next_page: null, limit: 100 })
+		const program = new Command().addCommand(attachmentCommand())
+
+		await program.parseAsync(['node', 'test', 'attachment', 'list', '--parent-gid', 'project1'], { from: 'node' })
+
+		expect(listAttachmentsMock).toHaveBeenCalledWith('project1', expect.anything())
+	})
+
 	it('attachment create forwards the parent gid and the file path', async () => {
 		createAttachmentMock.mockResolvedValue({ gid: 'att1', name: 'sprint.md' })
 		const program = new Command().addCommand(attachmentCommand())

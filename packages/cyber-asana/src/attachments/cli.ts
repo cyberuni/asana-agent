@@ -7,7 +7,6 @@ import {
 	normalizedGid,
 	paginationOptionsFromCli,
 	printNextPageHint,
-	requiredGid,
 } from '../cli-options.js'
 import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
@@ -48,7 +47,7 @@ export function attachmentCommand(api?: AttachmentApi | (() => AttachmentApi)) {
 		[
 			'',
 			'Examples:',
-			'  cyber-asana attachment list --task-gid <gid>',
+			'  cyber-asana attachment list --parent-gid <gid>',
 			'  cyber-asana attachment get <gid> --toon',
 			'  cyber-asana attachment create ./sprint.md --parent-gid <task-gid>',
 			'  cyber-asana attachment create --url https://example.com/design --parent-gid <task-gid> --name "Design doc"',
@@ -59,11 +58,19 @@ export function attachmentCommand(api?: AttachmentApi | (() => AttachmentApi)) {
 	)
 
 	addPaginationOptions(
-		addGidOption(cmd.command('list').description('List attachments for a task'), 'task', 'Task GID'),
+		addGidOption(
+			addGidOption(
+				cmd.command('list').description('List attachments for a task, project, or project brief'),
+				'parent',
+				'Parent GID — a task, project, or project brief',
+			),
+			'task',
+			'Task GID',
+		),
 	).action(async (opts: CliGidOptions & { limit?: number; offset?: string; optFields?: string }) => {
 		const pagination = paginationOptionsFromCli(opts)
 		pagination.optFields ??= ATTACHMENT_LIST_FIELDS
-		const data = await resolveAttachmentApi(api).listAttachments(requiredGid(opts, 'task', 'Task GID'), pagination)
+		const data = await resolveAttachmentApi(api).listAttachments(requiredParentGid(opts), pagination)
 		output(data, () => {
 			const items = itemsForOutput(data)
 			printTable(
