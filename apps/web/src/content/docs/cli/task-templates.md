@@ -2,7 +2,7 @@
 title: Task templates
 description: Create a task from an Asana task template instead of rebuilding it subtask by subtask.
 sidebar:
-  order: 16
+  order: 17
 ---
 
 A task template is a saved task — description, subtasks, assignees, custom fields — that a
