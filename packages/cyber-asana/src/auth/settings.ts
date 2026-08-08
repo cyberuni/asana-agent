@@ -64,8 +64,16 @@ export type AppCredentials = {
 	 * environment variable, so an MCP-app id standing in for an API-app id is
 	 * diagnosable rather than an unexplained rejection from Asana.
 	 */
-	source: 'flags' | 'settings.json' | (typeof CLIENT_ID_ENV_VARS)[number]
+	source: AppCredentialSource
+	/**
+	 * Labels of sources that hold a client id but lost to `source`. An MCP app's
+	 * pair sitting behind an API app's — or the reverse — is otherwise decided in
+	 * silence.
+	 */
+	shadowed: AppCredentialSource[]
 }
+
+export type AppCredentialSource = 'flags' | 'settings.json' | (typeof CLIENT_ID_ENV_VARS)[number]
 
 function firstSet<Name extends string>(
 	env: Record<string, string | undefined>,
@@ -88,13 +96,24 @@ export function resolveAppCredentials({
 	/** Values passed on the command line — highest precedence. */
 	overrides?: { clientId?: string; clientSecret?: string }
 }): AppCredentials | undefined {
-	const envId = firstSet(env, CLIENT_ID_ENV_VARS)
+	const candidates: Array<{ source: AppCredentialSource; clientId: string }> = []
+	if (overrides?.clientId) candidates.push({ source: 'flags', clientId: overrides.clientId })
+	for (const name of CLIENT_ID_ENV_VARS) {
+		const clientId = env[name]
+		if (clientId) candidates.push({ source: name, clientId })
+	}
+	if (settings.client_id) candidates.push({ source: 'settings.json', clientId: settings.client_id })
+
+	const [winner, ...rest] = candidates
+	if (!winner) return undefined
+
 	const envSecret = firstSet(env, CLIENT_SECRET_ENV_VARS)
-	const clientId = overrides?.clientId || envId?.value || settings.client_id
-	if (!clientId) return undefined
 	return {
-		clientId,
+		clientId: winner.clientId,
+		// The secret resolves per field, so a client id from one source can pair
+		// with a secret from another — the same rule as before.
 		clientSecret: overrides?.clientSecret || envSecret?.value || settings.client_secret,
-		source: overrides?.clientId ? 'flags' : (envId?.name ?? 'settings.json'),
+		source: winner.source,
+		shadowed: rest.map((candidate) => candidate.source),
 	}
 }
