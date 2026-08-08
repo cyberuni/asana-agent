@@ -72,7 +72,7 @@ for everyday use, 🟡 means the scope differs (explained under the table).
 | List users | `get_users` | `asana_user_list` | ✅ |
 | List teams | `get_teams` | `asana_team_list` | ✅ |
 | Create a status update | `create_project_status_update` | `asana_status_create` | 🟡 |
-| List attachments | `get_attachments` | `asana_attachment_list` | 🟡 |
+| List attachments | `get_attachments` | `asana_attachment_list` | ✅ |
 | Find objects by name | `search_objects` | `asana_search_objects` | 🟡 |
 
 Where the pairs are 🟡, the scope differs — and not always in cyber-asana's favor:
@@ -85,14 +85,10 @@ Where the pairs are 🟡, the scope differs — and not always in cyber-asana's 
   `search_objects` searches across object types in one call; `asana_search_objects` takes
   one `resource_type`, because that is all Asana's typeahead endpoint accepts. Both are
   capped, relevance/recency-ordered, and explicitly not exhaustive.
-- **List attachments** — the official server is the superset. `get_attachments` covers
-  tasks, projects, and project briefs, and already returns download and view URLs;
-  `asana_attachment_list` is task-only. What cyber-asana adds is `asana_attachment_get`,
-  for a single attachment by GID.
 
 ## What only cyber-asana has
 
-53 tools, mostly relationship edits and resources outside the official server's V2 scope.
+65 tools, mostly relationship edits and resources outside the official server's V2 scope.
 
 ### Task relationships
 
@@ -132,6 +128,12 @@ keyword search.
 ### Workspaces and teams
 
 `asana_workspace_list`, `asana_workspace_get`, `asana_team_get`.
+
+### Attachments
+
+`asana_attachment_get`, `asana_attachment_create`, `asana_attachment_delete`. The official
+server can list attachments but not add or remove one; `asana_attachment_create` uploads a
+local file or links an external URL to a task, project, or project brief.
 
 ### Comments and stories
 

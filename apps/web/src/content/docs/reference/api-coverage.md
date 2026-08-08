@@ -37,6 +37,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **16** of them.
 | Status updates | ✅ | 4 / 4 | `status` | Complete |
 | Typeahead | ✅ | 1 / 1 | `search` | Complete; one resource type per call, single capped page |
 | Tags | ✅ | 6 / 6 | `tag` | Complete, including task↔tag links |
+| Attachments | ✅ | 4 / 4 | `attachment` | List, get, upload (file or external URL), and delete |
 | Sections | ✅ | 7 / 7 | `section` | Complete, including section reordering and section-scoped task placement |
 | Portfolios | 🟡 | 6 / 13 | `portfolio` | CRUD + item listing; no membership edits |
 | Projects | 🟡 | 7 / 20 | `project` | CRUD, counts, search; no members/templates |
@@ -45,7 +46,6 @@ Asana documents **49 resource groups**. cyber-asana wraps **16** of them.
 | Teams | 🟡 | 2 / 7 | `team` | Read-only |
 | Workspaces | 🟡 | 2 / 6 | `workspace` | Read-only |
 | Stories | 🟡 | 5 / 7 | `story`, `comment` | Full comment lifecycle on tasks; no goal stories |
-| Attachments | 🟡 | 2 / 4 | `attachment` | Read-only; no upload or delete |
 | Custom fields | 🟡 | 2 / 8 | `custom-field` | Read-only discovery; no field or enum-option authoring |
 | User task lists | 🟡 | — | `task my-tasks` | Only the "My Tasks" read path |
 | Batch API | 🟡 | — | `task get-many` | Used internally, not exposed generically |
@@ -121,7 +121,7 @@ a `403` carrying that explanation as a hint.
 | Users | `user list\|get\|me` | `asana_user_list`, `asana_user_get`, `asana_user_me` |
 | Teams | `team list\|get` | `asana_team_list`, `asana_team_get` |
 | Workspaces | `workspace list\|get` | `asana_workspace_list`, `asana_workspace_get` |
-| Attachments | `attachment list\|get` | `asana_attachment_list`, `asana_attachment_get` |
+| Attachments | `attachment list\|get\|create\|delete` | `asana_attachment_list`, `asana_attachment_get`, `asana_attachment_create`, `asana_attachment_delete` |
 | Custom fields | `custom-field list\|get` | `asana_custom_field_list`, `asana_custom_field_get` |
 
 Custom fields are read-only here by design: `custom-field list` and `custom-field get`
