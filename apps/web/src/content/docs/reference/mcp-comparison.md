@@ -29,21 +29,23 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 
 ## What only the official server has
 
-These have no cyber-asana equivalent, because they are MCP-native capabilities rather than
-REST endpoints:
+These are routed to the official server by design. cyber-asana's remit is write-heavy REST
+automation; discovery, preview-then-confirm flows, and preview APIs stay where they already
+work. The exception is made when the REST cost turns out to be trivial — the reasoning for
+each is below, so you can tell a deliberate boundary from an oversight.
 
 | Official tool | What it does | cyber-asana alternative |
 | --- | --- | --- |
-| `search_objects` | Cross-object typeahead across tasks, projects, people | None — use `asana_task_search` / `asana_project_search` per type |
-| `search_tasks_preview` | Preview a task search before running it | None |
-| `create_task_preview` | Interactive preview of a task before creating it | None — `asana_task_create` writes directly |
-| `create_project_preview` | Interactive preview of a project before creating it | None — `asana_project_create` writes directly |
-| `get_agent` | Fetch an Asana AI agent | None |
-| `get_workspace_agents` | List a workspace's AI agents | None |
-| `get_status_overview` | Aggregated status report across projects and portfolios — task summaries and flagged blockers, found by its own keyword search | None — `asana_status_list` lists the updates on one parent you name by GID, which is a different thing |
+| `search_objects` | Cross-object typeahead across tasks, projects, people | Per-type `asana_task_search` / `asana_project_search` today. A typeahead-backed equivalent is planned — the endpoint is plain REST and already in the SDK |
+| `search_tasks_preview` | Preview a task search before running it | None by design — a host-UX confirm flow, not an API capability |
+| `create_task_preview` | Interactive preview of a task before creating it | None by design — same reason; `asana_task_create` writes directly |
+| `create_project_preview` | Interactive preview of a project before creating it | None by design — same reason; `asana_project_create` writes directly |
+| `get_agent` | Fetch an Asana AI agent | None while Asana's agent endpoints stay early-access and require an opt-in header |
+| `get_workspace_agents` | List a workspace's AI agents | Same — though typeahead's `agent` / `actor` types will cover basic discovery |
+| `get_status_overview` | Aggregated status report across projects and portfolios — task summaries and flagged blockers, found by its own keyword search | None for the search half. `asana_status_list` lists the updates on one parent you name by GID; a deterministic parent-scoped roll-up is planned |
 
 If your workflow depends on typeahead discovery, preview-then-confirm flows, Asana AI
-agents, or rolled-up status reporting, keep the official server installed.
+agents, or searched status reporting, keep the official server installed.
 
 ## What both servers cover
 
