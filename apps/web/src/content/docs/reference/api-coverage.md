@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **22** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **24** of them.
 
 | Legend | Meaning |
 | --- | --- |
@@ -43,9 +43,11 @@ Asana documents **49 resource groups**. cyber-asana wraps **22** of them.
 | Attachments | ✅ | 4 / 4 | `attachment` | List, get, upload (file or external URL), and delete |
 | Memberships | ✅ | 5 / 5 | `membership` | Complete; the unified endpoint covering project, portfolio, and goal memberships |
 | Ooo entries | ✅ | 5 / 5 | `ooo` | Complete |
+| Jobs | ✅ | 1 / 1 | `job` | Complete; reads the async jobs other operations return |
+| Project templates | 🟡 | 4 / 5 | `project-template` | List, get, and instantiate; no template deletion |
 | Sections | ✅ | 7 / 7 | `section` | Complete, including section reordering and section-scoped task placement |
 | Portfolios | 🟡 | 6 / 13 | `portfolio` | CRUD + item listing; members are managed under `membership` |
-| Projects | 🟡 | 7 / 20 | `project` | CRUD, counts, search; no templates. Members are managed under `membership` |
+| Projects | 🟡 | 7 / 20 | `project` | CRUD, counts, search. Templates have their own row; members are managed under `membership` |
 | Goals | 🟡 | 5 / 12 | `goal` | CRUD only; no metrics or followers |
 | Users | 🟡 | 3 / 8 | `user` | Read-only |
 | Teams | 🟡 | 2 / 7 | `team` | Read-only |
@@ -59,9 +61,9 @@ Asana documents **49 resource groups**. cyber-asana wraps **22** of them.
 ### Not wrapped
 
 Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custom types,
-Exports, Goal relationships, Jobs, Organization exports, Project briefs,
-Project portfolio settings, Project statuses (superseded by Status updates), Project
-templates, Rates, Reactions, Roles, Team memberships†, Time periods, Time tracking
+Exports, Goal relationships, Organization exports, Project briefs,
+Project portfolio settings, Project statuses (superseded by Status updates),
+Rates, Reactions, Roles, Team memberships†, Time periods, Time tracking
 categories, Time tracking entries, Timesheet approval statuses, Webhooks,
 Workspace memberships.
 
@@ -105,8 +107,8 @@ Not covered: `POST /tasks/{gid}/duplicate`, `GET /tasks/custom_id/{id}`.
 | Instantiate a task from a template | `task-template instantiate <gid>` | `asana_task_template_instantiate` |
 
 Instantiation returns a job rather than the task; both surfaces poll it briefly and hand
-back the job with its `new_task` once it succeeds. That job read is internal — Jobs stays
-off the wrapped list, and there is no `job` command.
+back the job with its `new_task` once it succeeds. That job can also be read directly with
+`job get` (see below).
 
 Not covered: `DELETE /task_templates/{gid}` — cyber-asana wraps using templates, not
 managing them.
@@ -124,6 +126,24 @@ managing them.
 Not covered: members, followers, attaching or detaching a custom field, duplicate,
 save-as-template, and the team-scoped create/list variants. Reading a project's attached
 custom fields is covered — see `custom-field project` below.
+
+### Project templates and jobs
+
+| Asana operation | CLI | MCP tool |
+| --- | --- | --- |
+| List project templates (workspace or team) | `project-template list` | `asana_project_template_list` |
+| Get a project template | `project-template get <gid>` | `asana_project_template_get` |
+| Instantiate a project from a template | `project-template instantiate <gid>` | `asana_project_template_instantiate` |
+| Get a job | `job get <gid>` | `asana_job_get` |
+
+Instantiation is asynchronous: Asana returns a job, not a project. The CLI and the MCP tool
+wait for that job by default and hand back the new project's GID, under a bounded timeout
+(`--timeout` / `timeout_seconds`, default 60 seconds); `--no-wait` / `wait: false` returns the
+job GID for callers that would rather poll `job get` themselves. A failed job surfaces as an
+error rather than a success with no project.
+
+Not covered: `DELETE /project_templates/{gid}` — managing templates is a different act from
+using one.
 
 ### Sections, tags, goals, portfolios, status updates, comments, memberships, out-of-office entries
 

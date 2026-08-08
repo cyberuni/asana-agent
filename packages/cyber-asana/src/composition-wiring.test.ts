@@ -117,6 +117,14 @@ function mockRuntimeContext(): RuntimeContext {
 			updateMembership: vi.fn(),
 			deleteMembership: vi.fn(),
 		},
+		jobs: { getJob: vi.fn() },
+		projectTemplates: {
+			listProjectTemplates: vi.fn(),
+			listProjectTemplatesForTeam: vi.fn(),
+			getProjectTemplate: vi.fn(),
+			instantiateProject: vi.fn(),
+			instantiateProjectAndWait: vi.fn(),
+		},
 		status: {
 			listStatuses: vi.fn(),
 			getStatus: vi.fn(),
@@ -405,6 +413,67 @@ describe('composition wiring', () => {
 		})
 
 		expect(ctx.memberships.createMembership).toHaveBeenCalledWith('proj1', 'u1', { access_level: 'editor' })
+	})
+
+	it('CLI job get uses runtime context jobs api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.jobs.getJob = vi.fn().mockResolvedValue({ gid: 'job1', status: 'succeeded' })
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'job', 'get', 'job1'], { from: 'node' })
+
+		expect(ctx.jobs.getJob).toHaveBeenCalledWith('job1')
+	})
+
+	it('MCP asana_job_get uses runtime context jobs api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.jobs.getJob = vi.fn().mockResolvedValue({ gid: 'job1', status: 'succeeded' })
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_job_get')?.({ job_gid: 'job1' })
+
+		expect(ctx.jobs.getJob).toHaveBeenCalledWith('job1')
+	})
+
+	it('CLI project-template instantiate uses runtime context project templates api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.projectTemplates.instantiateProjectAndWait = vi
+			.fn()
+			.mockResolvedValue({ gid: 'job1', status: 'succeeded', new_project: { gid: 'proj1' } })
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'project-template', 'instantiate', 'tpl1', '--name', 'Acme onboarding'], {
+			from: 'node',
+		})
+
+		expect(ctx.projectTemplates.instantiateProjectAndWait).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme onboarding' },
+			expect.objectContaining({ maxAttempts: 60 }),
+		)
+	})
+
+	it('MCP asana_project_template_instantiate uses runtime context project templates api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.projectTemplates.instantiateProjectAndWait = vi
+			.fn()
+			.mockResolvedValue({ gid: 'job1', status: 'succeeded', new_project: { gid: 'proj1' } })
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_project_template_instantiate')?.({
+			project_template_gid: 'tpl1',
+			name: 'Acme onboarding',
+		})
+
+		expect(ctx.projectTemplates.instantiateProjectAndWait).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme onboarding' },
+			expect.objectContaining({ maxAttempts: 60 }),
+		)
 	})
 
 	it('CLI search objects uses runtime context search api', async () => {

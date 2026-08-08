@@ -45,3 +45,31 @@ export async function waitForJob(job: Job, getJob: (jobGid: string) => Promise<J
 	}
 	return latest
 }
+
+export class JobFailedError extends Error {
+	readonly jobGid: string
+	readonly status: string | undefined
+	readonly job: Job
+
+	constructor(job: Job) {
+		const gid = job.gid ?? 'unknown'
+		super(
+			isJobFinished(job)
+				? `Asana job ${gid} failed.`
+				: `Asana job ${gid} is still ${job.status ?? 'unknown'}; the wait ran out before it finished. Check it with: cyber-asana job get ${gid}`,
+		)
+		this.name = 'JobFailedError'
+		this.jobGid = gid
+		this.status = job.status
+		this.job = job
+	}
+}
+
+/**
+ * Guard the honest reading of a polled job: only `succeeded` produced a resource,
+ * so a failed job and a wait that expired both raise instead of reading as success.
+ */
+export function assertJobSucceeded(job: Job): Job {
+	if (job.status !== 'succeeded') throw new JobFailedError(job)
+	return job
+}

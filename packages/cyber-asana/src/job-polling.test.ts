@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { isJobFinished, waitForJob } from './job-polling.js'
+import { assertJobSucceeded, isJobFinished, JobFailedError, waitForJob } from './job-polling.js'
 
 const noSleep = () => Promise.resolve()
 
@@ -74,5 +74,37 @@ describe('waitForJob', () => {
 			status: 'in_progress',
 		})
 		expect(getJob).not.toHaveBeenCalled()
+	})
+
+	it('assertJobSucceeded returns a succeeded job unchanged', () => {
+		const job = { gid: 'j1', status: 'succeeded' }
+
+		expect(assertJobSucceeded(job)).toBe(job)
+	})
+
+	it('assertJobSucceeded throws on a failed job, naming it', () => {
+		let thrown: unknown
+		try {
+			assertJobSucceeded({ gid: 'j1', status: 'failed' })
+		} catch (error) {
+			thrown = error
+		}
+
+		expect(thrown).toBeInstanceOf(JobFailedError)
+		expect((thrown as JobFailedError).jobGid).toBe('j1')
+		expect((thrown as JobFailedError).status).toBe('failed')
+		expect((thrown as JobFailedError).message).toContain('j1')
+	})
+
+	it('assertJobSucceeded throws on a job that never finished, pointing at job get', () => {
+		let thrown: unknown
+		try {
+			assertJobSucceeded({ gid: 'j1', status: 'in_progress' })
+		} catch (error) {
+			thrown = error
+		}
+
+		expect(thrown).toBeInstanceOf(JobFailedError)
+		expect((thrown as JobFailedError).message).toContain('cyber-asana job get j1')
 	})
 })

@@ -1,7 +1,7 @@
 {
 	"source": "src/**/mcp.ts",
 	"fetched_at": "2026-08-08",
-	"tool_count": 105,
+	"tool_count": 109,
 	"tools": [
 		"asana_attachment_create",
 		"asana_attachment_delete",
@@ -24,6 +24,7 @@
 		"asana_goal_get",
 		"asana_goal_list",
 		"asana_goal_update",
+		"asana_job_get",
 		"asana_membership_create",
 		"asana_membership_delete",
 		"asana_membership_get",
@@ -47,6 +48,9 @@
 		"asana_project_get",
 		"asana_project_list",
 		"asana_project_search",
+		"asana_project_template_get",
+		"asana_project_template_instantiate",
+		"asana_project_template_list",
 		"asana_project_update",
 		"asana_rule_trigger",
 		"asana_search_objects",

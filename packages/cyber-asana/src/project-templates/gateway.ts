@@ -1,0 +1,73 @@
+import Asana from 'asana'
+import type { Job } from '../job-polling.js'
+import {
+	collectListResponse,
+	type ListResult,
+	type PaginationOptions,
+	toAsanaPaginationOptions,
+} from '../pagination.js'
+
+/** A date variable the template asks the caller to fill in at instantiation time. */
+export type RequestedDate = {
+	gid: string
+	value: string
+}
+
+export type InstantiateProjectFields = {
+	name?: string
+	/** Team the new project belongs to. Required when the workspace is an organization. */
+	team?: string
+	public?: boolean
+	requestedDates?: RequestedDate[]
+}
+
+/** Which templates to list: a workspace's, a team's, or (with both) a team's within a workspace. */
+export type ProjectTemplateFilters = {
+	workspace?: string
+	team?: string
+}
+
+export type ProjectTemplateGateway = {
+	listProjectTemplates(filters?: ProjectTemplateFilters, opts?: PaginationOptions): Promise<ListResult<any>>
+	listProjectTemplatesForTeam(teamGid: string, opts?: PaginationOptions): Promise<ListResult<any>>
+	getProjectTemplate(templateGid: string): Promise<any>
+	instantiateProject(templateGid: string, fields: InstantiateProjectFields): Promise<Job>
+}
+
+function instantiationBody(fields: InstantiateProjectFields) {
+	return {
+		data: {
+			...(fields.name !== undefined && { name: fields.name }),
+			...(fields.team !== undefined && { team: fields.team }),
+			...(fields.public !== undefined && { public: fields.public }),
+			...(fields.requestedDates !== undefined && { requested_dates: fields.requestedDates }),
+		},
+	}
+}
+
+export function createAsanaProjectTemplateGateway(client: Asana.ApiClient): ProjectTemplateGateway {
+	const templatesApi = new Asana.ProjectTemplatesApi(client)
+
+	return {
+		async listProjectTemplates(filters, opts) {
+			const res = await templatesApi.getProjectTemplates({
+				...(filters?.workspace !== undefined && { workspace: filters.workspace }),
+				...(filters?.team !== undefined && { team: filters.team }),
+				...toAsanaPaginationOptions(opts),
+			})
+			return await collectListResponse(res, opts)
+		},
+		async listProjectTemplatesForTeam(teamGid, opts) {
+			const res = await templatesApi.getProjectTemplatesForTeam(teamGid, toAsanaPaginationOptions(opts))
+			return await collectListResponse(res, opts)
+		},
+		async getProjectTemplate(templateGid) {
+			const res = await templatesApi.getProjectTemplate(templateGid, {})
+			return res.data
+		},
+		async instantiateProject(templateGid, fields) {
+			const res = await templatesApi.instantiateProject(templateGid, { body: instantiationBody(fields) })
+			return res.data
+		},
+	}
+}
