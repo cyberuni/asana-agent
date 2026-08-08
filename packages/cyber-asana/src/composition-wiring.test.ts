@@ -38,6 +38,7 @@ function mockRuntimeContext(): RuntimeContext {
 			removeDependents: vi.fn(),
 			searchTasks: vi.fn(),
 		},
+		search: { searchObjects: vi.fn() },
 		sections: {
 			listSections: vi.fn(),
 			getSection: vi.fn(),
@@ -187,6 +188,42 @@ describe('composition wiring', () => {
 		})
 
 		expect(ctx.status.createStatus).toHaveBeenCalledWith('proj1', { status_type: 'on_track', text: 'All good' })
+	})
+
+	it('CLI search objects uses runtime context search api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.search.searchObjects = vi.fn().mockResolvedValue([])
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'search', 'objects', 'project', 'website', '--workspace-gid', 'ws1'], {
+			from: 'node',
+		})
+
+		expect(ctx.search.searchObjects).toHaveBeenCalledWith('ws1', 'project', {
+			query: 'website',
+			count: undefined,
+			optFields: 'gid,name,resource_type',
+		})
+	})
+
+	it('MCP asana_search_objects uses runtime context search api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.search.searchObjects = vi.fn().mockResolvedValue([])
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_search_objects')?.({
+			workspace_gid: 'ws1',
+			resource_type: 'project',
+			query: 'website',
+		})
+
+		expect(ctx.search.searchObjects).toHaveBeenCalledWith('ws1', 'project', {
+			query: 'website',
+			count: undefined,
+			optFields: 'gid,name,resource_type',
+		})
 	})
 
 	it('MCP asana_workspace_get uses runtime context workspaces api', async () => {

@@ -20,6 +20,10 @@ import { createProjectApi, type ProjectApi } from './projects/api.js'
 import { projectCommand } from './projects/cli.js'
 import { createAsanaProjectGateway } from './projects/gateway.js'
 import { registerProjectTools } from './projects/mcp.js'
+import { createSearchApi, type SearchApi } from './search/api.js'
+import { searchCommand } from './search/cli.js'
+import { createAsanaSearchGateway } from './search/gateway.js'
+import { registerSearchTools } from './search/mcp.js'
 import { createSectionApi, type SectionApi } from './sections/api.js'
 import { sectionCommand } from './sections/cli.js'
 import { createAsanaSectionGateway } from './sections/gateway.js'
@@ -61,6 +65,7 @@ export type RuntimeContext = {
 	goals: GoalApi
 	portfolios: PortfolioApi
 	projects: ProjectApi
+	search: SearchApi
 	sections: SectionApi
 	status: StatusApi
 	stories: StoryApi
@@ -78,6 +83,7 @@ export function createRuntimeContext(): RuntimeContext {
 		goals: createGoalApi(createAsanaGoalGateway(client)),
 		portfolios: createPortfolioApi(createAsanaPortfolioGateway(client)),
 		projects: createProjectApi(createAsanaProjectGateway(client)),
+		search: createSearchApi(createAsanaSearchGateway(client)),
 		sections: createSectionApi(createAsanaSectionGateway(client)),
 		status: createStatusApi(createAsanaStatusGateway(client)),
 		stories: createStoryApi(createAsanaStoryGateway(client)),
@@ -94,6 +100,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(projectCommand(() => getContext().projects))
 	program.addCommand(taskCommand(() => getContext().tasks))
 	program.addCommand(sectionCommand(() => getContext().sections))
+	program.addCommand(searchCommand(() => getContext().search))
 	program.addCommand(userCommand(() => getContext().users))
 	program.addCommand(teamCommand(() => getContext().teams))
 	program.addCommand(portfolioCommand(() => getContext().portfolios))
@@ -115,6 +122,7 @@ export function registerMcpTools(server: McpServer, getContext: () => RuntimeCon
 	registerProjectTools(server, () => getContext().projects)
 	registerTaskTools(server, () => getContext().tasks)
 	registerSectionTools(server, () => getContext().sections)
+	registerSearchTools(server, () => getContext().search)
 	registerUserTools(server, () => getContext().users)
 	registerTeamTools(server, () => getContext().teams)
 	registerPortfolioTools(server, () => getContext().portfolios)
