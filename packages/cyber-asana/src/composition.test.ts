@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 const createClientMock = vi.fn()
 const createAsanaAttachmentGatewayMock = vi.fn()
+const createAsanaCustomFieldGatewayMock = vi.fn()
 const createAsanaGoalGatewayMock = vi.fn()
 const createAsanaPortfolioGatewayMock = vi.fn()
 const createAsanaProjectGatewayMock = vi.fn()
@@ -20,6 +21,10 @@ vi.mock('./client.js', () => ({
 
 vi.mock('./attachments/gateway.js', () => ({
 	createAsanaAttachmentGateway: createAsanaAttachmentGatewayMock,
+}))
+
+vi.mock('./custom-fields/gateway.js', () => ({
+	createAsanaCustomFieldGateway: createAsanaCustomFieldGatewayMock,
 }))
 
 vi.mock('./goals/gateway.js', () => ({
@@ -69,11 +74,12 @@ vi.mock('./workspaces/gateway.js', () => ({
 const { createRuntimeContext } = await import('./composition.js')
 
 describe('composition', () => {
-	it('creates one shared Asana client passed to all 12 domain gateways', () => {
+	it('creates one shared Asana client passed to all 13 domain gateways', () => {
 		const client = { id: 'shared-client' }
 		createClientMock.mockReturnValue(client)
 		for (const mock of [
 			createAsanaAttachmentGatewayMock,
+			createAsanaCustomFieldGatewayMock,
 			createAsanaGoalGatewayMock,
 			createAsanaPortfolioGatewayMock,
 			createAsanaProjectGatewayMock,
@@ -93,6 +99,7 @@ describe('composition', () => {
 
 		expect(createClientMock).toHaveBeenCalledTimes(1)
 		expect(createAsanaAttachmentGatewayMock).toHaveBeenCalledWith(client)
+		expect(createAsanaCustomFieldGatewayMock).toHaveBeenCalledWith(client)
 		expect(createAsanaGoalGatewayMock).toHaveBeenCalledWith(client)
 		expect(createAsanaPortfolioGatewayMock).toHaveBeenCalledWith(client)
 		expect(createAsanaProjectGatewayMock).toHaveBeenCalledWith(client)

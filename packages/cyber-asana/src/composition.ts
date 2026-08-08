@@ -7,6 +7,10 @@ import { registerAttachmentTools } from './attachments/mcp.js'
 import { authCommand } from './auth/cli.js'
 import { createClient } from './client.js'
 import { configCommand } from './config-cli.js'
+import { type CustomFieldApi, createCustomFieldApi } from './custom-fields/api.js'
+import { customFieldCommand } from './custom-fields/cli.js'
+import { createAsanaCustomFieldGateway } from './custom-fields/gateway.js'
+import { registerCustomFieldTools } from './custom-fields/mcp.js'
 import { createGoalApi, type GoalApi } from './goals/api.js'
 import { goalCommand } from './goals/cli.js'
 import { createAsanaGoalGateway } from './goals/gateway.js'
@@ -62,6 +66,7 @@ import { registerWorkspaceTools } from './workspaces/mcp.js'
 
 export type RuntimeContext = {
 	attachments: AttachmentApi
+	customFields: CustomFieldApi
 	goals: GoalApi
 	portfolios: PortfolioApi
 	projects: ProjectApi
@@ -82,6 +87,7 @@ export function createRuntimeContext(): RuntimeContext {
 	const projectGateway = createAsanaProjectGateway(client)
 	return {
 		attachments: createAttachmentApi(createAsanaAttachmentGateway(client)),
+		customFields: createCustomFieldApi(createAsanaCustomFieldGateway(client)),
 		goals: createGoalApi(createAsanaGoalGateway(client)),
 		portfolios: createPortfolioApi(portfolioGateway),
 		projects: createProjectApi(projectGateway),
@@ -111,6 +117,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(portfolioCommand(() => getContext().portfolios))
 	program.addCommand(goalCommand(() => getContext().goals))
 	program.addCommand(tagCommand(() => getContext().tags))
+	program.addCommand(customFieldCommand(() => getContext().customFields))
 	program.addCommand(attachmentCommand(() => getContext().attachments))
 	program.addCommand(statusCommand(() => getContext().status))
 	program.addCommand(storyCommand('story', () => getContext().stories))
@@ -133,6 +140,7 @@ export function registerMcpTools(server: McpServer, getContext: () => RuntimeCon
 	registerPortfolioTools(server, () => getContext().portfolios)
 	registerGoalTools(server, () => getContext().goals)
 	registerTagTools(server, () => getContext().tags)
+	registerCustomFieldTools(server, () => getContext().customFields)
 	registerAttachmentTools(server, () => getContext().attachments)
 	registerStatusTools(server, () => getContext().status)
 	registerStoryTools(server, () => getContext().stories)
