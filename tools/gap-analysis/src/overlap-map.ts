@@ -21,7 +21,7 @@ export const overlapMap: OverlapEntry[] = [
 	// blockers, while `asana_status_list` lists the updates on one parent named by GID.
 	// Neither contains the other, so counting them as overlap overstates both servers.
 	{ official: 'create_project_status_update', cyber: 'asana_status_create', confidence: 'partial' },
-	{ official: 'get_attachments', cyber: 'asana_attachment_list', confidence: 'partial' },
+	{ official: 'get_attachments', cyber: 'asana_attachment_list', confidence: 'high' },
 	{ official: 'get_user', cyber: 'asana_user_get', confidence: 'high' },
 	{ official: 'get_me', cyber: 'asana_user_me', confidence: 'high' },
 	{ official: 'get_users', cyber: 'asana_user_list', confidence: 'high' },
