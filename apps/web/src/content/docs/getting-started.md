@@ -26,6 +26,30 @@ To see which credential is actually in effect:
 cyber-asana auth status
 ```
 
+### Where to keep the token
+
+:::caution
+Do not paste that `export` into `~/.zshrc` or `~/.bashrc`. A personal access token never expires, shell profiles are created world-readable, and they are the files most likely to end up in a dotfiles repo or a screen share — exposing a permanent credential to your entire workspace.
+:::
+
+Keep the secret in its own restricted file and source it from your profile:
+
+```bash
+touch ~/.secrets && chmod 600 ~/.secrets
+echo 'export ASANA_ACCESS_TOKEN=your_token_here' >> ~/.secrets
+```
+
+```bash
+# in ~/.zshrc or ~/.bashrc
+[[ -f ~/.secrets ]] && source ~/.secrets
+```
+
+Your profile now carries a path instead of a credential, so it stays safe to commit and share. Non-secrets like `ASANA_WORKSPACE_GID` can live in the profile — a workspace GID identifies, it does not authorize.
+
+Better still, avoid the long-lived secret altogether. [OAuth](#oauth) stores a self-refreshing token in a `0600` file under `~/.config/cyber-asana`, so nothing sensitive touches your shell config. A password manager's CLI works too — `export ASANA_ACCESS_TOKEN=$(op read op://vault/asana/token)` keeps the value off disk entirely.
+
+If a token has already been sitting in a shared or committed file, treat it as compromised and issue a new one from [Asana's My Apps page](https://app.asana.com/0/my-apps). Deleting the line does not revoke the token, and rewriting git history does not un-publish it.
+
 ### OAuth
 
 A PAT is the simpler choice for a single user. OAuth is worth the setup when several people use the same install, or when you want a credential that refreshes itself.
