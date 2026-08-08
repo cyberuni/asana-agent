@@ -16,7 +16,10 @@ export const overlapMap: OverlapEntry[] = [
 	{ official: 'get_portfolio', cyber: 'asana_portfolio_get', confidence: 'high' },
 	{ official: 'get_portfolios', cyber: 'asana_portfolio_list', confidence: 'high' },
 	{ official: 'get_items_for_portfolio', cyber: 'asana_portfolio_item_list', confidence: 'high' },
-	{ official: 'get_status_overview', cyber: 'asana_status_list', confidence: 'partial' },
+	// Deliberately NOT paired with `asana_status_list`: `get_status_overview` returns an
+	// aggregated report found by its own keyword search, with task summaries and flagged
+	// blockers, while `asana_status_list` lists the updates on one parent named by GID.
+	// Neither contains the other, so counting them as overlap overstates both servers.
 	{ official: 'create_project_status_update', cyber: 'asana_status_create', confidence: 'partial' },
 	{ official: 'get_attachments', cyber: 'asana_attachment_list', confidence: 'partial' },
 	{ official: 'get_user', cyber: 'asana_user_get', confidence: 'high' },

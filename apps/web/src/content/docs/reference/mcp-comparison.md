@@ -25,7 +25,7 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 | Output | JSON | JSON, or TOON via `CYBER_ASANA_MCP_FORMAT=toon` |
 | Also available as a CLI | No | Yes — same core, same operations |
 
-**Overlap: 21 tool pairs. Official-only: 6. cyber-asana-only: 51.**
+**Overlap: 20 tool pairs. Official-only: 7. cyber-asana-only: 52.**
 
 ## What only the official server has
 
@@ -40,13 +40,14 @@ REST endpoints:
 | `create_project_preview` | Interactive preview of a project before creating it | None — `asana_project_create` writes directly |
 | `get_agent` | Fetch an Asana AI agent | None |
 | `get_workspace_agents` | List a workspace's AI agents | None |
+| `get_status_overview` | Aggregated status report across projects and portfolios — task summaries and flagged blockers, found by its own keyword search | None — `asana_status_list` lists the updates on one parent you name by GID, which is a different thing |
 
-If your workflow depends on typeahead discovery, preview-then-confirm flows, or Asana AI
-agents, keep the official server installed.
+If your workflow depends on typeahead discovery, preview-then-confirm flows, Asana AI
+agents, or rolled-up status reporting, keep the official server installed.
 
 ## What both servers cover
 
-21 pairs overlap. Use whichever server is already loaded — ✅ means the two are equivalent
+20 pairs overlap. Use whichever server is already loaded — ✅ means the two are equivalent
 for everyday use, 🟡 means the scope differs (explained under the table).
 
 | Capability | Official | cyber-asana | Match |
@@ -69,17 +70,11 @@ for everyday use, 🟡 means the scope differs (explained under the table).
 | Get the current user | `get_me` | `asana_user_me` | ✅ |
 | List users | `get_users` | `asana_user_list` | ✅ |
 | List teams | `get_teams` | `asana_team_list` | ✅ |
-| List status updates | `get_status_overview` | `asana_status_list` | 🟡 |
 | Create a status update | `create_project_status_update` | `asana_status_create` | 🟡 |
 | List attachments | `get_attachments` | `asana_attachment_list` | 🟡 |
 
 Where the pairs are 🟡, the scope differs — and not always in cyber-asana's favor:
 
-- **List status updates** — not a like-for-like pair in either direction.
-  `get_status_overview` returns an aggregated report, found by its own internal keyword
-  search across projects and portfolios, including task summaries and flagged blockers.
-  `asana_status_list` lists the status updates on one parent you name by GID, and that
-  parent may also be a goal. Neither contains the other.
 - **Create a status update** — cyber-asana is the superset.
   `create_project_status_update` posts to a project or portfolio;
   `asana_status_create` adds goals, and `asana_status_get` / `asana_status_delete` round
@@ -91,7 +86,7 @@ Where the pairs are 🟡, the scope differs — and not always in cyber-asana's 
 
 ## What only cyber-asana has
 
-51 tools, mostly relationship edits and resources outside the official server's V2 scope.
+52 tools, mostly relationship edits and resources outside the official server's V2 scope.
 
 ### Task relationships
 
@@ -120,8 +115,9 @@ all, so board-column workflows need cyber-asana.
 ### Writes on projects and portfolios
 
 `asana_project_update`, `asana_project_delete`, `asana_project_counts`,
-`asana_project_search`, `asana_portfolio_create|update|delete`, `asana_status_get|delete`.
-The official server creates projects and portfolios but does not update or delete them.
+`asana_project_search`, `asana_portfolio_create|update|delete`,
+`asana_status_list|get|delete`. The official server creates projects and portfolios but
+does not update or delete them, and has no way to list the status updates on one parent.
 
 ### Workspaces and teams
 
