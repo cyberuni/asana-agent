@@ -34,6 +34,10 @@ export default defineConfig({
 					label: 'Skills',
 					items: [{ autogenerate: { directory: 'skills' } }],
 				},
+				{
+					label: 'Reference',
+					items: [{ autogenerate: { directory: 'reference' } }],
+				},
 			],
 			editLink: {
 				baseUrl: 'https://github.com/cyberuni/cyber-asana/edit/main/apps/web/',
