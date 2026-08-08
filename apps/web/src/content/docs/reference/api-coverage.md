@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **17** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **18** of them.
 
 | Legend | Meaning |
 | --- | --- |
@@ -38,6 +38,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **17** of them.
 | Rules | ✅ | 1 / 1 | `rule` | Complete — the whole Rules API is one trigger method (beta) |
 | Typeahead | ✅ | 1 / 1 | `search` | Complete; one resource type per call, single capped page |
 | Tags | ✅ | 6 / 6 | `tag` | Complete, including task↔tag links |
+| Task templates | 🟡 | 3 / 4 | `task-template` | Read plus instantiate; no template deletion |
 | Attachments | ✅ | 4 / 4 | `attachment` | List, get, upload (file or external URL), and delete |
 | Sections | ✅ | 7 / 7 | `section` | Complete, including section reordering and section-scoped task placement |
 | Portfolios | 🟡 | 6 / 13 | `portfolio` | CRUD + item listing; no membership edits |
@@ -57,7 +58,7 @@ Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custo
 settings, Custom types, Events, Exports, Goal relationships, Jobs, Memberships, Ooo
 entries, Organization exports, Portfolio memberships, Project briefs, Project memberships,
 Project portfolio settings, Project statuses (superseded by Status updates), Project
-templates, Rates, Reactions, Roles, Task templates, Team memberships, Time periods,
+templates, Rates, Reactions, Roles, Team memberships, Time periods,
 Time tracking categories, Time tracking entries, Timesheet approval statuses, Webhooks,
 Workspace memberships.
 
@@ -86,6 +87,21 @@ arbitrary endpoints.
 | List / add / remove dependents | `task dependent list\|add\|remove` | `asana_task_dependent_*` |
 
 Not covered: `POST /tasks/{gid}/duplicate`, `GET /tasks/custom_id/{id}`.
+
+### Task templates
+
+| Asana operation | CLI | MCP tool |
+| --- | --- | --- |
+| List task templates in a project | `task-template list` | `asana_task_template_list` |
+| Get a task template | `task-template get <gid>` | `asana_task_template_get` |
+| Instantiate a task from a template | `task-template instantiate <gid>` | `asana_task_template_instantiate` |
+
+Instantiation returns a job rather than the task; both surfaces poll it briefly and hand
+back the job with its `new_task` once it succeeds. That job read is internal — Jobs stays
+off the wrapped list, and there is no `job` command.
+
+Not covered: `DELETE /task_templates/{gid}` — cyber-asana wraps using templates, not
+managing them.
 
 ### Projects
 
