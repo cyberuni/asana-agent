@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **16** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **17** of them.
 
 | Legend | Meaning |
 | --- | --- |
@@ -35,6 +35,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **16** of them.
 | --- | --- | --- | --- | --- |
 | Tasks | ✅ | 25 / 27 | `task` | Missing duplicate and custom-ID lookup |
 | Status updates | ✅ | 4 / 4 | `status` | Complete |
+| Rules | ✅ | 1 / 1 | `rule` | Complete — the whole Rules API is one trigger method (beta) |
 | Typeahead | ✅ | 1 / 1 | `search` | Complete; one resource type per call, single capped page |
 | Tags | ✅ | 6 / 6 | `tag` | Complete, including task↔tag links |
 | Attachments | ✅ | 4 / 4 | `attachment` | List, get, upload (file or external URL), and delete |
@@ -56,7 +57,7 @@ Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custo
 settings, Custom types, Events, Exports, Goal relationships, Jobs, Memberships, Ooo
 entries, Organization exports, Portfolio memberships, Project briefs, Project memberships,
 Project portfolio settings, Project statuses (superseded by Status updates), Project
-templates, Rates, Reactions, Roles, Rules, Task templates, Team memberships, Time periods,
+templates, Rates, Reactions, Roles, Task templates, Team memberships, Time periods,
 Time tracking categories, Time tracking entries, Timesheet approval statuses, Webhooks,
 Workspace memberships.
 
@@ -113,6 +114,18 @@ the team-scoped create/list variants.
 Asana only allows editing and deleting comment stories you authored — system stories
 (assignee changed, due date set) are immutable, and an attempt to change one comes back as
 a `403` carrying that explanation as a hint.
+
+### Rules
+
+| Asana operation | CLI | MCP tool |
+| --- | --- | --- |
+| Trigger a rule | `rule trigger <rule-trigger-gid>` | `asana_rule_trigger` |
+
+The rule must be configured in Asana with an **incoming web request** trigger. Asana
+generates the `rule_trigger_gid` there and it can only be copied out of the Asana UI —
+no API call discovers or lists it. Asana documents the endpoint as beta, with `task` the
+only supported resource type, and answers `402` when the workspace plan does not include
+the operation.
 
 ### Read-only resources
 
