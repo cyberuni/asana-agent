@@ -208,7 +208,26 @@ describe('auth login', () => {
 	it('explains how to register an app when no client id is configured', async () => {
 		const deps = loginDeps({ readSettings: vi.fn().mockResolvedValue({}) })
 
-		await expect(runLogin(deps, [], ['node', 'test'])).rejects.toThrow(/ASANA_CLIENT_ID/)
+		await expect(runLogin(deps, [], ['node', 'test'])).rejects.toThrow(/ASANA_API_CLIENT_ID/)
+	})
+
+	// An MCP app registers under the same documented env var names but its
+	// tokens only reach Asana's hosted MCP server, so help that just says
+	// "create an app" sends people to the wrong registration.
+	it('says the registration must be an API app, not an MCP app', async () => {
+		const deps = loginDeps({ readSettings: vi.fn().mockResolvedValue({}) })
+
+		await expect(runLogin(deps, [], ['node', 'test'])).rejects.toThrow(/API app/)
+		await expect(runLogin(deps, [], ['node', 'test'])).rejects.toThrow(/MCP app/)
+	})
+
+	it('names both app-registration variables in the --client-id help', () => {
+		const help = authCommand()
+			.commands.find((c) => c.name() === 'login')
+			?.helpInformation()
+
+		expect(help).toContain('ASANA_API_CLIENT_ID')
+		expect(help).toContain('ASANA_CLIENT_ID')
 	})
 
 	it('passes the requested scopes through to the flow', async () => {

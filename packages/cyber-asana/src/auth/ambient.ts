@@ -62,7 +62,7 @@ export async function ensureStoredCredential(deps: AmbientDeps): Promise<Ambient
 	if (!app) {
 		return {
 			tokens: stored,
-			refreshError: 'Cannot refresh the stored token without an app registration (ASANA_CLIENT_ID).',
+			refreshError: 'Cannot refresh the stored token without an app registration (ASANA_API_CLIENT_ID).',
 		}
 	}
 

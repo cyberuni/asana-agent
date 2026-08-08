@@ -21,14 +21,15 @@ const REGISTRATION_HELP = `No Asana app registration found.
 cyber-asana uses your own OAuth app, so nobody else's registration sees your
 data. To create one:
 
-  1. Go to https://app.asana.com/0/my-apps and create an app
+  1. Go to https://app.asana.com/0/my-apps and create an API app
+     (not an MCP app — those only work with Asana's hosted MCP server)
   2. Add this redirect URL: http://localhost:${DEFAULT_CALLBACK_PORT}/callback
   3. Copy the client ID and client secret
 
 Then either export them:
 
-  export ASANA_CLIENT_ID=<client-id>
-  export ASANA_CLIENT_SECRET=<client-secret>
+  export ASANA_API_CLIENT_ID=<client-id>
+  export ASANA_API_CLIENT_SECRET=<client-secret>
 
 or put them in settings.json under your config directory:
 
@@ -76,7 +77,7 @@ type AppOptions = { clientId?: string; clientSecret?: string }
 /** The two flags every command that needs an app registration accepts. */
 function addAppOptions(cmd: Command): Command {
 	return cmd
-		.option('--client-id <id>', 'OAuth client ID (overrides ASANA_CLIENT_ID and settings.json)')
+		.option('--client-id <id>', 'OAuth client ID (overrides ASANA_API_CLIENT_ID, ASANA_CLIENT_ID, and settings.json)')
 		.option('--client-secret <secret>', 'OAuth client secret (visible in shell history — prefer the env var)')
 }
 
