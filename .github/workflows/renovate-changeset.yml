@@ -33,7 +33,7 @@ jobs:
       # A push made with GITHUB_TOKEN does not re-trigger `pull_request`, so the
       # required checks would never re-run and the PR would stall in the merge queue.
       # The app token does re-trigger them.
-      - uses: actions/create-github-app-token@v2
+      - uses: actions/create-github-app-token@v3
         if: steps.level.outputs.level != ''
         id: app-token
         with:
