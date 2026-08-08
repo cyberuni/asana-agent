@@ -130,6 +130,9 @@ These have no REST equivalent — they exist only in cyber-asana:
 
 - **Project export to Markdown** — `project export <gid>` / `asana_project_export`
   renders a project and its tasks as a Markdown document.
+- **Status roll-up** — `status overview <gid>` / `asana_status_overview` collapses a
+  project's or portfolio's latest status and task counts into one call, rolling up per item
+  for a portfolio. Asana has no such endpoint; it composes existing ones.
 - **TODO scanning** — `task scan-todos [dir]` / `asana_task_scan_todos` walks a codebase
   for `TODO`/`FIXME` comments and turns them into task drafts.
 - **Comment templates** — `comment create` interpolates `{task.name}`, `{task.assignee}`,
