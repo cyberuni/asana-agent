@@ -4,11 +4,11 @@ import { buildGapReport } from './report.js'
 describe('buildGapReport', () => {
 	it('classifies official-only, cyber-only, and overlap buckets', () => {
 		const report = buildGapReport(
-			['search_objects', 'get_task', 'create_tasks'],
+			['create_task_preview', 'get_task', 'create_tasks'],
 			['asana_task_get', 'asana_task_create', 'asana_goal_list'],
 		)
 
-		expect(report.official_only).toEqual(['search_objects'])
+		expect(report.official_only).toEqual(['create_task_preview'])
 		expect(report.cyber_only).toEqual(['asana_goal_list'])
 		expect(report.overlap).toEqual([
 			{ official: 'get_task', cyber: 'asana_task_get', confidence: 'high' },

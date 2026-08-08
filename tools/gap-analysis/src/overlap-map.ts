@@ -26,4 +26,7 @@ export const overlapMap: OverlapEntry[] = [
 	{ official: 'get_me', cyber: 'asana_user_me', confidence: 'high' },
 	{ official: 'get_users', cyber: 'asana_user_list', confidence: 'high' },
 	{ official: 'get_teams', cyber: 'asana_team_list', confidence: 'high' },
+	// `partial`: the official tool searches across object types in one call, ours takes one
+	// `resource_type` per call because that is all Asana's typeahead endpoint accepts.
+	{ official: 'search_objects', cyber: 'asana_search_objects', confidence: 'partial' },
 ]

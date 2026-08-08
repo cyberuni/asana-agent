@@ -17,7 +17,7 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 
 | | Official Asana MCP | cyber-asana MCP |
 | --- | --- | --- |
-| Tools | 27 | 72 |
+| Tools | 27 | 73 |
 | Transport | Hosted remote (`https://mcp.asana.com/v2/mcp`) | Local stdio (`cyber-asana mcp`) |
 | Auth | OAuth 2.0 (hosted, host-managed app) | Personal access token, or OAuth 2.0 + PKCE via `cyber-asana auth login` (your own Asana app) |
 | Config key | `asana` | `cyber-asana` |
@@ -25,7 +25,7 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 | Output | JSON | JSON, or TOON via `CYBER_ASANA_MCP_FORMAT=toon` |
 | Also available as a CLI | No | Yes — same core, same operations |
 
-**Overlap: 20 tool pairs. Official-only: 7. cyber-asana-only: 52.**
+**Overlap: 21 tool pairs. Official-only: 6. cyber-asana-only: 52.**
 
 ## What only the official server has
 
@@ -36,20 +36,19 @@ each is below, so you can tell a deliberate boundary from an oversight.
 
 | Official tool | What it does | cyber-asana alternative |
 | --- | --- | --- |
-| `search_objects` | Cross-object typeahead across tasks, projects, people | Per-type `asana_task_search` / `asana_project_search` today. A typeahead-backed equivalent is planned — the endpoint is plain REST and already in the SDK |
 | `search_tasks_preview` | Preview a task search before running it | None by design — a host-UX confirm flow, not an API capability |
 | `create_task_preview` | Interactive preview of a task before creating it | None by design — same reason; `asana_task_create` writes directly |
 | `create_project_preview` | Interactive preview of a project before creating it | None by design — same reason; `asana_project_create` writes directly |
 | `get_agent` | Fetch an Asana AI agent | None while Asana's agent endpoints stay early-access and require an opt-in header |
-| `get_workspace_agents` | List a workspace's AI agents | Same — though typeahead's `agent` / `actor` types will cover basic discovery |
+| `get_workspace_agents` | List a workspace's AI agents | Same — though `asana_search_objects` covers basic discovery via typeahead's `agent` / `actor` types |
 | `get_status_overview` | Aggregated status report across projects and portfolios — task summaries and flagged blockers, found by its own keyword search | None for the search half. `asana_status_list` lists the updates on one parent you name by GID; a deterministic parent-scoped roll-up is planned |
 
-If your workflow depends on typeahead discovery, preview-then-confirm flows, Asana AI
-agents, or searched status reporting, keep the official server installed.
+If your workflow depends on preview-then-confirm flows, Asana AI agents, or searched
+status reporting, keep the official server installed.
 
 ## What both servers cover
 
-20 pairs overlap. Use whichever server is already loaded — ✅ means the two are equivalent
+21 pairs overlap. Use whichever server is already loaded — ✅ means the two are equivalent
 for everyday use, 🟡 means the scope differs (explained under the table).
 
 | Capability | Official | cyber-asana | Match |
@@ -74,6 +73,7 @@ for everyday use, 🟡 means the scope differs (explained under the table).
 | List teams | `get_teams` | `asana_team_list` | ✅ |
 | Create a status update | `create_project_status_update` | `asana_status_create` | 🟡 |
 | List attachments | `get_attachments` | `asana_attachment_list` | 🟡 |
+| Find objects by name | `search_objects` | `asana_search_objects` | 🟡 |
 
 Where the pairs are 🟡, the scope differs — and not always in cyber-asana's favor:
 
@@ -81,6 +81,10 @@ Where the pairs are 🟡, the scope differs — and not always in cyber-asana's 
   `create_project_status_update` posts to a project or portfolio;
   `asana_status_create` adds goals, and `asana_status_get` / `asana_status_delete` round
   out the resource.
+- **Find objects by name** — the official server is the superset per call.
+  `search_objects` searches across object types in one call; `asana_search_objects` takes
+  one `resource_type`, because that is all Asana's typeahead endpoint accepts. Both are
+  capped, relevance/recency-ordered, and explicitly not exhaustive.
 - **List attachments** — the official server is the superset. `get_attachments` covers
   tasks, projects, and project briefs, and already returns download and view URLs;
   `asana_attachment_list` is task-only. What cyber-asana adds is `asana_attachment_get`,
@@ -146,7 +150,7 @@ for the dual config. When both could do the job:
 
 | Prefer official `asana` | Prefer `cyber-asana` |
 | --- | --- |
-| Cross-object discovery (`search_objects`, `search_tasks_preview`) | Anything relational: subtasks, dependencies, followers, sections |
+| Cross-object discovery in one call (`search_objects`, `search_tasks_preview`) | Anything relational: subtasks, dependencies, followers, sections |
 | Preview-then-confirm creation flows | Write-heavy automation and bulk edits |
 | Asana AI agents | Tags, goals, portfolio and project updates/deletes |
 | New MCP-only capabilities Asana ships first | Token-efficient output (`--toon`), auto-pagination, `--full` control |

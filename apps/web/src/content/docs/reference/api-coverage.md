@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **14** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **15** of them.
 
 | Legend | Meaning |
 | --- | --- |
@@ -35,6 +35,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **14** of them.
 | --- | --- | --- | --- | --- |
 | Tasks | ✅ | 25 / 27 | `task` | Missing duplicate and custom-ID lookup |
 | Status updates | ✅ | 4 / 4 | `status` | Complete |
+| Typeahead | ✅ | 1 / 1 | `search` | Complete; one resource type per call, single capped page |
 | Tags | ✅ | 6 / 6 | `tag` | Complete, including task↔tag links |
 | Sections | 🟡 | 5 / 7 | `section` | No reorder, no move-task-to-section |
 | Portfolios | 🟡 | 6 / 13 | `portfolio` | CRUD + item listing; no membership edits |
@@ -56,7 +57,7 @@ Memberships, Ooo entries, Organization exports, Portfolio memberships, Project b
 Project memberships, Project portfolio settings, Project statuses (superseded by Status
 updates), Project templates, Rates, Reactions, Roles, Rules, Task templates, Team
 memberships, Time periods, Time tracking categories, Time tracking entries, Timesheet
-approval statuses, Typeahead, Webhooks, Workspace memberships.
+approval statuses, Webhooks, Workspace memberships.
 
 For anything on this list, call the Asana API directly — cyber-asana does not proxy
 arbitrary endpoints.
