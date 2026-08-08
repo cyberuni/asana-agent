@@ -19,6 +19,10 @@ import { createGoalApi, type GoalApi } from './goals/api.js'
 import { goalCommand } from './goals/cli.js'
 import { createAsanaGoalGateway } from './goals/gateway.js'
 import { registerGoalTools } from './goals/mcp.js'
+import { createJobApi, type JobApi } from './jobs/api.js'
+import { jobCommand } from './jobs/cli.js'
+import { createAsanaJobGateway } from './jobs/gateway.js'
+import { registerJobTools } from './jobs/mcp.js'
 import { mcpCommand } from './mcp-cli.js'
 import { createMembershipApi, type MembershipApi } from './memberships/api.js'
 import { membershipCommand } from './memberships/cli.js'
@@ -91,6 +95,7 @@ export type RuntimeContext = {
 	goals: GoalApi
 	memberships: MembershipApi
 	ooo: OooApi
+	jobs: JobApi
 	portfolios: PortfolioApi
 	projects: ProjectApi
 	rules: RuleApi
@@ -117,6 +122,7 @@ export function createRuntimeContext(): RuntimeContext {
 		goals: createGoalApi(createAsanaGoalGateway(client)),
 		memberships: createMembershipApi(createAsanaMembershipGateway(client)),
 		ooo: createOooApi(createAsanaOooGateway(client)),
+		jobs: createJobApi(createAsanaJobGateway(client)),
 		portfolios: createPortfolioApi(portfolioGateway),
 		projects: createProjectApi(projectGateway),
 		rules: createRuleApi(createAsanaRuleGateway(client)),
@@ -152,6 +158,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(customFieldCommand(() => getContext().customFields))
 	program.addCommand(oooCommand(() => getContext().ooo))
 	program.addCommand(attachmentCommand(() => getContext().attachments))
+	program.addCommand(jobCommand(() => getContext().jobs))
 	program.addCommand(statusCommand(() => getContext().status))
 	program.addCommand(ruleCommand(() => getContext().rules))
 	program.addCommand(eventCommand(() => getContext().events))
@@ -180,6 +187,7 @@ export function registerMcpTools(server: McpServer, getContext: () => RuntimeCon
 	registerCustomFieldTools(server, () => getContext().customFields)
 	registerOooTools(server, () => getContext().ooo)
 	registerAttachmentTools(server, () => getContext().attachments)
+	registerJobTools(server, () => getContext().jobs)
 	registerStatusTools(server, () => getContext().status)
 	registerRuleTools(server, () => getContext().rules)
 	registerEventTools(server, () => getContext().events)

@@ -117,6 +117,7 @@ function mockRuntimeContext(): RuntimeContext {
 			updateMembership: vi.fn(),
 			deleteMembership: vi.fn(),
 		},
+		jobs: { getJob: vi.fn() },
 		status: {
 			listStatuses: vi.fn(),
 			getStatus: vi.fn(),
@@ -405,6 +406,28 @@ describe('composition wiring', () => {
 		})
 
 		expect(ctx.memberships.createMembership).toHaveBeenCalledWith('proj1', 'u1', { access_level: 'editor' })
+	})
+
+	it('CLI job get uses runtime context jobs api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.jobs.getJob = vi.fn().mockResolvedValue({ gid: 'job1', status: 'succeeded' })
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'job', 'get', 'job1'], { from: 'node' })
+
+		expect(ctx.jobs.getJob).toHaveBeenCalledWith('job1')
+	})
+
+	it('MCP asana_job_get uses runtime context jobs api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.jobs.getJob = vi.fn().mockResolvedValue({ gid: 'job1', status: 'succeeded' })
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_job_get')?.({ job_gid: 'job1' })
+
+		expect(ctx.jobs.getJob).toHaveBeenCalledWith('job1')
 	})
 
 	it('CLI search objects uses runtime context search api', async () => {
