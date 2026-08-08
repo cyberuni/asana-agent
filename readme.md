@@ -414,6 +414,8 @@ Tools are named `asana_<resource>_<action>` (e.g. `asana_task_create`).
 | `tag` | `asana_tag_list`, `asana_tag_get`, `asana_tag_create`, `asana_tag_update`, `asana_tag_delete`, `asana_tag_list_for_task`, `asana_tag_list_tasks`, `asana_tag_add_to_task`, `asana_tag_remove_from_task` |
 | `ooo` | `asana_ooo_list`, `asana_ooo_get`, `asana_ooo_create`, `asana_ooo_update`, `asana_ooo_delete` |
 | `attachment` | `asana_attachment_list`, `asana_attachment_get`, `asana_attachment_create`, `asana_attachment_delete` |
+| `project-template` | `asana_project_template_list`, `asana_project_template_get`, `asana_project_template_instantiate` |
+| `job` | `asana_job_get` |
 | `status` | `asana_status_overview`, `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
 | `rule` | `asana_rule_trigger` (fires an Asana automation rule; the rule must use an "incoming web request" trigger) |
 | `event` | `asana_event_list` (change feed; sync-token cursored, not paginated) |
@@ -441,6 +443,7 @@ Notable parameters:
 - `asana_task_follower_add` / `asana_task_follower_remove` — manage followers on existing tasks
 - `asana_project_search` — `text`, `completed`, team/owner/member/portfolio filters, date filters, `sort_by`, `sort_ascending`, `opt_fields`
 - `asana_project_counts` — `opt_fields` defaults to `num_tasks,num_incomplete_tasks,num_completed_tasks`
+- `asana_project_template_instantiate` — `name`, `team_gid`, `public`, `requested_dates` (`[{gid, value}]` from the template's `requested_dates`), `wait` (default `true`), `timeout_seconds` (default 60). Returns `{ job, project_gid }`; a failed job or an expired wait is an error, never a success with a null `project_gid`
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
 - `asana_story_update` / `asana_story_delete` (and the `comment` aliases) — `story_gid`; only comment stories you authored can be changed, and a refusal comes back as a `403` with a hint saying so
 - `asana_membership_list` — `parent_gid` (project, portfolio, goal, custom type, or custom field), `member_gid` (user or team), `resource_subtype`; pass `resource_subtype` when `parent_gid` is omitted
@@ -539,6 +542,8 @@ Installing twice is a no-op, and unrelated settings are preserved.
 | `tag` | `list`, `get`, `create`, `update`, `delete`, `tasks`, `task list/add/remove` |
 | `ooo` | `list`, `get`, `create`, `update`, `delete` |
 | `attachment` | `list`, `get`, `create`, `delete` |
+| `project-template` | `list`, `get`, `instantiate` |
+| `job` | `get` |
 | `status` | `list`, `get`, `create`, `delete` |
 | `event` | `list` |
 | `story` | `list`, `get`, `create`, `update`, `delete` |
@@ -833,6 +838,41 @@ cyber-asana project counts <project-gid> --opt-fields num_tasks,num_completed_ta
 Asana returns no fields from this endpoint unless `opt_fields` is supplied. This wrapper defaults to `num_tasks,num_incomplete_tasks,num_completed_tasks`.
 
 This endpoint has a stricter Asana rate/cost profile than ordinary project reads, so prefer the default field set unless you need additional count fields.
+
+### Project templates
+
+Templates are how a team encodes a project's structure once. `project-template list` and
+`get` browse them; `instantiate` starts a real project from one.
+
+```sh
+cyber-asana project-template list --workspace-gid <gid>
+cyber-asana project-template list --team-gid <gid>      # the team-scoped endpoint
+cyber-asana project-template get <gid>                  # includes the template's date variables
+cyber-asana project-template instantiate <gid> --name "Acme onboarding" --team-gid <gid>
+```
+
+`--team-gid` is required when the workspace is an organization. `--public` / `--private` set
+the new project's visibility; omit both to let Asana decide. Templates that ask for dates
+list them under `requested_dates` in `project-template get`; pass each one as
+`--requested-date <date-variable-gid>=<YYYY-MM-DD>` (repeatable).
+
+Asana builds the project asynchronously and returns a job, so:
+
+- **By default `instantiate` waits** for the job and prints the new project's GID. The wait is
+  bounded by `--timeout <seconds>` (default 60) and polls every `--poll-interval <seconds>`
+  (default 1). Expiry is an error naming the job, not a silent success.
+- **A failed job is an error.** You never get an exit code 0 with a missing project GID.
+- **`--no-wait`** skips polling and prints the job GID instead, for scripts that want to poll
+  themselves with `cyber-asana job get <gid>`.
+
+```sh
+# Poll it yourself
+job=$(cyber-asana project-template instantiate <gid> --name "Acme" --no-wait --json | jq -r .gid)
+cyber-asana job get "$job"
+```
+
+A job's `status` is `not_started`, `in_progress`, `succeeded`, or `failed`; a succeeded
+instantiation carries the project under `new_project`.
 
 ### Object search (typeahead)
 
