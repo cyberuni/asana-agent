@@ -28,7 +28,7 @@ help text. Every resource group's `--help` ends with worked examples.
 | [Tasks](/cyber-asana/cli/tasks/) | `list`, `get`, `get-many`, `create`, `update`, `delete`, `search`, `my-tasks`, `subtask`, `project`, `follower`, `dependency`, `dependent` |
 | [Projects](/cyber-asana/cli/projects/) | `list`, `get`, `counts`, `search`, `create`, `update`, `delete`, `export` |
 | [Sections](/cyber-asana/cli/sections/) | `list`, `get`, `create`, `update`, `delete` |
-| [Comments](/cyber-asana/cli/comments/) | `list`, `create` (as `story` or `comment`) |
+| [Comments](/cyber-asana/cli/comments/) | `list`, `get`, `create`, `update`, `delete` (as `story` or `comment`) |
 | [Tags](/cyber-asana/cli/tags/) | `list`, `get`, `create`, `update`, `delete`, `tasks`, `task list/add/remove` |
 | [Goals](/cyber-asana/cli/goals/) | `list`, `get`, `create`, `update`, `delete` |
 | [Portfolios](/cyber-asana/cli/portfolios/) | `list`, `items`, `get`, `create`, `update`, `delete` |

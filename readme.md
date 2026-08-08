@@ -413,8 +413,8 @@ Tools are named `asana_<resource>_<action>` (e.g. `asana_task_create`).
 | `tag` | `asana_tag_list`, `asana_tag_get`, `asana_tag_create`, `asana_tag_update`, `asana_tag_delete`, `asana_tag_list_for_task`, `asana_tag_list_tasks`, `asana_tag_add_to_task`, `asana_tag_remove_from_task` |
 | `attachment` | `asana_attachment_list`, `asana_attachment_get` |
 | `status` | `asana_status_overview`, `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
-| `story` | `asana_story_list`, `asana_story_create` |
-| `comment` | `asana_comment_list`, `asana_comment_create` (aliases for `story`) |
+| `story` | `asana_story_list`, `asana_story_get`, `asana_story_create`, `asana_story_update`, `asana_story_delete` |
+| `comment` | `asana_comment_list`, `asana_comment_get`, `asana_comment_create`, `asana_comment_update`, `asana_comment_delete` (aliases for `story`) |
 | `custom-field` | `asana_custom_field_list`, `asana_custom_field_get` (discover the field and enum-option GIDs that `asana_task_create` / `asana_task_update` expect) |
 | `search` | `asana_search_objects` (typeahead; one `resource_type` per call, single capped page, not exhaustive) |
 | `url` | `asana_url_parse` (no API call; extracts GIDs from Asana app URLs) |
@@ -434,6 +434,7 @@ Notable parameters:
 - `asana_project_search` — `text`, `completed`, team/owner/member/portfolio filters, date filters, `sort_by`, `sort_ascending`, `opt_fields`
 - `asana_project_counts` — `opt_fields` defaults to `num_tasks,num_incomplete_tasks,num_completed_tasks`
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
+- `asana_story_update` / `asana_story_delete` (and the `comment` aliases) — `story_gid`; only comment stories you authored can be changed, and a refusal comes back as a `403` with a hint saying so
 - `asana_search_objects` — `resource_type` (one of `actor`, `agent`, `custom_field`, `goal`, `portfolio`, `project`, `project_template`, `tag`, `task`, `team`, `user`), `query`, `count` (1–100, default 20), `opt_fields`. Turns a name into a GID; not paginated and not exhaustive
 - `asana_url_parse` — local URL parsing; use `workspace_gid` + `project_gid` for create; `list_view_gid` is not a section GID
 
@@ -526,8 +527,8 @@ Installing twice is a no-op, and unrelated settings are preserved.
 | `tag` | `list`, `get`, `create`, `update`, `delete`, `tasks`, `task list/add/remove` |
 | `attachment` | `list`, `get` |
 | `status` | `list`, `get`, `create`, `delete` |
-| `story` | `list`, `create` |
-| `comment` | `list`, `create` (alias for `story`) |
+| `story` | `list`, `get`, `create`, `update`, `delete` |
+| `comment` | `list`, `get`, `create`, `update`, `delete` (alias for `story`) |
 | `custom-field` | `list`, `get` |
 | `setup` | `hook` |
 
@@ -678,6 +679,20 @@ cyber-asana comment create "Great work!" --task <gid>
 cyber-asana story list --task <gid>
 cyber-asana story create "Great work!" --task <gid>
 ```
+
+Read, correct, or withdraw one comment by its story GID:
+
+```sh
+cyber-asana comment get <story-gid>
+cyber-asana comment update <story-gid> "Corrected text"
+cyber-asana comment update <story-gid> --html-text "<body><strong>Corrected</strong></body>"
+cyber-asana comment delete <story-gid>
+```
+
+Asana only permits editing and deleting comment stories you authored; system stories
+(assignee changed, due date set) are immutable, and the refusal comes back as a `403` whose
+hint says so. `comment delete` is idempotent — deleting a comment that is already gone
+still succeeds.
 
 Use `--template` to interpolate task data into the comment text before posting. Supported variables: `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`.
 

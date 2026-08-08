@@ -1,6 +1,6 @@
 ---
 title: Comments
-description: Read and post comments (Asana stories) on tasks, with optional templating.
+description: Read, post, edit, and delete comments (Asana stories) on tasks, with optional templating.
 sidebar:
   order: 5
 ---
@@ -21,9 +21,28 @@ cyber-asana story create "Great work!" --task <gid>
 | --- | --- | --- |
 | `list` | — | `--task-gid <gid>` / `--task <gid>`, [pagination](/cyber-asana/cli/#pagination) |
 | `create` | `[text]` | `--task-gid <gid>` / `--task <gid>`, `--html-text <html>`, `--template` |
+| `get` | `<gid>` | — |
+| `update` | `<gid> [text]` | `--html-text <html>` |
+| `delete` | `<gid>` | — |
 
 Comment bodies are truncated in list output with a size hint; pass `--full` for the
 complete text.
+
+## Correcting or withdrawing a comment
+
+`list` returns each comment's story GID; `get`, `update`, and `delete` take it.
+
+```sh
+cyber-asana comment get <story-gid>
+cyber-asana comment update <story-gid> "Corrected text"
+cyber-asana comment update <story-gid> --html-text '<body><strong>Corrected</strong></body>'
+cyber-asana comment delete <story-gid>
+```
+
+Asana only permits editing and deleting comment stories you authored — system stories
+(assignee changed, due date set) are immutable, and the refusal comes back as a `403` whose
+hint says so. `delete` is idempotent: withdrawing a comment that is already gone still
+succeeds.
 
 ## Rich text
 
