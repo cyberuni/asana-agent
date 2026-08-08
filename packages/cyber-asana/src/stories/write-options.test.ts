@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildStoryCreateFields } from './write-options.js'
+import { buildStoryCreateFields, buildStoryUpdateFields } from './write-options.js'
 
 describe('stories/write-options', () => {
 	it('buildStoryCreateFields rejects text and html_text together', () => {
@@ -59,5 +59,31 @@ describe('stories/write-options', () => {
 		).toEqual({
 			html_text: '<body><div class="foo">Rich</div></body>',
 		})
+	})
+
+	it('buildStoryUpdateFields returns the replacement text', () => {
+		expect(buildStoryUpdateFields({ text: 'Corrected' })).toEqual({ text: 'Corrected' })
+	})
+
+	it('buildStoryUpdateFields preserves valid html_text', () => {
+		expect(buildStoryUpdateFields({ htmlText: '<body><strong>Corrected</strong></body>' })).toEqual({
+			html_text: '<body><strong>Corrected</strong></body>',
+		})
+	})
+
+	it('buildStoryUpdateFields rejects text and html_text together', () => {
+		expect(() => buildStoryUpdateFields({ text: 'Plain', htmlText: '<body>Rich</body>' })).toThrow(
+			'--text and --html-text are mutually exclusive',
+		)
+	})
+
+	it('buildStoryUpdateFields requires either text or html_text', () => {
+		expect(() => buildStoryUpdateFields({})).toThrow('Provide either text or --html-text')
+	})
+
+	it('buildStoryUpdateFields rejects malformed html_text', () => {
+		expect(() => buildStoryUpdateFields({ htmlText: '<body><strong>Rich</body>' })).toThrow(
+			'html_text has unbalanced closing tags',
+		)
 	})
 })

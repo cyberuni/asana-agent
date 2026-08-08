@@ -37,6 +37,26 @@ describe('formatMcpToolError', () => {
 		})
 	})
 
+	it('carries a hint an operation attached to an Asana API error', () => {
+		const error = {
+			hint: 'Only comment stories you authored can be edited or deleted.',
+			response: {
+				status: 403,
+				body: { errors: [{ message: 'Forbidden' }] },
+			},
+		}
+
+		const result = formatMcpToolError(error)
+
+		expect(JSON.parse(textContent(result))).toMatchObject({
+			error: {
+				kind: 'asana_api',
+				status: 403,
+				hint: 'Only comment stories you authored can be edited or deleted.',
+			},
+		})
+	})
+
 	it('returns structured JSON for missing token config errors', () => {
 		const result = formatMcpToolError(new Error('ASANA_TOKEN environment variable is not set'))
 

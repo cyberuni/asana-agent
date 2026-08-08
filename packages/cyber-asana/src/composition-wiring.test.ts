@@ -78,7 +78,14 @@ function mockRuntimeContext(): RuntimeContext {
 			removeTagFromTask: vi.fn(),
 		},
 		attachments: { listAttachments: vi.fn(), getAttachment: vi.fn() },
-		stories: { listStories: vi.fn(), createStory: vi.fn(), getTaskTemplateData: vi.fn() },
+		stories: {
+			listStories: vi.fn(),
+			createStory: vi.fn(),
+			getStory: vi.fn(),
+			updateStory: vi.fn(),
+			deleteStory: vi.fn(),
+			getTaskTemplateData: vi.fn(),
+		},
 		status: {
 			listStatuses: vi.fn(),
 			getStatus: vi.fn(),

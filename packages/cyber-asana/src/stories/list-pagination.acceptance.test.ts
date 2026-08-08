@@ -15,6 +15,9 @@ function createPaginatingStoryGateway(): StoryGateway {
 	return {
 		listStories: createPaginatingScopedListMock(pages),
 		createStory: vi.fn(),
+		getStory: vi.fn(),
+		updateStory: vi.fn(),
+		deleteStory: vi.fn(),
 		getTaskTemplateData: vi.fn(),
 	}
 }

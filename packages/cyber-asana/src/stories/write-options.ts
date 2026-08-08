@@ -3,6 +3,9 @@ export type StoryCreateFields = {
 	html_text?: string
 }
 
+/** An edit replaces the comment body, so it carries the same fields a create does. */
+export type StoryUpdateFields = StoryCreateFields
+
 type BuildStoryCreateInput = {
 	text?: string
 	htmlText?: string
@@ -49,4 +52,8 @@ export function buildStoryCreateFields(input: BuildStoryCreateInput): StoryCreat
 		return { html_text: input.htmlText }
 	}
 	return { text: input.text }
+}
+
+export function buildStoryUpdateFields(input: BuildStoryCreateInput): StoryUpdateFields {
+	return buildStoryCreateFields(input)
 }
