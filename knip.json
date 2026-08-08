@@ -10,6 +10,9 @@
 		},
 		"tools/gap-analysis": {
 			"project": ["src/**/*.ts"]
+		},
+		"tests/skills": {
+			"project": ["src/**/*.ts"]
 		}
 	}
 }

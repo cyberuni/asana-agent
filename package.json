@@ -12,7 +12,7 @@
 		"release": "changeset publish",
 		"test": "turbo run test",
 		"typecheck": "turbo run typecheck",
-		"verify": "turbo run build typecheck test",
+		"verify": "pnpm check && turbo run build typecheck test && pnpm knip",
 		"version": "changeset version",
 		"web": "turbo run --filter=@cyberuni/web"
 	},
