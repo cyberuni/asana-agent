@@ -10,7 +10,7 @@ function resolveJobApi(api?: JobApi | (() => JobApi)): JobApi {
 }
 
 /** The resource an async job produces, whichever kind of job it is. */
-export function jobResult(job: Job): { label: string; gid: string; command: string } | undefined {
+function jobResult(job: Job): { label: string; gid: string; command: string } | undefined {
 	type Produced = { gid?: string } | null | undefined
 	const candidates: [string, string, Produced][] = [
 		['New project', 'project get', job.new_project as Produced],
@@ -23,7 +23,7 @@ export function jobResult(job: Job): { label: string; gid: string; command: stri
 	return undefined
 }
 
-export function fmtJob(job: Job) {
+function fmtJob(job: Job) {
 	const result = jobResult(job)
 	printFields({
 		ID: job.gid ?? null,

@@ -73,7 +73,7 @@ export type AppCredentials = {
 	shadowed: AppCredentialSource[]
 }
 
-export type AppCredentialSource = 'flags' | 'settings.json' | (typeof CLIENT_ID_ENV_VARS)[number]
+type AppCredentialSource = 'flags' | 'settings.json' | (typeof CLIENT_ID_ENV_VARS)[number]
 
 function firstSet<Name extends string>(
 	env: Record<string, string | undefined>,
