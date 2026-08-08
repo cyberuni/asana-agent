@@ -46,34 +46,34 @@ agents, keep the official server installed.
 
 ## What both servers cover
 
-21 pairs overlap. Use whichever server is already loaded; where marked *partial*, the
-shapes differ.
+21 pairs overlap. Use whichever server is already loaded — ✅ means the two are equivalent
+for everyday use, 🟡 means the scope differs (explained under the table).
 
 | Capability | Official | cyber-asana | Match |
 | --- | --- | --- | --- |
-| Get a task | `get_task` | `asana_task_get` | |
-| List tasks | `get_tasks` | `asana_task_list` | |
-| My Tasks | `get_my_tasks` | `asana_task_my_tasks` | |
-| Search tasks | `search_tasks` | `asana_task_search` | |
-| Create a task | `create_tasks` | `asana_task_create` | |
-| Update a task | `update_tasks` | `asana_task_update` | |
-| Delete a task | `delete_task` | `asana_task_delete` | |
-| Comment on a task | `add_comment` | `asana_comment_create` | |
-| Get a project | `get_project` | `asana_project_get` | |
-| List projects | `get_projects` | `asana_project_list` | |
-| Create a project | `create_project` | `asana_project_create` | |
-| Get a portfolio | `get_portfolio` | `asana_portfolio_get` | |
-| List portfolios | `get_portfolios` | `asana_portfolio_list` | |
-| List portfolio items | `get_items_for_portfolio` | `asana_portfolio_item_list` | |
-| Get a user | `get_user` | `asana_user_get` | |
-| Get the current user | `get_me` | `asana_user_me` | |
-| List users | `get_users` | `asana_user_list` | |
-| List teams | `get_teams` | `asana_team_list` | |
-| List status updates | `get_status_overview` | `asana_status_list` | partial |
-| Create a status update | `create_project_status_update` | `asana_status_create` | partial |
-| List attachments | `get_attachments` | `asana_attachment_list` | partial |
+| Get a task | `get_task` | `asana_task_get` | ✅ |
+| List tasks | `get_tasks` | `asana_task_list` | ✅ |
+| My Tasks | `get_my_tasks` | `asana_task_my_tasks` | ✅ |
+| Search tasks | `search_tasks` | `asana_task_search` | ✅ |
+| Create a task | `create_tasks` | `asana_task_create` | ✅ |
+| Update a task | `update_tasks` | `asana_task_update` | ✅ |
+| Delete a task | `delete_task` | `asana_task_delete` | ✅ |
+| Comment on a task | `add_comment` | `asana_comment_create` | ✅ |
+| Get a project | `get_project` | `asana_project_get` | ✅ |
+| List projects | `get_projects` | `asana_project_list` | ✅ |
+| Create a project | `create_project` | `asana_project_create` | ✅ |
+| Get a portfolio | `get_portfolio` | `asana_portfolio_get` | ✅ |
+| List portfolios | `get_portfolios` | `asana_portfolio_list` | ✅ |
+| List portfolio items | `get_items_for_portfolio` | `asana_portfolio_item_list` | ✅ |
+| Get a user | `get_user` | `asana_user_get` | ✅ |
+| Get the current user | `get_me` | `asana_user_me` | ✅ |
+| List users | `get_users` | `asana_user_list` | ✅ |
+| List teams | `get_teams` | `asana_team_list` | ✅ |
+| List status updates | `get_status_overview` | `asana_status_list` | 🟡 |
+| Create a status update | `create_project_status_update` | `asana_status_create` | 🟡 |
+| List attachments | `get_attachments` | `asana_attachment_list` | 🟡 |
 
-Where the pairs are *partial*, the scope differs:
+Where the pairs are 🟡, the scope differs:
 
 - **Status updates** — the official tools are project-scoped and read-oriented;
   `asana_status_*` works on projects, portfolios, and goals, and adds `get` and `delete`.
