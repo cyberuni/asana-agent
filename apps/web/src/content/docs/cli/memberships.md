@@ -2,7 +2,7 @@
 title: Memberships
 description: See who has access to a project, portfolio, or goal — and change it.
 sidebar:
-  order: 16
+  order: 18
 ---
 
 A membership links a **member** (a user or a team) to a **parent** (a project, portfolio,
