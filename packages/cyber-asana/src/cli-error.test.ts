@@ -29,6 +29,10 @@ describe('exitCodeFor', () => {
 	it('maps 429 to 6 (rate limited)', () => {
 		expect(exitCodeFor(asanaError(429))).toBe(6)
 	})
+
+	it('maps 402 to 7 (above the workspace plan level)', () => {
+		expect(exitCodeFor(asanaError(402))).toBe(7)
+	})
 })
 
 describe('renderCliError', () => {
@@ -44,6 +48,12 @@ describe('renderCliError', () => {
 		const text = renderCliError(new Error('ASANA_TOKEN missing'), 'text')
 		expect(text).toContain('Error: ASANA_TOKEN missing')
 		expect(text).toContain('Hint:')
+	})
+
+	it('names the plan limitation in the hint for a 402', () => {
+		const text = renderCliError(asanaError(402, 'Payment Required'), 'text')
+		expect(text).toContain('Asana API error: Payment Required')
+		expect(text).toContain("Hint: Asana answered 402 — this operation is above the workspace's plan level")
 	})
 
 	it('renders structured JSON when the json format is selected', () => {

@@ -55,19 +55,30 @@ function normalizeAsanaErrors(errors: unknown[] | undefined): AsanaApiErrorDetai
 	})
 }
 
+// Asana answers 402 when the endpoint itself works but the workspace's plan does
+// not include it. That is a billing fact, not a bug in the call, so it gets named
+// rather than left to read as a generic failure.
+export const PLAN_LIMITATION_STATUS = 402
+const PLAN_LIMITATION_HINT =
+	"Asana answered 402 — this operation is above the workspace's plan level. Upgrade the workspace or use a workspace whose plan includes it."
+
 export function buildMcpToolErrorBody(error: unknown): McpToolErrorBody {
 	const asanaError = asAsanaResponseError(error)
 	const asanaErrors = normalizeAsanaErrors(asanaError?.response?.body?.errors)
 	const hint = attachedHint(error)
 	if (asanaErrors?.length) {
+		const status = asanaError?.response?.status
+		// A hint the operation attached wins: it knows more about the call than the
+		// status code does. Otherwise a 402 still gets named as a plan limitation.
+		const asanaHint = hint ?? (status === PLAN_LIMITATION_STATUS ? PLAN_LIMITATION_HINT : undefined)
 		return {
 			ok: false,
 			error: {
 				kind: 'asana_api',
 				message: asanaErrors.map((entry) => entry.message).join('; '),
-				...(asanaError?.response?.status !== undefined && { status: asanaError.response.status }),
+				...(status !== undefined && { status }),
 				errors: asanaErrors,
-				...(hint !== undefined && { hint }),
+				...(asanaHint !== undefined && { hint: asanaHint }),
 			},
 		}
 	}

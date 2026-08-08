@@ -71,6 +71,23 @@ describe('formatMcpToolError', () => {
 		})
 	})
 
+	it('adds a plan-limitation hint for a 402', () => {
+		const error = {
+			response: { status: 402, body: { errors: [{ message: 'Payment Required' }] } },
+		}
+
+		const result = formatMcpToolError(error)
+
+		expect(JSON.parse(textContent(result))).toMatchObject({
+			ok: false,
+			error: {
+				kind: 'asana_api',
+				status: 402,
+				hint: expect.stringContaining('plan level'),
+			},
+		})
+	})
+
 	it('returns structured JSON for generic errors', () => {
 		const result = formatMcpToolError(new Error('Something went wrong'))
 
