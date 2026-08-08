@@ -44,11 +44,17 @@ cyber-asana auth logout
 ```
 
 `login` opens the browser, listens on a loopback callback, and stores the credential
-locally.
+locally. It runs against your own Asana app, which must be registered as an **API app** —
+tokens from an **MCP app** work only with Asana's hosted MCP server.
+
+```sh
+export ASANA_API_CLIENT_ID="<client-id>"
+export ASANA_API_CLIENT_SECRET="<client-secret>"
+```
 
 | Option | Command | Description |
 | --- | --- | --- |
-| `--client-id <id>` | `login`, `logout` | OAuth client ID — overrides `ASANA_CLIENT_ID` and `settings.json` |
+| `--client-id <id>` | `login`, `logout` | OAuth client ID — overrides `ASANA_API_CLIENT_ID`, `ASANA_CLIENT_ID`, and `settings.json` |
 | `--client-secret <secret>` | `login`, `logout` | OAuth client secret (visible in shell history — prefer the env var) |
 | `--no-store` | `login` | Print the token instead of saving it |
 | `--include-refresh-token` | `login` | Also print the long-lived refresh token (implies `--no-store`) |
@@ -61,6 +67,21 @@ locally.
 
 Use `--manual` when you are on a remote or headless machine where the browser cannot reach
 the loopback listener.
+
+### App registration sources
+
+The client id and secret resolve independently, in this order:
+
+1. `--client-id` / `--client-secret` on the command
+2. `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` environment variables
+3. `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` environment variables
+4. `client_id` / `client_secret` in `~/.config/cyber-asana/settings.json`
+
+`ASANA_API_CLIENT_ID` and `ASANA_API_CLIENT_SECRET` are names cyber-asana defines — they are
+not official Asana variables. They exist because Asana's docs use `ASANA_CLIENT_ID` /
+`ASANA_CLIENT_SECRET` for the hosted MCP server's **MCP app**, whose credentials do not work
+here; the prefixed pair lets both registrations coexist. `ASANA_CLIENT_ID` /
+`ASANA_CLIENT_SECRET` still work as a fallback.
 
 ## Printing the stored token
 
@@ -77,6 +98,7 @@ curl -H "Authorization: Bearer $(cyber-asana auth token)" \
 ```
 
 :::caution
-OAuth tokens from Asana's official MCP server are not interchangeable with these — they
-cannot be used as `ASANA_ACCESS_TOKEN`, and a PAT cannot substitute for official MCP OAuth.
+Nothing from Asana's official MCP server is interchangeable with these. Its OAuth tokens
+cannot be used as `ASANA_ACCESS_TOKEN`, a PAT cannot substitute for official MCP OAuth, and
+its **MCP app** client id and secret cannot drive `auth login`, which needs an **API app**.
 :::

@@ -4,10 +4,15 @@ Run the [official Asana MCP](https://developers.asana.com/docs/mcp-tools-referen
 
 | Server | Config key | Auth | Env vars |
 | --- | --- | --- | --- |
-| Official Asana MCP | `asana` | OAuth 2.0 (hosted, host-managed app) | `ASANA_CLIENT_ID`, `ASANA_CLIENT_SECRET` |
-| cyber-asana | `cyber-asana` | Personal access token, or OAuth 2.0 + PKCE via `cyber-asana auth login` (your own Asana app) | `ASANA_ACCESS_TOKEN`, optional `ASANA_WORKSPACE_GID` |
+| Official Asana MCP | `asana` | OAuth 2.0 (hosted, **MCP app** you register) | `ASANA_CLIENT_ID`, `ASANA_CLIENT_SECRET` (Asana's documented names) |
+| cyber-asana | `cyber-asana` | Personal access token, or OAuth 2.0 + PKCE via `cyber-asana auth login` (your own **API app**) | `ASANA_ACCESS_TOKEN`, optional `ASANA_WORKSPACE_GID`; for OAuth, `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` |
 
-**Credentials are not interchangeable:** MCP OAuth tokens from the official server cannot be used as `ASANA_ACCESS_TOKEN`. PATs cannot substitute for official MCP OAuth.
+**Credentials are not interchangeable — neither the tokens nor the app registrations.**
+
+Asana's hosted MCP server does not support dynamic client registration, so you pre-register an app of type **MCP app** ([integrating](https://developers.asana.com/docs/integrating-with-asanas-mcp-server), [connecting](https://developers.asana.com/docs/connecting-mcp-clients-to-asanas-v2-server)). Asana states that tokens issued for MCP apps only work with the MCP server, and that standard API requests need a separate **API app**.
+
+- **Tokens** — MCP OAuth tokens from the official server cannot be used as `ASANA_ACCESS_TOKEN`. PATs cannot substitute for official MCP OAuth.
+- **Client ids and secrets** — an MCP app's pair cannot drive `cyber-asana auth login`, which needs an API app's. Asana documents the MCP app's pair under `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET`, so one exported pair cannot serve both. Give cyber-asana its API app through `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` (names cyber-asana defines) or `~/.config/cyber-asana/settings.json`, and keep the official server's pair in the host config's `auth` block.
 
 Dual-config example (Cursor-style):
 
