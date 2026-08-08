@@ -91,6 +91,11 @@ function mockRuntimeContext(): RuntimeContext {
 			deleteStory: vi.fn(),
 			getTaskTemplateData: vi.fn(),
 		},
+		taskTemplates: {
+			listTaskTemplates: vi.fn(),
+			getTaskTemplate: vi.fn(),
+			instantiateTask: vi.fn(),
+		},
 		status: {
 			listStatuses: vi.fn(),
 			getStatus: vi.fn(),
@@ -181,6 +186,32 @@ describe('composition wiring', () => {
 		})
 
 		expect(ctx.tags.createTag).toHaveBeenCalledWith('ws1', 'Urgent', {})
+	})
+
+	it('CLI task-template instantiate uses runtime context task templates api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.taskTemplates.instantiateTask = vi.fn().mockResolvedValue({ gid: 'j1', status: 'succeeded' })
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'task-template', 'instantiate', 'tt1', '--no-wait'], { from: 'node' })
+
+		expect(ctx.taskTemplates.instantiateTask).toHaveBeenCalledWith(
+			'tt1',
+			{},
+			expect.objectContaining({ maxAttempts: 0 }),
+		)
+	})
+
+	it('MCP asana_task_template_list uses runtime context task templates api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.taskTemplates.listTaskTemplates = vi.fn().mockResolvedValue([])
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_task_template_list')?.({ project_gid: 'p1' })
+
+		expect(ctx.taskTemplates.listTaskTemplates).toHaveBeenCalledWith('p1', expect.any(Object))
 	})
 
 	it('CLI status create uses runtime context status api', async () => {

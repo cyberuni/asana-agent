@@ -49,6 +49,10 @@ import { createTagApi, type TagApi } from './tags/api.js'
 import { tagCommand } from './tags/cli.js'
 import { createAsanaTagGateway } from './tags/gateway.js'
 import { registerTagTools } from './tags/mcp.js'
+import { createTaskTemplateApi, type TaskTemplateApi } from './task-templates/api.js'
+import { taskTemplateCommand } from './task-templates/cli.js'
+import { createAsanaTaskTemplateGateway } from './task-templates/gateway.js'
+import { registerTaskTemplateTools } from './task-templates/mcp.js'
 import { createTaskApi, type TaskApi } from './tasks/api.js'
 import { taskCommand } from './tasks/cli.js'
 import { createAsanaTaskGateway } from './tasks/gateway.js'
@@ -81,6 +85,7 @@ export type RuntimeContext = {
 	stories: StoryApi
 	tags: TagApi
 	tasks: TaskApi
+	taskTemplates: TaskTemplateApi
 	teams: TeamApi
 	users: UserApi
 	workspaces: WorkspaceApi
@@ -106,6 +111,7 @@ export function createRuntimeContext(): RuntimeContext {
 		stories: createStoryApi(createAsanaStoryGateway(client)),
 		tags: createTagApi(createAsanaTagGateway(client)),
 		tasks: createTaskApi(createAsanaTaskGateway(client)),
+		taskTemplates: createTaskTemplateApi(createAsanaTaskTemplateGateway(client)),
 		teams: createTeamApi(createAsanaTeamGateway(client)),
 		users: createUserApi(createAsanaUserGateway(client)),
 		workspaces: createWorkspaceApi(createAsanaWorkspaceGateway(client)),
@@ -116,6 +122,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(workspaceCommand(() => getContext().workspaces))
 	program.addCommand(projectCommand(() => getContext().projects))
 	program.addCommand(taskCommand(() => getContext().tasks))
+	program.addCommand(taskTemplateCommand(() => getContext().taskTemplates))
 	program.addCommand(sectionCommand(() => getContext().sections))
 	program.addCommand(searchCommand(() => getContext().search))
 	program.addCommand(userCommand(() => getContext().users))
@@ -140,6 +147,7 @@ export function registerMcpTools(server: McpServer, getContext: () => RuntimeCon
 	registerWorkspaceTools(server, () => getContext().workspaces)
 	registerProjectTools(server, () => getContext().projects)
 	registerTaskTools(server, () => getContext().tasks)
+	registerTaskTemplateTools(server, () => getContext().taskTemplates)
 	registerSectionTools(server, () => getContext().sections)
 	registerSearchTools(server, () => getContext().search)
 	registerUserTools(server, () => getContext().users)

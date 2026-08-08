@@ -126,6 +126,7 @@ Default: if both can do the job, prefer **official for discovery and previews** 
 | `workspace` | `asana_workspace_list`, `asana_workspace_get` |
 | `project` | `asana_project_list`, `asana_project_get`, `asana_project_counts`, `asana_project_search`, `asana_project_create`, `asana_project_update`, `asana_project_delete`, `asana_project_export` |
 | `task` | `asana_task_list`, `asana_task_my_tasks`, `asana_task_subtask_list`, `asana_task_subtask_create`, `asana_task_get`, `asana_task_get_many`, `asana_task_create`, `asana_task_update`, `asana_task_delete`, `asana_task_search`, `asana_task_follower_add`, `asana_task_follower_remove`, `asana_task_project_add`, `asana_task_project_remove`, `asana_task_dependency_list`, `asana_task_dependency_add`, `asana_task_dependency_remove`, `asana_task_dependent_list`, `asana_task_dependent_add`, `asana_task_dependent_remove`, `asana_task_scan_todos` |
+| `task-template` | `asana_task_template_list`, `asana_task_template_get`, `asana_task_template_instantiate` |
 | `section` | `asana_section_list`, `asana_section_get`, `asana_section_create`, `asana_section_update`, `asana_section_move`, `asana_section_task_add`, `asana_section_delete` |
 | `user` | `asana_user_list`, `asana_user_get`, `asana_user_me` |
 | `team` | `asana_team_list`, `asana_team_get` |
@@ -143,6 +144,7 @@ List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` 
 
 ### Notable Parameters
 
+- `asana_task_template_instantiate` — `name` names the created task; instantiation is a job, so the tool polls it for `timeout_seconds` (default 10) and returns the job with `new_task` once it succeeds. `wait: false` returns the pending job immediately
 - `asana_task_list`, `asana_task_my_tasks`, `asana_task_subtask_list` — `incomplete: true` filters to incomplete tasks
 - `asana_task_create` — `project_gid`, `project_gids`, `follower_gids`, `html_notes`, `parent_gid`, `resource_subtype`, `custom_fields`
 - `asana_task_update` — `html_notes`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
