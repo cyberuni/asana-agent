@@ -10,7 +10,8 @@ tags, goals, portfolios — and deliberately leaves out admin, billing, and ente
 surfaces.
 
 Every operation below is reachable from both the CLI and the MCP server; they share the
-same core, so nothing is CLI-only or MCP-only.
+same core, so nothing is CLI-only or MCP-only. For how the MCP server compares to Asana's
+own, see [cyber-asana vs official Asana MCP](/cyber-asana/reference/mcp-comparison/).
 
 :::note
 Coverage is measured against the `asana` npm SDK v3.1.12, which is generated from the
