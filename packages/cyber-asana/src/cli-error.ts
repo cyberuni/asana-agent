@@ -1,5 +1,5 @@
 import { buildUsageErrorBody, isUsageError, renderUsageErrorText } from './cli-usage.js'
-import { buildMcpToolErrorBody } from './mcp-error.js'
+import { buildMcpToolErrorBody, PLAN_LIMITATION_STATUS } from './mcp-error.js'
 import type { OutputFormat } from './output.js'
 import { encodeToon } from './toon.js'
 
@@ -11,6 +11,8 @@ export function exitCodeFor(error: unknown): number {
 	const body = buildMcpToolErrorBody(error)
 	if (body.error.kind === 'config') return 3
 	switch (body.error.status) {
+		case PLAN_LIMITATION_STATUS:
+			return 7 // above the workspace's plan level
 		case 401:
 			return 3 // unauthenticated
 		case 403:

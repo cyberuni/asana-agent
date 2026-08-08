@@ -24,6 +24,10 @@ import { createProjectApi, type ProjectApi } from './projects/api.js'
 import { projectCommand } from './projects/cli.js'
 import { createAsanaProjectGateway } from './projects/gateway.js'
 import { registerProjectTools } from './projects/mcp.js'
+import { createRuleApi, type RuleApi } from './rules/api.js'
+import { ruleCommand } from './rules/cli.js'
+import { createAsanaRuleGateway } from './rules/gateway.js'
+import { registerRuleTools } from './rules/mcp.js'
 import { createSearchApi, type SearchApi } from './search/api.js'
 import { searchCommand } from './search/cli.js'
 import { createAsanaSearchGateway } from './search/gateway.js'
@@ -70,6 +74,7 @@ export type RuntimeContext = {
 	goals: GoalApi
 	portfolios: PortfolioApi
 	projects: ProjectApi
+	rules: RuleApi
 	search: SearchApi
 	sections: SectionApi
 	status: StatusApi
@@ -91,6 +96,7 @@ export function createRuntimeContext(): RuntimeContext {
 		goals: createGoalApi(createAsanaGoalGateway(client)),
 		portfolios: createPortfolioApi(portfolioGateway),
 		projects: createProjectApi(projectGateway),
+		rules: createRuleApi(createAsanaRuleGateway(client)),
 		search: createSearchApi(createAsanaSearchGateway(client)),
 		sections: createSectionApi(createAsanaSectionGateway(client)),
 		status: createStatusApi(createAsanaStatusGateway(client), {
@@ -120,6 +126,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(customFieldCommand(() => getContext().customFields))
 	program.addCommand(attachmentCommand(() => getContext().attachments))
 	program.addCommand(statusCommand(() => getContext().status))
+	program.addCommand(ruleCommand(() => getContext().rules))
 	program.addCommand(storyCommand('story', () => getContext().stories))
 	program.addCommand(storyCommand('comment', () => getContext().stories))
 	program.addCommand(authCommand())
@@ -143,6 +150,7 @@ export function registerMcpTools(server: McpServer, getContext: () => RuntimeCon
 	registerCustomFieldTools(server, () => getContext().customFields)
 	registerAttachmentTools(server, () => getContext().attachments)
 	registerStatusTools(server, () => getContext().status)
+	registerRuleTools(server, () => getContext().rules)
 	registerStoryTools(server, () => getContext().stories)
 	registerUrlTools(server)
 }
