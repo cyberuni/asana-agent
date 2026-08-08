@@ -97,7 +97,7 @@ Credentials live under `$XDG_CONFIG_HOME/cyber-asana` (or `~/.config/cyber-asana
 | `settings.json` | `client_id`, `client_secret` | you, by hand |
 | `credentials.json` | access token, refresh token, expiry | the CLI, on every refresh |
 
-Both are `0600`. The environment overrides `settings.json` per field; full precedence is `--client-id` / `--client-secret` > `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` > `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` > `settings.json`.
+Both are `0600`. The environment overrides `settings.json` per field; full precedence is `--client-id` / `--client-secret` > `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` > `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` > `settings.json`. `auth status` reports which registration won and which ones it shadows, so the precedence is never silent.
 
 To get a token without storing it — for a one-off shell, a CI step, or a container:
 
@@ -239,6 +239,21 @@ export ASANA_API_CLIENT_SECRET="..."  # cyber-asana API app
 ```
 
 If your host reads the official server's credentials from the environment instead of the config file, `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` can hold the MCP app's pair — the prefixed names keep cyber-asana off them.
+
+**Checking which registration cyber-asana picked up.** With both pairs exported, precedence decides silently — so confirm it before you hit the OAuth flow:
+
+```sh
+cyber-asana auth status
+```
+
+```
+App          …cdef (ASANA_API_CLIENT_ID)
+App ignored  ASANA_CLIENT_ID
+```
+
+`App` is the masked client id and the source it came from; `App ignored` names the registrations that source shadowed — here the MCP app's pair, correctly losing. If `App` reads `(ASANA_CLIENT_ID)` in a dual setup, cyber-asana is about to authorize with the MCP app. `--json` and `--toon` report the same as an `app` object (`client_id_masked`, `source`, `shadowed`), `null` when nothing resolves. The command is offline — it never calls Asana.
+
+If the wrong registration does reach Asana, the token request fails with `invalid_client`; cyber-asana appends a hint about the API-app / MCP-app distinction to Asana's own message rather than replacing it.
 
 **Migration:** If you already registered cyber-asana under the config key `"asana"`, rename it to `"cyber-asana"` before adding the official `"asana"` server. This is a host-config change only — not a package breaking change.
 
