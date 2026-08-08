@@ -1,186 +1,120 @@
 ---
-title: CLI Reference
-description: cyber-asana command-line interface reference
+title: CLI Overview
+description: Global options, output formats, and pagination shared by every cyber-asana command.
+sidebar:
+  order: 1
 ---
 
-Terminal and scripting interface — same API surface as MCP, without an agent host. For agents, prefer [Skills](/cyber-asana/skills/) and [MCP](/cyber-asana/mcp/) first.
+The `cyber-asana` CLI exposes the same operations as the MCP server, without needing an
+agent host. Every command follows the same shape:
 
-```bash
+```sh
 cyber-asana <resource> <action> [options]
 ```
 
-## Output Formats
-
-Output is human-readable by default. Add `--toon` for token-efficient TOON (recommended for agents) or `--json` for raw API JSON.
-
-```bash
-cyber-asana task list --project <gid> --toon
-cyber-asana task list --project <gid> --json
+```sh
+cyber-asana task list --project <gid>
+cyber-asana project create "Launch" --workspace-gid <gid>
+cyber-asana comment create "Shipped!" --task <gid>
 ```
+
+Run `cyber-asana` with no arguments to see the authenticated user and version instead of
+help text. Every resource group's `--help` ends with worked examples.
+
+## Command reference
+
+| Resource | Actions |
+| --- | --- |
+| [Tasks](/cyber-asana/cli/tasks/) | `list`, `get`, `get-many`, `create`, `update`, `delete`, `search`, `my-tasks`, `subtask`, `project`, `follower`, `dependency`, `dependent` |
+| [Projects](/cyber-asana/cli/projects/) | `list`, `get`, `counts`, `search`, `create`, `update`, `delete`, `export` |
+| [Sections](/cyber-asana/cli/sections/) | `list`, `get`, `create`, `update`, `delete` |
+| [Comments](/cyber-asana/cli/comments/) | `list`, `create` (as `story` or `comment`) |
+| [Tags](/cyber-asana/cli/tags/) | `list`, `get`, `create`, `update`, `delete`, `tasks`, `task list/add/remove` |
+| [Goals](/cyber-asana/cli/goals/) | `list`, `get`, `create`, `update`, `delete` |
+| [Portfolios](/cyber-asana/cli/portfolios/) | `list`, `items`, `get`, `create`, `update`, `delete` |
+| [Status updates](/cyber-asana/cli/status-updates/) | `list`, `get`, `create`, `delete` |
+| [Attachments](/cyber-asana/cli/attachments/) | `list`, `get` |
+| [People & places](/cyber-asana/cli/people/) | `user list/get/me`, `team list/get`, `workspace list/get` |
+| [Authentication](/cyber-asana/cli/auth/) | `auth status`, `auth login`, `auth token`, `auth logout` |
+| [Repo config](/cyber-asana/cli/repo-config/) | `config show/list/path/resolve-project/add/remove/sync` |
+| [Utilities](/cyber-asana/cli/utilities/) | `url parse`, `task scan-todos`, `setup hook`, `mcp` |
+
+## Global options
+
+These work on every command:
+
+| Option | Description |
+| --- | --- |
+| `--token <token>` | Asana PAT — overrides the `ASANA_ACCESS_TOKEN` env var |
+| `--json` | Raw API JSON instead of formatted text |
+| `--toon` | Token-efficient TOON instead of formatted text (recommended for agents) |
+| `--full` | Show full field values instead of truncating large text |
+
+Output is human-readable by default. `--toon` emits
+[TOON](https://github.com/kunchenguid/axi#the-10-principles), a compact tabular format
+that drops repeated keys for roughly 40% fewer tokens than pretty JSON.
+
+## GID options
+
+Commands that take a resource GID accept both a canonical `--<resource>-gid` flag and a
+shorter legacy alias:
+
+```sh
+cyber-asana task list --project-gid <gid>
+cyber-asana task list --project <gid>      # legacy alias
+```
+
+Workspace-scoped commands read `ASANA_WORKSPACE` when `--workspace-gid` is omitted, so
+setting it once in your shell removes it from every call.
 
 ## Pagination
 
-List commands support pagination and field selection:
+Every list command supports the same pagination options:
 
-```bash
-cyber-asana task list --project <gid> --limit 50 --offset <next_page.offset>
+| Option | Description |
+| --- | --- |
+| `--limit <number>` | Results per page, 1–100 (default: 100) |
+| `--offset <token>` | Offset token from a previous paginated response |
+| `--opt-fields <fields>` | Comma-separated Asana fields to include |
+| `--all` | Fetch all pages up to `--max-pages` |
+| `--max-pages <number>` | Cap pages fetched with `--all` (default: 10) |
+
+```sh
+cyber-asana task list --project <gid> --limit 50
+cyber-asana task list --project <gid> --offset <next_page.offset>
 cyber-asana task list --project <gid> --all --max-pages 5
-cyber-asana project list --opt-fields gid,name,permalink_url
 ```
 
-List commands request 100 results per page by default. Use `--all` to fetch multiple pages; `--max-pages` caps the number.
+`--all` and `--offset` are mutually exclusive. Under `--json`, paginated responses include
+`data`, `next_page`, and `limit`; in text mode a `Next offset` hint prints when another
+page is available.
 
-## Resources
+Each list command requests a small default field set — task lists ask for only
+`gid,name,completed,due_on` — so responses stay cheap. Pass `--opt-fields` to widen.
 
-| Resource | Actions |
-|---|---|
-| `workspace` | `list`, `get` |
-| `project` | `list`, `get`, `counts`, `search`, `create`, `update`, `delete` |
-| `task` | `list`, `my-tasks list`, `get`, `create`, `update`, `delete`, `subtask list`, `subtask create`, `search`, `project add/remove`, `follower add/remove`, `dependency list/add/remove`, `dependent list/add/remove` |
-| `section` | `list`, `get`, `create`, `update`, `delete` |
-| `user` | `list`, `get`, `me` |
-| `team` | `list`, `get` |
-| `portfolio` | `list`, `items`, `get`, `create`, `update`, `delete` |
-| `goal` | `list`, `get`, `create`, `update`, `delete` |
-| `tag` | `list`, `get`, `create`, `update`, `delete`, `tasks`, `task list/add/remove` |
-| `attachment` | `list`, `get` |
-| `status` | `list`, `get`, `create`, `delete` |
-| `story` | `list`, `create` |
-| `comment` | `list`, `create` (alias for `story`) |
-| `setup` | `hook` |
-| `auth` | `status`, `login`, `logout`, `token` |
-| `config` | `add`, `show`, `sync`, `resolve-project` |
-| `url` | `parse` |
+## Output conventions
 
-## Agent-friendly Output
+- **Definitive empty states** — an empty result names what was empty (`0 tasks found`),
+  never a blank line.
+- **Content truncation** — large text (task notes, project notes, status update and
+  comment bodies) is truncated with a size hint; pass `--full` for the complete value.
+- **Aggregates & next steps** — list commands print a count summary and follow-up command
+  suggestions in text mode, suppressed under `--toon`/`--json`.
+- **Non-interactive mutations** — no prompts, so everything is safe to script.
+- **Idempotent deletes** — deleting something already gone succeeds and reports
+  `already_absent: true` instead of failing with a 404.
 
-The CLI follows conventions that make its output cheap and unambiguous for AI agents:
+## Exit codes
 
-- **Token-efficient output** — `--toon` emits TOON, a compact tabular format (~40% fewer tokens than pretty JSON)
-- **Minimal default schemas** — every list command requests a small field set by default
-- **Content truncation** — large text is truncated with a size hint; pass `--full` for complete values
-- **Definitive empty states** — empty results name what was empty, e.g. `0 tasks found`
-- **Aggregates & next steps** — list commands print count summaries and follow-up suggestions in text mode
-- **Structured errors & exit codes** — `0` success, `1` generic, `2` usage, `3` auth/config, `4` forbidden, `5` not found, `6` rate limited
-- **Self-correcting usage errors** — unknown flags report what the command accepts
+| Code | Meaning |
+| --- | --- |
+| `0` | Success |
+| `1` | Generic error |
+| `2` | Usage error (bad flag or subcommand) |
+| `3` | Auth or config error |
+| `4` | Forbidden |
+| `5` | Not found |
+| `6` | Rate limited |
 
-All mutations are non-interactive and deletes are idempotent.
-
-## Incomplete Tasks
-
-All task list commands accept `--incomplete` as shorthand for `--completed-since now`:
-
-```bash
-cyber-asana task list --project <gid> --incomplete
-cyber-asana task my-tasks list --incomplete
-cyber-asana task subtask list <task-gid> --incomplete
-```
-
-## Task Search Filters
-
-`task search` accepts an optional text query plus filters:
-
-```bash
-# Text search
-cyber-asana task search "login"
-
-# Incomplete tasks in a project
-cyber-asana task search --no-completed --project <gid>
-
-# Overdue milestones
-cyber-asana task search --assignee <user-gid> --subtype milestone --due-on-before 2026-01-01
-
-# Blocked tasks, sorted by due date
-cyber-asana task search --is-blocked --sort-by due_date --json
-```
-
-**Status filters:** `--completed/--no-completed`, `--subtask/--no-subtask`, `--has-attachment`, `--is-blocking`, `--is-blocked`
-
-**Resource filters** (accept `<gid[,gid...]>`): `--assignee`, `--project`, `--section`, `--tag`, `--team`, `--portfolio`, `--follower`, `--created-by`
-
-**Date filters** (YYYY-MM-DD): `--due-on`, `--due-on-before`, `--due-on-after`, `--start-on`, `--created-on`, `--completed-on`, `--modified-on`
-
-## Project Search Filters
-
-```bash
-cyber-asana project search "launch" --workspace-gid <gid>
-cyber-asana project search --workspace-gid <gid> --no-completed --owner me
-cyber-asana project search --workspace-gid <gid> --portfolio <gid> --sort-by due_date
-```
-
-## Task Dependencies
-
-```bash
-# List dependencies
-cyber-asana task dependency list <task-gid>
-
-# Add/remove dependencies
-cyber-asana task dependency add <task-gid> <dep-gid>
-cyber-asana task dependency remove <task-gid> <dep-gid>
-
-# List/add/remove dependents
-cyber-asana task dependent list <task-gid>
-cyber-asana task dependent add <task-gid> <dep-gid>
-```
-
-## Task Project Membership
-
-```bash
-# Add task to a project
-cyber-asana task project add <task-gid> <project-gid>
-
-# Add into a specific section
-cyber-asana task project add <task-gid> <project-gid> --section <section-gid>
-
-# Remove from a project
-cyber-asana task project remove <task-gid> <project-gid>
-```
-
-## Comments (Stories)
-
-```bash
-cyber-asana comment list --task <gid>
-cyber-asana comment create "Great work!" --task <gid>
-
-# With template interpolation
-cyber-asana comment create "Hey {task.assignee}, '{task.name}' is due {task.due_on}" --task <gid> --template
-```
-
-## URL Parsing
-
-Extract GIDs from Asana app URLs without calling the API:
-
-```bash
-cyber-asana url parse 'https://app.asana.com/1/<workspace>/project/<project>/list/<view>' --json
-```
-
-## Ambient Context Hook
-
-Install a SessionStart hook so each agent session opens with live Asana context:
-
-```bash
-cyber-asana setup hook              # merges into .claude/settings.json
-cyber-asana setup hook --dry-run    # report without writing
-```
-
-## Examples
-
-```bash
-# List projects
-cyber-asana project list
-
-# Search projects
-cyber-asana project search "launch" --workspace-gid <gid>
-
-# Create a task
-cyber-asana task create "Fix the bug" --workspace-gid <gid> --project-gid <gid> --due-on 2026-06-01
-
-# Search tasks
-cyber-asana task search "login" --json
-
-# Get project task counts
-cyber-asana project counts <project-gid>
-
-# List task subtasks with assignee emails
-cyber-asana task subtask list <task-gid> --assignee-email
-```
+Under `--json`/`--toon`, errors are structured objects. An unknown flag reports the flags
+that command actually accepts, plus a `--help` pointer, and exits `2`.
