@@ -411,7 +411,7 @@ Tools are named `asana_<resource>_<action>` (e.g. `asana_task_create`).
 | `portfolio` | `asana_portfolio_list`, `asana_portfolio_item_list`, `asana_portfolio_get`, `asana_portfolio_create`, `asana_portfolio_update`, `asana_portfolio_delete` |
 | `goal` | `asana_goal_list`, `asana_goal_get`, `asana_goal_create`, `asana_goal_update`, `asana_goal_delete` |
 | `tag` | `asana_tag_list`, `asana_tag_get`, `asana_tag_create`, `asana_tag_update`, `asana_tag_delete`, `asana_tag_list_for_task`, `asana_tag_list_tasks`, `asana_tag_add_to_task`, `asana_tag_remove_from_task` |
-| `attachment` | `asana_attachment_list`, `asana_attachment_get` |
+| `attachment` | `asana_attachment_list`, `asana_attachment_get`, `asana_attachment_create`, `asana_attachment_delete` |
 | `status` | `asana_status_overview`, `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
 | `story` | `asana_story_list`, `asana_story_get`, `asana_story_create`, `asana_story_update`, `asana_story_delete` |
 | `comment` | `asana_comment_list`, `asana_comment_get`, `asana_comment_create`, `asana_comment_update`, `asana_comment_delete` (aliases for `story`) |
@@ -525,7 +525,7 @@ Installing twice is a no-op, and unrelated settings are preserved.
 | `portfolio` | `list`, `items`, `get`, `create`, `update`, `delete` |
 | `goal` | `list`, `get`, `create`, `update`, `delete` |
 | `tag` | `list`, `get`, `create`, `update`, `delete`, `tasks`, `task list/add/remove` |
-| `attachment` | `list`, `get` |
+| `attachment` | `list`, `get`, `create`, `delete` |
 | `status` | `list`, `get`, `create`, `delete` |
 | `story` | `list`, `get`, `create`, `update`, `delete` |
 | `comment` | `list`, `get`, `create`, `update`, `delete` (alias for `story`) |
