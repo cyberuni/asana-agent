@@ -51,6 +51,42 @@ describe('users/cli', () => {
 		logSpy.mockRestore()
 	})
 
+	it('user list points at out-of-office entries', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		listUsersMock.mockResolvedValue([{ gid: 'user1', name: 'Alice' }])
+		const program = new Command().addCommand(userCommand())
+
+		await program.parseAsync(['node', 'test', 'user', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines.some((l) => l.includes('cyber-asana ooo list --user-gid <gid>'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
+	it('user get points at that user out-of-office entries', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		getUserMock.mockResolvedValue({ gid: 'user1', name: 'Alice' })
+		const program = new Command().addCommand(userCommand())
+
+		await program.parseAsync(['node', 'test', 'user', 'get', 'user1'], { from: 'node' })
+
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines.some((l) => l.includes('cyber-asana ooo list --user-gid user1'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
+	it('user me points at your own out-of-office entries', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		getMeMock.mockResolvedValue({ gid: 'me', name: 'Me' })
+		const program = new Command().addCommand(userCommand())
+
+		await program.parseAsync(['node', 'test', 'user', 'me'], { from: 'node' })
+
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines.some((l) => l.includes('cyber-asana ooo list'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
 	it('user get forwards gid', async () => {
 		getUserMock.mockResolvedValue({ gid: 'user1', name: 'Alice' })
 		const program = new Command().addCommand(userCommand())
