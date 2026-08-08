@@ -56,6 +56,19 @@ Reload MCP servers after changes.
 
 **Dual MCP:** Both the official Asana OAuth MCP and cyber-asana can run together with separate config keys and credentials. Routing guidance is in [readme.md — Using alongside official Asana MCP](readme.md#using-alongside-official-asana-mcp).
 
+### Gap analysis vs the official MCP
+
+The docs site's [cyber-asana vs official Asana MCP](https://cyberuni.github.io/cyber-asana/reference/mcp-comparison/) page reports tool counts, overlap pairs, and gaps. Those numbers come from `tools/gap-analysis`, which extracts cyber-asana's tools from `packages/cyber-asana/src/**/mcp.ts` and diffs them against a checked-in snapshot of Asana's documented tool list.
+
+```sh
+cd tools/gap-analysis
+pnpm fetch-official   # refresh data/official-asana-mcp-baseline.json
+pnpm catalog          # re-extract cyber-asana's tools
+pnpm report           # print the gap report
+```
+
+Regenerate and update the comparison page whenever MCP tools are added or removed, or when Asana publishes new ones. `pnpm check` fails if the checked-in catalog has drifted from the source.
+
 ### MCP Inspector
 
 Debug tools and schemas without an agent host. UI defaults to [http://localhost:6274](http://localhost:6274).
