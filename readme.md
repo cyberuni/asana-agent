@@ -57,13 +57,15 @@ It reads local state only, never calls the API, and exits `0` even when no crede
 
 A PAT is the simpler choice for a single user. OAuth is worth the setup when several people use the same install, or when you want a credential that refreshes itself instead of living forever in your shell profile.
 
-cyber-asana uses **your own** Asana app, so no third-party registration ever sees your data. Create one at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps), then:
+cyber-asana uses **your own** Asana app, so no third-party registration ever sees your data. Create one at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps) — it must be an **API app**, not an **MCP app**. The two are separate registrations: [per Asana](https://developers.asana.com/docs/integrating-with-asanas-mcp-server), tokens issued for MCP apps only work with Asana's hosted MCP server, and standard API requests need an API app. cyber-asana talks to the REST API, so an MCP app's client id will not work here. Then:
 
 ```sh
-export ASANA_CLIENT_ID=<client-id>
-export ASANA_CLIENT_SECRET=<client-secret>
+export ASANA_API_CLIENT_ID=<client-id>
+export ASANA_API_CLIENT_SECRET=<client-secret>
 cyber-asana auth login
 ```
+
+`ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` are names cyber-asana defines, not official Asana variables. They exist so the API app's credentials can sit alongside an MCP app's — see [Using alongside official Asana MCP](#using-alongside-official-asana-mcp). `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` still work as a fallback.
 
 ### Which redirect URL to register
 
@@ -95,7 +97,7 @@ Credentials live under `$XDG_CONFIG_HOME/cyber-asana` (or `~/.config/cyber-asana
 | `settings.json` | `client_id`, `client_secret` | you, by hand |
 | `credentials.json` | access token, refresh token, expiry | the CLI, on every refresh |
 
-Both are `0600`. `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` override `settings.json` per field.
+Both are `0600`. The environment overrides `settings.json` per field; full precedence is `--client-id` / `--client-secret` > `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` > `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` > `settings.json`.
 
 To get a token without storing it — for a one-off shell, a CI step, or a container:
 
@@ -184,10 +186,19 @@ You can run **both** the [official Asana MCP](https://developers.asana.com/docs/
 
 | Server | Config key | Auth | Env vars |
 | --- | --- | --- | --- |
-| Official Asana MCP | `asana` | OAuth 2.0 (hosted, host-managed app) | `ASANA_CLIENT_ID`, `ASANA_CLIENT_SECRET` |
-| cyber-asana | `cyber-asana` | Personal access token, or OAuth 2.0 + PKCE via [`auth login`](#oauth) (your own Asana app) | `ASANA_ACCESS_TOKEN`, optional `ASANA_WORKSPACE_GID` |
+| Official Asana MCP | `asana` | OAuth 2.0 (hosted, **MCP app** you register) | `ASANA_CLIENT_ID`, `ASANA_CLIENT_SECRET` (Asana's documented names) |
+| cyber-asana | `cyber-asana` | Personal access token, or OAuth 2.0 + PKCE via [`auth login`](#oauth) (your own **API app**) | `ASANA_ACCESS_TOKEN`, optional `ASANA_WORKSPACE_GID`; for OAuth, `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` |
 
-**Credentials are not interchangeable:** MCP OAuth tokens from the official server cannot be used as `ASANA_ACCESS_TOKEN` for cyber-asana or the REST API. PATs cannot substitute for official MCP OAuth.
+**Credentials are not interchangeable — neither the tokens nor the app registrations.**
+
+Asana's hosted MCP server does not support dynamic client registration, so you pre-register an app of type **MCP app** and give the host its client id and secret ([integrating](https://developers.asana.com/docs/integrating-with-asanas-mcp-server), [connecting](https://developers.asana.com/docs/connecting-mcp-clients-to-asanas-v2-server)). Asana is explicit that this is a separate registration from the one the REST API uses:
+
+> Tokens issued for MCP apps only work with the MCP server. If you need to make standard Asana API requests, create a separate API app and obtain tokens through the standard OAuth or PAT flow.
+
+So:
+
+- **Tokens** — MCP OAuth tokens from the official server cannot be used as `ASANA_ACCESS_TOKEN` for cyber-asana or the REST API, and a PAT cannot substitute for official MCP OAuth.
+- **Client ids and secrets** — an MCP app's pair cannot drive `cyber-asana auth login`, which needs an API app's. Asana documents the MCP app's pair under `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET`, so exporting one pair globally will not serve both servers. Give cyber-asana its API app through `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` (names cyber-asana defines) or `~/.config/cyber-asana/settings.json`, and keep the official server's pair scoped to the host config's `auth` block.
 
 Dual-config example (Cursor-style; see [Asana's connecting doc](https://developers.asana.com/docs/connecting-mcp-clients-to-asanas-v2-server) for host-specific OAuth setup):
 
@@ -213,14 +224,21 @@ Dual-config example (Cursor-style; see [Asana's connecting doc](https://develope
 }
 ```
 
-Shell profile for dual setup:
+Shell profile for dual setup — the official server's pair stays in the host config's `auth` block above rather than being exported, so it cannot be picked up by `cyber-asana auth login`:
 
 ```sh
-export ASANA_CLIENT_ID="..."      # official MCP OAuth app
-export ASANA_CLIENT_SECRET="..."  # official MCP OAuth app
 export ASANA_ACCESS_TOKEN="..."   # cyber-asana PAT (create at app.asana.com → My Apps)
 export ASANA_WORKSPACE_GID="..."  # cyber-asana default workspace (optional)
 ```
+
+If you use OAuth for cyber-asana rather than a PAT, add its **API app** registration under the prefixed names, which outrank `ASANA_CLIENT_*`:
+
+```sh
+export ASANA_API_CLIENT_ID="..."      # cyber-asana API app
+export ASANA_API_CLIENT_SECRET="..."  # cyber-asana API app
+```
+
+If your host reads the official server's credentials from the environment instead of the config file, `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` can hold the MCP app's pair — the prefixed names keep cyber-asana off them.
 
 **Migration:** If you already registered cyber-asana under the config key `"asana"`, rename it to `"cyber-asana"` before adding the official `"asana"` server. This is a host-config change only — not a package breaking change.
 

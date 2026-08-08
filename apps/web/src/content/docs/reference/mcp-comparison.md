@@ -19,7 +19,7 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 | --- | --- | --- |
 | Tools | 27 | 72 |
 | Transport | Hosted remote (`https://mcp.asana.com/v2/mcp`) | Local stdio (`cyber-asana mcp`) |
-| Auth | OAuth 2.0 (hosted, host-managed app) | Personal access token, or OAuth 2.0 + PKCE via `cyber-asana auth login` (your own Asana app) |
+| Auth | OAuth 2.0 (hosted, an **MCP app** you register) | Personal access token, or OAuth 2.0 + PKCE via `cyber-asana auth login` (your own **API app**) |
 | Config key | `asana` | `cyber-asana` |
 | Backing surface | Asana's MCP-native V2 API | Asana REST API |
 | Output | JSON | JSON, or TOON via `CYBER_ASANA_MCP_FORMAT=toon` |

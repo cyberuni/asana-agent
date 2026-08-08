@@ -85,6 +85,6 @@ describe('ensureStoredCredential', () => {
 
 		const result = await ensureStoredCredential(d)
 
-		expect(result.refreshError).toMatch(/ASANA_CLIENT_ID|registration/i)
+		expect(result.refreshError).toMatch(/ASANA_API_CLIENT_ID/)
 	})
 })

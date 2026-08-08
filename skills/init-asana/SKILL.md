@@ -95,8 +95,8 @@ and set `CYBER_ASANA_MCP_FORMAT=toon` in its `env` for token-efficient output.
 
 Both servers can run together with separate config keys and credentials:
 
-- **Official Asana MCP** — config key `asana`; OAuth app with `ASANA_CLIENT_ID` and `ASANA_CLIENT_SECRET` (not `ASANA_ACCESS_TOKEN`).
-- **cyber-asana** — config key `cyber-asana`; PAT via `ASANA_ACCESS_TOKEN` and workspace via `ASANA_WORKSPACE_GID` (steps 2–4 above).
+- **Official Asana MCP** — config key `asana`; an **MCP app** registration, whose `ASANA_CLIENT_ID` and `ASANA_CLIENT_SECRET` belong in the host config's `auth` block (not `ASANA_ACCESS_TOKEN`).
+- **cyber-asana** — config key `cyber-asana`; PAT via `ASANA_ACCESS_TOKEN` and workspace via `ASANA_WORKSPACE_GID` (steps 2–4 above). For OAuth instead of a PAT, it needs its own **API app** via `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` — an MCP app's credentials will not work.
 
 See [reference.md](./reference.md) for dual-config JSON examples and routing guidance.
 
