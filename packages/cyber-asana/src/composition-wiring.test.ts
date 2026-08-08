@@ -90,6 +90,13 @@ function mockRuntimeContext(): RuntimeContext {
 			createAttachment: vi.fn(),
 			deleteAttachment: vi.fn(),
 		},
+		ooo: {
+			listOooEntries: vi.fn(),
+			getOooEntry: vi.fn(),
+			createOooEntry: vi.fn(),
+			updateOooEntry: vi.fn(),
+			deleteOooEntry: vi.fn(),
+		},
 		stories: {
 			listStories: vi.fn(),
 			createStory: vi.fn(),
@@ -227,6 +234,28 @@ describe('composition wiring', () => {
 		await server.handlers.get('asana_task_template_list')?.({ project_gid: 'p1' })
 
 		expect(ctx.taskTemplates.listTaskTemplates).toHaveBeenCalledWith('p1', expect.any(Object))
+	})
+
+	it('CLI ooo list uses runtime context ooo api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.ooo.listOooEntries = vi.fn().mockResolvedValue({ data: [] })
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'ooo', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(ctx.ooo.listOooEntries).toHaveBeenCalledWith('me', 'ws1', expect.anything())
+	})
+
+	it('MCP asana_ooo_list uses runtime context ooo api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.ooo.listOooEntries = vi.fn().mockResolvedValue({ data: [] })
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_ooo_list')?.({ workspace_gid: 'ws1' })
+
+		expect(ctx.ooo.listOooEntries).toHaveBeenCalledWith('me', 'ws1', {})
 	})
 
 	it('CLI status create uses runtime context status api', async () => {

@@ -17,7 +17,7 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 
 | | Official Asana MCP | cyber-asana MCP |
 | --- | --- | --- |
-| Tools | 27 | 95 |
+| Tools | 27 | 105 |
 | Transport | Hosted remote (`https://mcp.asana.com/v2/mcp`) | Local stdio (`cyber-asana mcp`) |
 | Auth | OAuth 2.0 (hosted, an **MCP app** you register) | Personal access token, or OAuth 2.0 + PKCE via `cyber-asana auth login` (your own **API app**) |
 | Config key | `asana` | `cyber-asana` |
@@ -25,7 +25,7 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 | Output | JSON | JSON, or TOON via `CYBER_ASANA_MCP_FORMAT=toon` |
 | Also available as a CLI | No | Yes — same core, same operations |
 
-**Overlap: 21 tool pairs. Official-only: 6. cyber-asana-only: 53.**
+**Overlap: 21 tool pairs. Official-only: 6. cyber-asana-only: 84.**
 
 ## What only the official server has
 
@@ -88,7 +88,7 @@ Where the pairs are 🟡, the scope differs — and not always in cyber-asana's 
 
 ## What only cyber-asana has
 
-65 tools, mostly relationship edits and resources outside the official server's V2 scope.
+84 tools, mostly relationship edits and resources outside the official server's V2 scope.
 
 ### Task relationships
 
@@ -114,6 +114,12 @@ reordering the columns and dropping a task straight into one — need cyber-asan
 ### Goals
 
 `asana_goal_list|get|create|update|delete`.
+
+### Out-of-office entries
+
+`asana_ooo_list|get|create|update|delete`. Asana holds who is away and nothing else does;
+the official server exposes no path to it, so checking availability before assigning work
+needs cyber-asana.
 
 ### Writes on projects and portfolios
 

@@ -75,7 +75,10 @@ export function userCommand(api?: UserApi | (() => UserApi)) {
 			fmtUserList(items)
 			printCountSummary(items.length, 'user(s)')
 			printNextPageHint(data)
-			printNextSteps(['cyber-asana user get <gid> — view a user'])
+			printNextSteps([
+				'cyber-asana user get <gid> — view a user',
+				'cyber-asana ooo list --user-gid <gid> — check whether someone is out of office',
+			])
 		})
 	})
 
@@ -84,7 +87,10 @@ export function userCommand(api?: UserApi | (() => UserApi)) {
 		.description('Get a user by GID')
 		.action(async (gid: string) => {
 			const data = await resolveUserApi(api).getUser(gid)
-			output(data, () => fmtUser(data))
+			output(data, () => {
+				fmtUser(data)
+				printNextSteps([`cyber-asana ooo list --user-gid ${gid} — check whether this user is out of office`])
+			})
 		})
 
 	cmd
@@ -92,7 +98,10 @@ export function userCommand(api?: UserApi | (() => UserApi)) {
 		.description('Get the authenticated user')
 		.action(async () => {
 			const data = await resolveUserApi(api).getMe()
-			output(data, () => fmtUser(data))
+			output(data, () => {
+				fmtUser(data)
+				printNextSteps(['cyber-asana ooo list — your out-of-office entries'])
+			})
 		})
 
 	return cmd

@@ -412,6 +412,7 @@ Tools are named `asana_<resource>_<action>` (e.g. `asana_task_create`).
 | `portfolio` | `asana_portfolio_list`, `asana_portfolio_item_list`, `asana_portfolio_get`, `asana_portfolio_create`, `asana_portfolio_update`, `asana_portfolio_delete` |
 | `goal` | `asana_goal_list`, `asana_goal_get`, `asana_goal_create`, `asana_goal_update`, `asana_goal_delete` |
 | `tag` | `asana_tag_list`, `asana_tag_get`, `asana_tag_create`, `asana_tag_update`, `asana_tag_delete`, `asana_tag_list_for_task`, `asana_tag_list_tasks`, `asana_tag_add_to_task`, `asana_tag_remove_from_task` |
+| `ooo` | `asana_ooo_list`, `asana_ooo_get`, `asana_ooo_create`, `asana_ooo_update`, `asana_ooo_delete` |
 | `attachment` | `asana_attachment_list`, `asana_attachment_get`, `asana_attachment_create`, `asana_attachment_delete` |
 | `status` | `asana_status_overview`, `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
 | `rule` | `asana_rule_trigger` (fires an Asana automation rule; the rule must use an "incoming web request" trigger) |
@@ -536,6 +537,7 @@ Installing twice is a no-op, and unrelated settings are preserved.
 | `portfolio` | `list`, `items`, `get`, `create`, `update`, `delete` |
 | `goal` | `list`, `get`, `create`, `update`, `delete` |
 | `tag` | `list`, `get`, `create`, `update`, `delete`, `tasks`, `task list/add/remove` |
+| `ooo` | `list`, `get`, `create`, `update`, `delete` |
 | `attachment` | `list`, `get`, `create`, `delete` |
 | `status` | `list`, `get`, `create`, `delete` |
 | `event` | `list` |

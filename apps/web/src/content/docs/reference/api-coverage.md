@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **21** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **22** of them.
 
 | Legend | Meaning |
 | --- | --- |
@@ -42,6 +42,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **21** of them.
 | Task templates | 🟡 | 3 / 4 | `task-template` | Read plus instantiate; no template deletion |
 | Attachments | ✅ | 4 / 4 | `attachment` | List, get, upload (file or external URL), and delete |
 | Memberships | ✅ | 5 / 5 | `membership` | Complete; the unified endpoint covering project, portfolio, and goal memberships |
+| Ooo entries | ✅ | 5 / 5 | `ooo` | Complete |
 | Sections | ✅ | 7 / 7 | `section` | Complete, including section reordering and section-scoped task placement |
 | Portfolios | 🟡 | 6 / 13 | `portfolio` | CRUD + item listing; members are managed under `membership` |
 | Projects | 🟡 | 7 / 20 | `project` | CRUD, counts, search; no templates. Members are managed under `membership` |
@@ -58,7 +59,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **21** of them.
 ### Not wrapped
 
 Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custom types,
-Exports, Goal relationships, Jobs, Ooo entries, Organization exports, Project briefs,
+Exports, Goal relationships, Jobs, Organization exports, Project briefs,
 Project portfolio settings, Project statuses (superseded by Status updates), Project
 templates, Rates, Reactions, Roles, Team memberships†, Time periods, Time tracking
 categories, Time tracking entries, Timesheet approval statuses, Webhooks,
@@ -124,7 +125,7 @@ Not covered: members, followers, attaching or detaching a custom field, duplicat
 save-as-template, and the team-scoped create/list variants. Reading a project's attached
 custom fields is covered — see `custom-field project` below.
 
-### Sections, tags, goals, portfolios, status updates, comments, memberships
+### Sections, tags, goals, portfolios, status updates, comments, memberships, out-of-office entries
 
 | Resource | CLI | MCP tools |
 | --- | --- | --- |
@@ -135,10 +136,15 @@ custom fields is covered — see `custom-field project` below.
 | Status updates | `status list\|get\|create\|delete` | `asana_status_*` |
 | Stories / comments | `story list\|get\|create\|update\|delete`, same under `comment` | `asana_story_*`, `asana_comment_*` |
 | Memberships | `membership list\|get\|create\|update\|delete` | `asana_membership_*` |
+| Ooo entries | `ooo list\|get\|create\|update\|delete` | `asana_ooo_*` |
 
 Asana only allows editing and deleting comment stories you authored — system stories
 (assignee changed, due date set) are immutable, and an attempt to change one comes back as
 a `403` carrying that explanation as a hint.
+
+`ooo list` is scoped to one user and one workspace, as Asana requires. Both the CLI and
+the MCP tool default the user to the authenticated one, so an unscoped call reads your own
+calendar rather than failing on a missing GID.
 
 ### Rules
 

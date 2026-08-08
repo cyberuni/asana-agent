@@ -24,6 +24,10 @@ import { createMembershipApi, type MembershipApi } from './memberships/api.js'
 import { membershipCommand } from './memberships/cli.js'
 import { createAsanaMembershipGateway } from './memberships/gateway.js'
 import { registerMembershipTools } from './memberships/mcp.js'
+import { createOooApi, type OooApi } from './ooo/api.js'
+import { oooCommand } from './ooo/cli.js'
+import { createAsanaOooGateway } from './ooo/gateway.js'
+import { registerOooTools } from './ooo/mcp.js'
 import { createPortfolioApi, type PortfolioApi } from './portfolios/api.js'
 import { portfolioCommand } from './portfolios/cli.js'
 import { createAsanaPortfolioGateway } from './portfolios/gateway.js'
@@ -86,6 +90,7 @@ export type RuntimeContext = {
 	events: EventApi
 	goals: GoalApi
 	memberships: MembershipApi
+	ooo: OooApi
 	portfolios: PortfolioApi
 	projects: ProjectApi
 	rules: RuleApi
@@ -111,6 +116,7 @@ export function createRuntimeContext(): RuntimeContext {
 		events: createEventApi(createAsanaEventGateway(client)),
 		goals: createGoalApi(createAsanaGoalGateway(client)),
 		memberships: createMembershipApi(createAsanaMembershipGateway(client)),
+		ooo: createOooApi(createAsanaOooGateway(client)),
 		portfolios: createPortfolioApi(portfolioGateway),
 		projects: createProjectApi(projectGateway),
 		rules: createRuleApi(createAsanaRuleGateway(client)),
@@ -144,6 +150,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(membershipCommand(() => getContext().memberships))
 	program.addCommand(tagCommand(() => getContext().tags))
 	program.addCommand(customFieldCommand(() => getContext().customFields))
+	program.addCommand(oooCommand(() => getContext().ooo))
 	program.addCommand(attachmentCommand(() => getContext().attachments))
 	program.addCommand(statusCommand(() => getContext().status))
 	program.addCommand(ruleCommand(() => getContext().rules))
@@ -171,6 +178,7 @@ export function registerMcpTools(server: McpServer, getContext: () => RuntimeCon
 	registerMembershipTools(server, () => getContext().memberships)
 	registerTagTools(server, () => getContext().tags)
 	registerCustomFieldTools(server, () => getContext().customFields)
+	registerOooTools(server, () => getContext().ooo)
 	registerAttachmentTools(server, () => getContext().attachments)
 	registerStatusTools(server, () => getContext().status)
 	registerRuleTools(server, () => getContext().rules)
