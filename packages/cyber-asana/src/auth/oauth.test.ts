@@ -164,6 +164,39 @@ describe('exchangeCode', () => {
 
 		await expect(exchangeCode(params, { fetch: fetchImpl, now: () => 1000 })).rejects.toThrow(/invalid_client/)
 	})
+
+	// invalid_client is RFC 6749 §5.2's client-authentication failure, and the
+	// likeliest way to hit it here is an MCP app's client id driving a flow only
+	// an API app can complete.
+	it('points a client-authentication failure at the API-app registration', async () => {
+		const { fetchImpl } = recordingFetch(
+			jsonResponse({ error: 'invalid_client', error_description: 'Client authentication failed' }, 401),
+		)
+
+		await expect(exchangeCode(params, { fetch: fetchImpl, now: () => 1000 })).rejects.toThrow(/ASANA_API_CLIENT_ID/)
+	})
+
+	// The hint is a guess about the cause; keeping Asana's own words means a
+	// wrong guess costs the user nothing.
+	it('keeps the provider message alongside the hint', async () => {
+		const { fetchImpl } = recordingFetch(
+			jsonResponse({ error: 'invalid_client', error_description: 'Client authentication failed' }, 401),
+		)
+
+		await expect(exchangeCode(params, { fetch: fetchImpl, now: () => 1000 })).rejects.toThrow(
+			/Client authentication failed/,
+		)
+	})
+
+	it('leaves rejections that are not client-authentication failures unhinted', async () => {
+		const { fetchImpl } = recordingFetch(
+			jsonResponse({ error: 'invalid_grant', error_description: 'Authorization code expired' }, 400),
+		)
+
+		await expect(exchangeCode(params, { fetch: fetchImpl, now: () => 1000 })).rejects.toThrow(
+			expect.objectContaining({ message: expect.not.stringContaining('ASANA_API_CLIENT_ID') }),
+		)
+	})
 })
 
 describe('refreshAccessToken', () => {
@@ -197,6 +230,14 @@ describe('refreshAccessToken', () => {
 		const tokens = await refreshAccessToken(params, { fetch: fetchImpl, now: () => 1000 })
 
 		expect(tokens.refreshToken).toBe('rotated')
+	})
+
+	it('points a client-authentication failure at the API-app registration', async () => {
+		const { fetchImpl } = recordingFetch(jsonResponse({ error: 'invalid_client' }, 401))
+
+		await expect(refreshAccessToken(params, { fetch: fetchImpl, now: () => 1000 })).rejects.toThrow(
+			/ASANA_API_CLIENT_ID/,
+		)
 	})
 })
 
