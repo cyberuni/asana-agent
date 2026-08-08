@@ -55,8 +55,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          if ls .changeset/*.md 2>/dev/null | grep -qv 'README.md'; then
-            echo "changeset already present; leaving it alone"
+          # Scope the idempotency check to THIS PR's changeset. The repo normally
+          # carries a backlog of unreleased changesets, so a "does any changeset
+          # exist" test would skip every time and the generator would never fire.
+          if [ -f ".changeset/renovate-${PR_NUMBER}.md" ]; then
+            echo "changeset for PR ${PR_NUMBER} already present"
             exit 0
           fi
 
