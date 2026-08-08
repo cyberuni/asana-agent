@@ -135,6 +135,7 @@ Default: if both can do the job, prefer **official for discovery and previews** 
 | `tag` | `asana_tag_list`, `asana_tag_get`, `asana_tag_create`, `asana_tag_update`, `asana_tag_delete`, `asana_tag_list_for_task`, `asana_tag_list_tasks`, `asana_tag_add_to_task`, `asana_tag_remove_from_task` |
 | `attachment` | `asana_attachment_list`, `asana_attachment_get`, `asana_attachment_create`, `asana_attachment_delete` |
 | `status` | `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
+| `event` | `asana_event_list` (change feed; sync-token cursored, not paginated) |
 | `story` | `asana_story_list`, `asana_story_get`, `asana_story_create`, `asana_story_update`, `asana_story_delete` |
 | `comment` | `asana_comment_list`, `asana_comment_get`, `asana_comment_create`, `asana_comment_update`, `asana_comment_delete` (aliases for `story`) |
 | `search` | `asana_search_objects` (typeahead; one `resource_type` per call, single capped page, not exhaustive) |
@@ -152,3 +153,4 @@ List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` 
 - `asana_story_update` / `asana_story_delete` (and the `comment` aliases) — take `story_gid`; only comment stories you authored can be changed, and a refusal is a `403` carrying that as a hint
 - `asana_search_objects` — `resource_type` (one per call), `query`, `count` (1–100, default 20), `opt_fields`. Turns a name into a GID; not paginated and not exhaustive
 - `asana_url_parse` — local URL parsing; use `workspace_gid` + `project_gid` for create; `list_view_gid` is not a section GID
+- `asana_event_list` — `resource_gid` (task, project, or goal), `sync`, `opt_fields`. Omit `sync` on the first call: the response carries a fresh token, `sync_reset: true`, and no events. Pass the returned token back next time, and poll again immediately while `has_more` is true — Asana caps one token at 100 events

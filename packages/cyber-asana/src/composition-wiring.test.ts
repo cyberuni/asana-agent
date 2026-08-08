@@ -104,6 +104,7 @@ function mockRuntimeContext(): RuntimeContext {
 			getStatusOverview: vi.fn(),
 		},
 		rules: { triggerRule: vi.fn() },
+		events: { getEvents: vi.fn() },
 	}
 }
 
@@ -285,6 +286,28 @@ describe('composition wiring', () => {
 		await server.handlers.get('asana_rule_trigger')?.({ rule_trigger_gid: 'rt1', resource: 'task1' })
 
 		expect(ctx.rules.triggerRule).toHaveBeenCalledWith('rt1', { resource: 'task1' })
+	})
+
+	it('CLI event list uses runtime context events api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.events.getEvents = vi.fn().mockResolvedValue({ data: [], sync: 'tok-2', has_more: false, sync_reset: false })
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'event', 'list', 'proj1', '--sync', 'tok-1'], { from: 'node' })
+
+		expect(ctx.events.getEvents).toHaveBeenCalledWith('proj1', { sync: 'tok-1' })
+	})
+
+	it('MCP asana_event_list uses runtime context events api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.events.getEvents = vi.fn().mockResolvedValue({ data: [], sync: 'tok-2', has_more: false, sync_reset: false })
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_event_list')?.({ resource_gid: 'proj1', sync: 'tok-1' })
+
+		expect(ctx.events.getEvents).toHaveBeenCalledWith('proj1', { sync: 'tok-1' })
 	})
 
 	it('CLI search objects uses runtime context search api', async () => {

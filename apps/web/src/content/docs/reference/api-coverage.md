@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **18** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **19** of them.
 
 | Legend | Meaning |
 | --- | --- |
@@ -36,6 +36,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **18** of them.
 | Tasks | ✅ | 25 / 27 | `task` | Missing duplicate and custom-ID lookup |
 | Status updates | ✅ | 4 / 4 | `status` | Complete |
 | Rules | ✅ | 1 / 1 | `rule` | Complete — the whole Rules API is one trigger method (beta) |
+| Events | ✅ | 1 / 1 | `event` | Complete; sync-token change feed, not paginated |
 | Typeahead | ✅ | 1 / 1 | `search` | Complete; one resource type per call, single capped page |
 | Tags | ✅ | 6 / 6 | `tag` | Complete, including task↔tag links |
 | Task templates | 🟡 | 3 / 4 | `task-template` | Read plus instantiate; no template deletion |
@@ -55,7 +56,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **18** of them.
 ### Not wrapped
 
 Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custom field
-settings, Custom types, Events, Exports, Goal relationships, Jobs, Memberships, Ooo
+settings, Custom types, Exports, Goal relationships, Jobs, Memberships, Ooo
 entries, Organization exports, Portfolio memberships, Project briefs, Project memberships,
 Project portfolio settings, Project statuses (superseded by Status updates), Project
 templates, Rates, Reactions, Roles, Team memberships, Time periods,
@@ -142,6 +143,18 @@ generates the `rule_trigger_gid` there and it can only be copied out of the Asan
 no API call discovers or lists it. Asana documents the endpoint as beta, with `task` the
 only supported resource type, and answers `402` when the workspace plan does not include
 the operation.
+
+### Events
+
+| Asana operation | CLI | MCP tool |
+| --- | --- | --- |
+| Get events on a resource | `event list <resource-gid>` | `asana_event_list` |
+
+The change feed is cursored by a sync token rather than an offset, so it takes neither the
+shared pagination options nor `--all`. A call with no token (or an expired one) returns a
+fresh token and `sync_reset: true` instead of events — Asana's documented "start here"
+handshake, surfaced as a normal result rather than a `412`. See
+[Events](/cyber-asana/cli/events/).
 
 ### Read-only resources
 

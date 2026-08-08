@@ -34,6 +34,7 @@ help text. Every resource group's `--help` ends with worked examples.
 | [Portfolios](/cyber-asana/cli/portfolios/) | `list`, `items`, `get`, `create`, `update`, `delete` |
 | [Status updates](/cyber-asana/cli/status-updates/) | `list`, `get`, `create`, `delete` |
 | [Attachments](/cyber-asana/cli/attachments/) | `list`, `get`, `create`, `delete` |
+| [Events](/cyber-asana/cli/events/) | `list` (change feed; sync-token cursored, not paginated) |
 | [People & places](/cyber-asana/cli/people/) | `user list/get/me`, `team list/get`, `workspace list/get` |
 | [Custom fields](/cyber-asana/cli/custom-fields/) | `list`, `get` (find the GIDs task writes are keyed by) |
 | [Authentication](/cyber-asana/cli/auth/) | `auth status`, `auth login`, `auth token`, `auth logout` |
