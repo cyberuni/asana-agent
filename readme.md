@@ -23,6 +23,28 @@ export ASANA_WORKSPACE_GID=<workspace-gid>   # optional default workspace
 
 `ASANA_TOKEN` and `ASANA_WORKSPACE` still work as deprecated fallbacks. Or pass `--token <pat>` and `--workspace <gid>` per command.
 
+### Where to keep the token
+
+Resist pasting that `export` straight into `~/.zshrc` or `~/.bashrc`. A PAT never expires, shell profiles are created `0644` so every account on the machine can read yours, and profiles are the files most likely to end up in a dotfiles repo, a screen share, or a pasted snippet — at which point a permanent credential to your whole workspace is public.
+
+Keep the secret in its own restricted file and source it:
+
+```sh
+touch ~/.secrets && chmod 600 ~/.secrets
+echo 'export ASANA_ACCESS_TOKEN=<your-pat>' >> ~/.secrets
+```
+
+```sh
+# in ~/.zshrc or ~/.bashrc
+[[ -f ~/.secrets ]] && source ~/.secrets
+```
+
+The profile now carries a path, not a credential, so it stays safe to commit and share. Non-secrets like `ASANA_WORKSPACE_GID` can stay in the profile — a workspace GID identifies, it does not authorize.
+
+Better still, skip the long-lived secret entirely: [OAuth](#oauth) stores a self-refreshing token in a `0600` file under `~/.config/cyber-asana`, so nothing sensitive touches your shell config. A password manager's CLI works too — `export ASANA_ACCESS_TOKEN=$(op read op://vault/asana/token)` keeps the value out of the filesystem altogether.
+
+If a PAT has already been sitting in a shared or committed file, treat it as compromised and issue a new one at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps) — deleting the line does not revoke the token, and rewriting git history does not un-publish it.
+
 To see which credential is actually in effect — including any source being shadowed by a higher-precedence one:
 
 ```sh
