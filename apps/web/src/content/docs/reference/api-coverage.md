@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **18** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **19** of them.
 
 | Legend | Meaning |
 | --- | --- |
