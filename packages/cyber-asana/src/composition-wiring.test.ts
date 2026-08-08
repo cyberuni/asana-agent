@@ -118,6 +118,13 @@ function mockRuntimeContext(): RuntimeContext {
 			deleteMembership: vi.fn(),
 		},
 		jobs: { getJob: vi.fn() },
+		projectTemplates: {
+			listProjectTemplates: vi.fn(),
+			listProjectTemplatesForTeam: vi.fn(),
+			getProjectTemplate: vi.fn(),
+			instantiateProject: vi.fn(),
+			instantiateProjectAndWait: vi.fn(),
+		},
 		status: {
 			listStatuses: vi.fn(),
 			getStatus: vi.fn(),
@@ -428,6 +435,45 @@ describe('composition wiring', () => {
 		await server.handlers.get('asana_job_get')?.({ job_gid: 'job1' })
 
 		expect(ctx.jobs.getJob).toHaveBeenCalledWith('job1')
+	})
+
+	it('CLI project-template instantiate uses runtime context project templates api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.projectTemplates.instantiateProjectAndWait = vi
+			.fn()
+			.mockResolvedValue({ gid: 'job1', status: 'succeeded', new_project: { gid: 'proj1' } })
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'project-template', 'instantiate', 'tpl1', '--name', 'Acme onboarding'], {
+			from: 'node',
+		})
+
+		expect(ctx.projectTemplates.instantiateProjectAndWait).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme onboarding' },
+			expect.objectContaining({ maxAttempts: 60 }),
+		)
+	})
+
+	it('MCP asana_project_template_instantiate uses runtime context project templates api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.projectTemplates.instantiateProjectAndWait = vi
+			.fn()
+			.mockResolvedValue({ gid: 'job1', status: 'succeeded', new_project: { gid: 'proj1' } })
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_project_template_instantiate')?.({
+			project_template_gid: 'tpl1',
+			name: 'Acme onboarding',
+		})
+
+		expect(ctx.projectTemplates.instantiateProjectAndWait).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme onboarding' },
+			expect.objectContaining({ maxAttempts: 60 }),
+		)
 	})
 
 	it('CLI search objects uses runtime context search api', async () => {

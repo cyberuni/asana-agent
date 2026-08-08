@@ -36,6 +36,10 @@ import { createPortfolioApi, type PortfolioApi } from './portfolios/api.js'
 import { portfolioCommand } from './portfolios/cli.js'
 import { createAsanaPortfolioGateway } from './portfolios/gateway.js'
 import { registerPortfolioTools } from './portfolios/mcp.js'
+import { createProjectTemplateApi, type ProjectTemplateApi } from './project-templates/api.js'
+import { projectTemplateCommand } from './project-templates/cli.js'
+import { createAsanaProjectTemplateGateway } from './project-templates/gateway.js'
+import { registerProjectTemplateTools } from './project-templates/mcp.js'
 import { createProjectApi, type ProjectApi } from './projects/api.js'
 import { projectCommand } from './projects/cli.js'
 import { createAsanaProjectGateway } from './projects/gateway.js'
@@ -98,6 +102,7 @@ export type RuntimeContext = {
 	jobs: JobApi
 	portfolios: PortfolioApi
 	projects: ProjectApi
+	projectTemplates: ProjectTemplateApi
 	rules: RuleApi
 	search: SearchApi
 	sections: SectionApi
@@ -115,6 +120,7 @@ export function createRuntimeContext(): RuntimeContext {
 	const client = createClient()
 	const portfolioGateway = createAsanaPortfolioGateway(client)
 	const projectGateway = createAsanaProjectGateway(client)
+	const jobGateway = createAsanaJobGateway(client)
 	return {
 		attachments: createAttachmentApi(createAsanaAttachmentGateway(client)),
 		customFields: createCustomFieldApi(createAsanaCustomFieldGateway(client)),
@@ -122,9 +128,10 @@ export function createRuntimeContext(): RuntimeContext {
 		goals: createGoalApi(createAsanaGoalGateway(client)),
 		memberships: createMembershipApi(createAsanaMembershipGateway(client)),
 		ooo: createOooApi(createAsanaOooGateway(client)),
-		jobs: createJobApi(createAsanaJobGateway(client)),
+		jobs: createJobApi(jobGateway),
 		portfolios: createPortfolioApi(portfolioGateway),
 		projects: createProjectApi(projectGateway),
+		projectTemplates: createProjectTemplateApi(createAsanaProjectTemplateGateway(client), { jobs: jobGateway }),
 		rules: createRuleApi(createAsanaRuleGateway(client)),
 		search: createSearchApi(createAsanaSearchGateway(client)),
 		sections: createSectionApi(createAsanaSectionGateway(client)),
@@ -158,6 +165,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(customFieldCommand(() => getContext().customFields))
 	program.addCommand(oooCommand(() => getContext().ooo))
 	program.addCommand(attachmentCommand(() => getContext().attachments))
+	program.addCommand(projectTemplateCommand(() => getContext().projectTemplates))
 	program.addCommand(jobCommand(() => getContext().jobs))
 	program.addCommand(statusCommand(() => getContext().status))
 	program.addCommand(ruleCommand(() => getContext().rules))
@@ -187,6 +195,7 @@ export function registerMcpTools(server: McpServer, getContext: () => RuntimeCon
 	registerCustomFieldTools(server, () => getContext().customFields)
 	registerOooTools(server, () => getContext().ooo)
 	registerAttachmentTools(server, () => getContext().attachments)
+	registerProjectTemplateTools(server, () => getContext().projectTemplates)
 	registerJobTools(server, () => getContext().jobs)
 	registerStatusTools(server, () => getContext().status)
 	registerRuleTools(server, () => getContext().rules)

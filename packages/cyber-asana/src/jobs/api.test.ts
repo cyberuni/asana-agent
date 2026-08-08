@@ -24,5 +24,4 @@ describe('jobs/api', () => {
 		expect(result).toEqual(mockJob)
 		expect(Asana.JobsApi.prototype.getJob).toHaveBeenCalledWith('job1', {})
 	})
-
 })
