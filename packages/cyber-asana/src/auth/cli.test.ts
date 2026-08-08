@@ -82,6 +82,95 @@ describe('auth/cli', () => {
 		const out = await runStatus({ authenticated: false, shadowed: [] }, ['node', 'test'])
 		expect(out).toContain('ASANA_ACCESS_TOKEN')
 	})
+
+	// The app registration is what `auth login` will authorize with, and it
+	// resolves from a different chain than the token — so `status` has to report
+	// it separately or an MCP app's id standing in for an API app's stays
+	// invisible until Asana rejects it.
+	describe('app registration', () => {
+		const app = {
+			clientId: 'api-client-1234',
+			clientSecret: 'secret',
+			source: 'ASANA_API_CLIENT_ID',
+			shadowed: [] as string[],
+		}
+
+		async function runAppStatus(overrides: Record<string, unknown> = {}, argv = ['node', 'test', '--json']) {
+			const program = new Command().addCommand(
+				authCommand({
+					readCredential: () => ({ authenticated: false, shadowed: [] }),
+					readStoredCredential: async () => undefined,
+					configDir: () => '/tmp/cyber-asana-test',
+					readSettings: async () => ({}),
+					readAppCredentials: () => app,
+					...overrides,
+				} as never),
+			)
+			process.argv = argv
+			await program.parseAsync(['node', 'test', 'auth', 'status'], { from: 'node' })
+			return logSpy.mock.calls.map((call) => String(call[0])).join('\n')
+		}
+
+		it('names the source the app registration came from', async () => {
+			const out = await runAppStatus()
+
+			expect(out).toContain('"source": "ASANA_API_CLIENT_ID"')
+		})
+
+		it('masks the client id instead of printing it', async () => {
+			const out = await runAppStatus()
+
+			expect(out).not.toContain('api-client-1234')
+			expect(out).toContain('"client_id_masked": "…1234"')
+		})
+
+		it('never prints the client secret', async () => {
+			const out = await runAppStatus()
+
+			expect(out).not.toContain('secret')
+		})
+
+		it('reports no app registration as null rather than omitting it', async () => {
+			const out = await runAppStatus({ readAppCredentials: () => undefined })
+
+			expect(out).toContain('"app": null')
+		})
+
+		it('lists the app-registration sources being ignored', async () => {
+			const out = await runAppStatus({
+				readAppCredentials: () => ({ ...app, shadowed: ['ASANA_CLIENT_ID', 'settings.json'] }),
+			})
+
+			expect(out).toContain('"ASANA_CLIENT_ID"')
+			expect(out).toContain('"settings.json"')
+		})
+
+		it('names the registration and its source in text mode', async () => {
+			const out = await runAppStatus({}, ['node', 'test'])
+
+			expect(out).toContain('…1234')
+			expect(out).toContain('ASANA_API_CLIENT_ID')
+		})
+
+		it('names the shadowed registration in text mode, where the mix-up bites', async () => {
+			const out = await runAppStatus({ readAppCredentials: () => ({ ...app, shadowed: ['ASANA_CLIENT_ID'] }) }, [
+				'node',
+				'test',
+			])
+
+			expect(out).toContain('ASANA_CLIENT_ID')
+		})
+
+		it('resolves the registration against the settings file in the config directory', async () => {
+			const readSettings = vi.fn().mockResolvedValue({ client_id: 'file-id' })
+			const readAppCredentials = vi.fn().mockReturnValue(app)
+
+			await runAppStatus({ readSettings, readAppCredentials })
+
+			expect(readSettings).toHaveBeenCalledWith('/tmp/cyber-asana-test')
+			expect(readAppCredentials).toHaveBeenCalledWith({ settings: { client_id: 'file-id' } })
+		})
+	})
 })
 
 describe('auth login', () => {

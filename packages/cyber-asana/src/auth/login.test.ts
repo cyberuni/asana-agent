@@ -31,7 +31,7 @@ function deps(overrides: Partial<Parameters<typeof performLogin>[1]> = {}) {
 	}
 }
 
-const app = { clientId: 'client-123', clientSecret: 'secret-456', source: 'settings.json' as const }
+const app = { clientId: 'client-123', clientSecret: 'secret-456', source: 'settings.json' as const, shadowed: [] }
 
 describe('performLogin', () => {
 	it('opens an authorize URL carrying the client, the challenge, and the state', async () => {

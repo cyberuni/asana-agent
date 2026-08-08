@@ -5,7 +5,7 @@ import { defaultAmbientDeps, ensureStoredCredential } from './ambient.js'
 import { type Credential, maskToken, resolveCredential, type StoredCredential } from './credential.js'
 import { defaultLoginDeps, type LoginParams, performLogin } from './login.js'
 import { refreshAccessToken, revokeRefreshToken, type Tokens } from './oauth.js'
-import { type AppSettings, configDir, readSettings, resolveAppCredentials } from './settings.js'
+import { type AppCredentials, type AppSettings, configDir, readSettings, resolveAppCredentials } from './settings.js'
 import { deleteCredentials, readCredentials, writeCredentials } from './token-store.js'
 
 // `auth status` is a credential diagnostic that works when the credential does
@@ -47,6 +47,8 @@ export type AuthCommandDeps = {
 	readStoredCredential: () => Promise<Tokens | undefined>
 	configDir: () => string
 	readSettings: (dir: string) => Promise<AppSettings>
+	/** The app registration `auth login` would authorize with — undefined when none is configured. */
+	readAppCredentials: (input: { settings: AppSettings }) => AppCredentials | undefined
 	login: (params: LoginParams) => Promise<Tokens>
 	readCredentials: (dir: string) => Promise<Tokens | undefined>
 	writeCredentials: (dir: string, tokens: Tokens) => Promise<void>
@@ -62,6 +64,7 @@ function defaultDeps(): AuthCommandDeps {
 		readStoredCredential: async () => (await ensureStoredCredential(defaultAmbientDeps())).tokens,
 		configDir: () => configDir(),
 		readSettings,
+		readAppCredentials: ({ settings }) => resolveAppCredentials({ settings }),
 		login: (params) => performLogin(params, defaultLoginDeps()),
 		readCredentials,
 		writeCredentials,
@@ -133,6 +136,13 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 					: undefined,
 			})
 			const expires = credential.expiresAt ? new Date(credential.expiresAt).toISOString() : null
+			// The registration resolves from its own chain, so a working token says
+			// nothing about which app `auth login` would authorize with next.
+			const app = deps.readAppCredentials({ settings: await deps.readSettings(deps.configDir()) })
+			const appFields = {
+				App: app ? `${maskToken(app.clientId)} (${app.source})` : null,
+				'App ignored': app && app.shadowed.length > 0 ? app.shadowed.join(', ') : null,
+			}
 			output(
 				{
 					authenticated: credential.authenticated,
@@ -141,10 +151,11 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 					shadowed: credential.shadowed,
 					expires_at: expires,
 					user: credential.user ?? null,
+					app: app ? { client_id_masked: maskToken(app.clientId), source: app.source, shadowed: app.shadowed } : null,
 				},
 				() => {
 					if (!credential.authenticated) {
-						printFields({ Status: 'not authenticated' })
+						printFields({ Status: 'not authenticated', ...appFields })
 						printNextSteps([
 							'export ASANA_ACCESS_TOKEN=<pat> — https://app.asana.com/0/my-apps',
 							'cyber-asana auth login — authorize through OAuth',
@@ -158,6 +169,7 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 						Token: credential.token ? maskToken(credential.token) : null,
 						Expires: expires,
 						Ignored: credential.shadowed.length > 0 ? credential.shadowed.join(', ') : null,
+						...appFields,
 					})
 				},
 			)
