@@ -94,7 +94,64 @@ describe('resolveAppCredentials', () => {
 			settings: { client_id: 'file-id', client_secret: 'file-secret' },
 			env: { ASANA_CLIENT_ID: 'env-id', ASANA_CLIENT_SECRET: 'env-secret' },
 		})
-		expect(result).toEqual({ clientId: 'env-id', clientSecret: 'env-secret', source: 'environment' })
+		expect(result).toEqual({ clientId: 'env-id', clientSecret: 'env-secret', source: 'ASANA_CLIENT_ID' })
+	})
+
+	it('reads the API-app variables in preference to the settings file', () => {
+		const result = resolveAppCredentials({
+			settings: { client_id: 'file-id', client_secret: 'file-secret' },
+			env: { ASANA_API_CLIENT_ID: 'api-id', ASANA_API_CLIENT_SECRET: 'api-secret' },
+		})
+		expect(result).toEqual({ clientId: 'api-id', clientSecret: 'api-secret', source: 'ASANA_API_CLIENT_ID' })
+	})
+
+	// ASANA_CLIENT_ID is also what Asana's docs tell you to export for the
+	// official MCP server's app, whose tokens do not work against the REST API.
+	// The API-app-specific pair has to win so a dual-MCP setup can name both.
+	it('prefers the API-app variables over the shared Asana ones', () => {
+		const result = resolveAppCredentials({
+			settings: {},
+			env: {
+				ASANA_API_CLIENT_ID: 'api-id',
+				ASANA_API_CLIENT_SECRET: 'api-secret',
+				ASANA_CLIENT_ID: 'mcp-id',
+				ASANA_CLIENT_SECRET: 'mcp-secret',
+			},
+		})
+		expect(result).toEqual({ clientId: 'api-id', clientSecret: 'api-secret', source: 'ASANA_API_CLIENT_ID' })
+	})
+
+	it('names the environment variable that supplied the client id', () => {
+		expect(resolveAppCredentials({ settings: {}, env: { ASANA_CLIENT_ID: 'mcp-id' } })?.source).toBe('ASANA_CLIENT_ID')
+		expect(resolveAppCredentials({ settings: {}, env: { ASANA_API_CLIENT_ID: 'api-id' } })?.source).toBe(
+			'ASANA_API_CLIENT_ID',
+		)
+	})
+
+	it('resolves the id and the secret independently across the two env pairs', () => {
+		const result = resolveAppCredentials({
+			settings: {},
+			env: { ASANA_API_CLIENT_ID: 'api-id', ASANA_CLIENT_SECRET: 'shared-secret' },
+		})
+		expect(result?.clientId).toBe('api-id')
+		expect(result?.clientSecret).toBe('shared-secret')
+	})
+
+	it('falls back to the shared variables when only the API secret is set', () => {
+		const result = resolveAppCredentials({
+			settings: { client_id: 'file-id', client_secret: 'file-secret' },
+			env: { ASANA_CLIENT_ID: 'mcp-id', ASANA_API_CLIENT_SECRET: 'api-secret' },
+		})
+		expect(result).toEqual({ clientId: 'mcp-id', clientSecret: 'api-secret', source: 'ASANA_CLIENT_ID' })
+	})
+
+	it('lets flags win over the API-app variables', () => {
+		const result = resolveAppCredentials({
+			settings: {},
+			env: { ASANA_API_CLIENT_ID: 'api-id', ASANA_API_CLIENT_SECRET: 'api-secret' },
+			overrides: { clientId: 'flag-id', clientSecret: 'flag-secret' },
+		})
+		expect(result).toEqual({ clientId: 'flag-id', clientSecret: 'flag-secret', source: 'flags' })
 	})
 
 	it('reports no registration when neither source has a client id', () => {

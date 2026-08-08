@@ -45,10 +45,37 @@ export async function writeSettings(dir: string, settings: AppSettings): Promise
 	await chmod(path, OWNER_ONLY)
 }
 
+// Asana registers two incompatible app types under the same documented env var
+// names: an "MCP app", whose tokens only work against Asana's hosted MCP
+// server, and an "API app", which is what this CLI's OAuth flow needs. Asana's
+// own docs tell you to export the MCP app's pair as ASANA_CLIENT_ID/_SECRET, so
+// a dual-MCP setup needs a name only the API app answers to — hence the
+// ASANA_API_ prefixed pair, which wins. The shared pair stays as a fallback so
+// every setup that predates the split keeps working.
+// https://developers.asana.com/docs/integrating-with-asanas-mcp-server
+const CLIENT_ID_ENV_VARS = ['ASANA_API_CLIENT_ID', 'ASANA_CLIENT_ID'] as const
+const CLIENT_SECRET_ENV_VARS = ['ASANA_API_CLIENT_SECRET', 'ASANA_CLIENT_SECRET'] as const
+
 export type AppCredentials = {
 	clientId: string
 	clientSecret?: string
-	source: 'flags' | 'environment' | 'settings.json'
+	/**
+	 * Label of the winning source — `flags`, `settings.json`, or the exact
+	 * environment variable, so an MCP-app id standing in for an API-app id is
+	 * diagnosable rather than an unexplained rejection from Asana.
+	 */
+	source: 'flags' | 'settings.json' | (typeof CLIENT_ID_ENV_VARS)[number]
+}
+
+function firstSet<Name extends string>(
+	env: Record<string, string | undefined>,
+	names: readonly Name[],
+): { name: Name; value: string } | undefined {
+	for (const name of names) {
+		const value = env[name]
+		if (value) return { name, value }
+	}
+	return undefined
 }
 
 export function resolveAppCredentials({
@@ -61,11 +88,13 @@ export function resolveAppCredentials({
 	/** Values passed on the command line — highest precedence. */
 	overrides?: { clientId?: string; clientSecret?: string }
 }): AppCredentials | undefined {
-	const clientId = overrides?.clientId || env.ASANA_CLIENT_ID || settings.client_id
+	const envId = firstSet(env, CLIENT_ID_ENV_VARS)
+	const envSecret = firstSet(env, CLIENT_SECRET_ENV_VARS)
+	const clientId = overrides?.clientId || envId?.value || settings.client_id
 	if (!clientId) return undefined
 	return {
 		clientId,
-		clientSecret: overrides?.clientSecret || env.ASANA_CLIENT_SECRET || settings.client_secret,
-		source: overrides?.clientId ? 'flags' : env.ASANA_CLIENT_ID ? 'environment' : 'settings.json',
+		clientSecret: overrides?.clientSecret || envSecret?.value || settings.client_secret,
+		source: overrides?.clientId ? 'flags' : (envId?.name ?? 'settings.json'),
 	}
 }
