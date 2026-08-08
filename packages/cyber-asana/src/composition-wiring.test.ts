@@ -98,6 +98,7 @@ function mockRuntimeContext(): RuntimeContext {
 			deleteStatus: vi.fn(),
 			getStatusOverview: vi.fn(),
 		},
+		rules: { triggerRule: vi.fn() },
 	}
 }
 
@@ -231,6 +232,28 @@ describe('composition wiring', () => {
 		await server.handlers.get('asana_custom_field_list')?.({ workspace_gid: 'ws1' })
 
 		expect(ctx.customFields.listCustomFields).toHaveBeenCalledWith('ws1', {})
+	})
+
+	it('CLI rule trigger uses runtime context rules api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.rules.triggerRule = vi.fn().mockResolvedValue({ triggered: true, rule_trigger_gid: 'rt1' })
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'rule', 'trigger', 'rt1', '--resource', 'task1'], { from: 'node' })
+
+		expect(ctx.rules.triggerRule).toHaveBeenCalledWith('rt1', { resource: 'task1' })
+	})
+
+	it('MCP asana_rule_trigger uses runtime context rules api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.rules.triggerRule = vi.fn().mockResolvedValue({ triggered: true, rule_trigger_gid: 'rt1' })
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_rule_trigger')?.({ rule_trigger_gid: 'rt1', resource: 'task1' })
+
+		expect(ctx.rules.triggerRule).toHaveBeenCalledWith('rt1', { resource: 'task1' })
 	})
 
 	it('CLI search objects uses runtime context search api', async () => {
