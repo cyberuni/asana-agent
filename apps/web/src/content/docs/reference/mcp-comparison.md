@@ -17,7 +17,7 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 
 | | Official Asana MCP | cyber-asana MCP |
 | --- | --- | --- |
-| Tools | 27 | 74 |
+| Tools | 27 | 95 |
 | Transport | Hosted remote (`https://mcp.asana.com/v2/mcp`) | Local stdio (`cyber-asana mcp`) |
 | Auth | OAuth 2.0 (hosted, an **MCP app** you register) | Personal access token, or OAuth 2.0 + PKCE via `cyber-asana auth login` (your own **API app**) |
 | Config key | `asana` | `cyber-asana` |
@@ -124,6 +124,12 @@ projects and portfolios but does not update or delete them, and has no way to li
 status updates on one parent. `asana_status_overview` rolls a parent's latest status and
 task counts into one call — the deterministic half of `get_status_overview`, without its
 keyword search.
+
+### Custom field settings
+
+`asana_custom_field_list_for_project|portfolio|goal|team`. The official server has no way
+to ask which custom fields a project accepts, so an agent writing `custom_fields` has to
+guess the field and option GIDs. These four reads answer that directly.
 
 ### Workspaces and teams
 

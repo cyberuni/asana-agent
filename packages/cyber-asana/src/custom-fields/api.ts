@@ -12,6 +12,18 @@ export function createCustomFieldApi(gateway: CustomFieldGateway) {
 		getCustomField(customFieldGid: string) {
 			return gateway.getCustomField(customFieldGid)
 		},
+		listCustomFieldSettingsForProject(projectGid: string, opts?: PaginationOptions) {
+			return gateway.listCustomFieldSettingsForProject(projectGid, opts)
+		},
+		listCustomFieldSettingsForPortfolio(portfolioGid: string, opts?: PaginationOptions) {
+			return gateway.listCustomFieldSettingsForPortfolio(portfolioGid, opts)
+		},
+		listCustomFieldSettingsForGoal(goalGid: string, opts?: PaginationOptions) {
+			return gateway.listCustomFieldSettingsForGoal(goalGid, opts)
+		},
+		listCustomFieldSettingsForTeam(teamGid: string, opts?: PaginationOptions) {
+			return gateway.listCustomFieldSettingsForTeam(teamGid, opts)
+		},
 	}
 }
 
@@ -25,4 +37,20 @@ export async function listCustomFields(workspaceGid: string, opts?: PaginationOp
 
 export async function getCustomField(customFieldGid: string) {
 	return defaultCustomFieldApi().getCustomField(customFieldGid)
+}
+
+export async function listCustomFieldSettingsForProject(projectGid: string, opts?: PaginationOptions) {
+	return defaultCustomFieldApi().listCustomFieldSettingsForProject(projectGid, opts)
+}
+
+export async function listCustomFieldSettingsForPortfolio(portfolioGid: string, opts?: PaginationOptions) {
+	return defaultCustomFieldApi().listCustomFieldSettingsForPortfolio(portfolioGid, opts)
+}
+
+export async function listCustomFieldSettingsForGoal(goalGid: string, opts?: PaginationOptions) {
+	return defaultCustomFieldApi().listCustomFieldSettingsForGoal(goalGid, opts)
+}
+
+export async function listCustomFieldSettingsForTeam(teamGid: string, opts?: PaginationOptions) {
+	return defaultCustomFieldApi().listCustomFieldSettingsForTeam(teamGid, opts)
 }

@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **19** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **20** of them.
 
 | Legend | Meaning |
 | --- | --- |
@@ -50,13 +50,14 @@ Asana documents **49 resource groups**. cyber-asana wraps **19** of them.
 | Workspaces | 🟡 | 2 / 6 | `workspace` | Read-only |
 | Stories | 🟡 | 5 / 7 | `story`, `comment` | Full comment lifecycle on tasks; no goal stories |
 | Custom fields | 🟡 | 2 / 8 | `custom-field` | Read-only discovery; no field or enum-option authoring |
+| Custom field settings | ✅ | 4 / 4 | `custom-field` | All four reads; attaching a field is administration and stays out |
 | User task lists | 🟡 | — | `task my-tasks` | Only the "My Tasks" read path |
 | Batch API | 🟡 | — | `task get-many` | Used internally, not exposed generically |
 
 ### Not wrapped
 
-Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custom field
-settings, Custom types, Exports, Goal relationships, Jobs, Memberships, Ooo
+Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custom types,
+Exports, Goal relationships, Jobs, Memberships, Ooo
 entries, Organization exports, Portfolio memberships, Project briefs, Project memberships,
 Project portfolio settings, Project statuses (superseded by Status updates), Project
 templates, Rates, Reactions, Roles, Team memberships, Time periods,
@@ -114,8 +115,9 @@ managing them.
 | Search projects | `project search [text]` | `asana_project_search` |
 | Create / update / delete | `project create\|update\|delete` | `asana_project_create` / `_update` / `_delete` |
 
-Not covered: members, followers, custom field settings, duplicate, save-as-template, and
-the team-scoped create/list variants.
+Not covered: members, followers, attaching or detaching a custom field, duplicate,
+save-as-template, and the team-scoped create/list variants. Reading a project's attached
+custom fields is covered — see `custom-field project` below.
 
 ### Sections, tags, goals, portfolios, status updates, comments
 
@@ -165,11 +167,18 @@ handshake, surfaced as a normal result rather than a `412`. See
 | Workspaces | `workspace list\|get` | `asana_workspace_list`, `asana_workspace_get` |
 | Attachments | `attachment list\|get\|create\|delete` | `asana_attachment_list`, `asana_attachment_get`, `asana_attachment_create`, `asana_attachment_delete` |
 | Custom fields | `custom-field list\|get` | `asana_custom_field_list`, `asana_custom_field_get` |
+| Custom field settings | `custom-field project\|portfolio\|goal\|team` | `asana_custom_field_list_for_*` |
 
 Custom fields are read-only here by design: `custom-field list` and `custom-field get`
 exist so the GIDs that `task create` / `task update` require in `--custom-field` and
 `--custom-fields-json` are discoverable — `get` returns the field's `enum_options` and
 their GIDs. Defining or editing fields is workspace administration and is not wrapped.
+
+`custom-field project <gid>` is the narrower half of the same question: the fields
+actually attached to that project, with their enum options, which is what Asana will
+accept in a `custom_fields` payload there. `portfolio`, `goal`, and `team` cover the other
+three parents. Attaching or detaching a field lives on the Projects API and is
+administration, so it stays out.
 
 ## What cyber-asana adds on top
 

@@ -13,3 +13,18 @@ export function defineCustomFieldListPaginationAcceptanceSpecs(deps: CustomField
 		includeFetchAll: deps.includeFetchAll,
 	})
 }
+
+export type CustomFieldSettingsListPaginationAcceptanceDeps = {
+	getApi: () => Pick<CustomFieldApi, 'listCustomFieldSettingsForProject'>
+	projectGid: string
+	includeFetchAll?: boolean
+}
+
+export function defineCustomFieldSettingsListPaginationAcceptanceSpecs(
+	deps: CustomFieldSettingsListPaginationAcceptanceDeps,
+) {
+	return defineListPaginationAcceptanceSpecs({
+		list: (opts) => deps.getApi().listCustomFieldSettingsForProject(deps.projectGid, opts),
+		includeFetchAll: deps.includeFetchAll,
+	})
+}

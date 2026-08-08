@@ -1,7 +1,7 @@
 {
 	"source": "src/**/mcp.ts",
 	"fetched_at": "2026-08-08",
-	"tool_count": 91,
+	"tool_count": 95,
 	"tools": [
 		"asana_attachment_create",
 		"asana_attachment_delete",
@@ -14,6 +14,10 @@
 		"asana_comment_update",
 		"asana_custom_field_get",
 		"asana_custom_field_list",
+		"asana_custom_field_list_for_goal",
+		"asana_custom_field_list_for_portfolio",
+		"asana_custom_field_list_for_project",
+		"asana_custom_field_list_for_team",
 		"asana_event_list",
 		"asana_goal_create",
 		"asana_goal_delete",

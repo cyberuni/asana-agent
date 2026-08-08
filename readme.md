@@ -418,7 +418,7 @@ Tools are named `asana_<resource>_<action>` (e.g. `asana_task_create`).
 | `event` | `asana_event_list` (change feed; sync-token cursored, not paginated) |
 | `story` | `asana_story_list`, `asana_story_get`, `asana_story_create`, `asana_story_update`, `asana_story_delete` |
 | `comment` | `asana_comment_list`, `asana_comment_get`, `asana_comment_create`, `asana_comment_update`, `asana_comment_delete` (aliases for `story`) |
-| `custom-field` | `asana_custom_field_list`, `asana_custom_field_get` (discover the field and enum-option GIDs that `asana_task_create` / `asana_task_update` expect) |
+| `custom-field` | `asana_custom_field_list`, `asana_custom_field_get` (discover the field and enum-option GIDs that `asana_task_create` / `asana_task_update` expect), `asana_custom_field_list_for_project`, `asana_custom_field_list_for_portfolio`, `asana_custom_field_list_for_goal`, `asana_custom_field_list_for_team` |
 | `search` | `asana_search_objects` (typeahead; one `resource_type` per call, single capped page, not exhaustive) |
 | `url` | `asana_url_parse` (no API call; extracts GIDs from Asana app URLs) |
 
@@ -442,6 +442,7 @@ Notable parameters:
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
 - `asana_story_update` / `asana_story_delete` (and the `comment` aliases) — `story_gid`; only comment stories you authored can be changed, and a refusal comes back as a `403` with a hint saying so
 - `asana_search_objects` — `resource_type` (one of `actor`, `agent`, `custom_field`, `goal`, `portfolio`, `project`, `project_template`, `tag`, `task`, `team`, `user`), `query`, `count` (1–100, default 20), `opt_fields`. Turns a name into a GID; not paginated and not exhaustive
+- `asana_custom_field_list_for_project` — the fields actually attached to one project, with their enum options. Narrower than `asana_custom_field_list`, and the right lookup before writing `custom_fields`: Asana rejects a payload naming a field the project does not have. Same shape for `_for_portfolio`, `_for_goal`, `_for_team`
 - `asana_url_parse` — local URL parsing; use `workspace_gid` + `project_gid` for create; `list_view_gid` is not a section GID
 
 Per-tool parameter schemas live in `src/<domain>/mcp.ts` (e.g. `src/tasks/mcp.ts`) and [`src/url-mcp.ts`](src/url-mcp.ts). MCP hosts also expose tool schemas at runtime when the server is connected.
@@ -538,7 +539,7 @@ Installing twice is a no-op, and unrelated settings are preserved.
 | `event` | `list` |
 | `story` | `list`, `get`, `create`, `update`, `delete` |
 | `comment` | `list`, `get`, `create`, `update`, `delete` (alias for `story`) |
-| `custom-field` | `list`, `get` |
+| `custom-field` | `list`, `get`, `project`, `portfolio`, `goal`, `team` |
 | `setup` | `hook` |
 
 ### GID options
@@ -643,6 +644,8 @@ cyber-asana task update <task-gid> \
 When both custom-field forms are provided, repeated `--custom-field` entries override duplicate keys from `--custom-fields-json`.
 
 Both forms are keyed by custom field GID. Use `cyber-asana custom-field list --workspace-gid <gid>` to find those GIDs, and `cyber-asana custom-field get <gid>` for an enum field's option GIDs.
+
+When you already know the project, `cyber-asana custom-field project <project-gid>` is the narrower lookup — it lists only the fields attached to that project, with their enum options, which is what Asana will accept on a task there. `portfolio`, `goal`, and `team` do the same for those parents.
 
 ### Task followers
 

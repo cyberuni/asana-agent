@@ -2,6 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const listCustomFieldsMock = vi.fn()
 const getCustomFieldMock = vi.fn()
+const listForProjectMock = vi.fn()
+const listForPortfolioMock = vi.fn()
+const listForGoalMock = vi.fn()
+const listForTeamMock = vi.fn()
 
 vi.mock('./api.js', async () => {
 	const actual = await vi.importActual<typeof import('./api.js')>('./api.js')
@@ -9,6 +13,10 @@ vi.mock('./api.js', async () => {
 		...actual,
 		listCustomFields: listCustomFieldsMock,
 		getCustomField: getCustomFieldMock,
+		listCustomFieldSettingsForProject: listForProjectMock,
+		listCustomFieldSettingsForPortfolio: listForPortfolioMock,
+		listCustomFieldSettingsForGoal: listForGoalMock,
+		listCustomFieldSettingsForTeam: listForTeamMock,
 	}
 })
 
@@ -77,10 +85,83 @@ describe('custom-fields/mcp', () => {
 		registerCustomFieldTools(server as any, {
 			listCustomFields: vi.fn(),
 			getCustomField: injectedGetCustomField,
+			listCustomFieldSettingsForProject: vi.fn(),
+			listCustomFieldSettingsForPortfolio: vi.fn(),
+			listCustomFieldSettingsForGoal: vi.fn(),
+			listCustomFieldSettingsForTeam: vi.fn(),
 		})
 
 		await server.handlers.get('asana_custom_field_get')?.({ custom_field_gid: 'cf1' })
 
 		expect(injectedGetCustomField).toHaveBeenCalledWith('cf1')
+	})
+})
+
+describe('custom-fields/mcp custom field settings', () => {
+	afterEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it('asana_custom_field_list_for_project returns the settings as JSON', async () => {
+		const settings = [{ gid: 'cfs1', custom_field: { gid: 'cf1', name: 'Priority' } }]
+		listForProjectMock.mockResolvedValue(settings)
+		const server = createServer()
+		registerCustomFieldTools(server as any)
+
+		const result = await server.handlers.get('asana_custom_field_list_for_project')?.({
+			project_gid: 'proj1',
+			limit: 25,
+			opt_fields: 'custom_field.name',
+		})
+
+		expect(listForProjectMock).toHaveBeenCalledWith('proj1', { limit: 25, optFields: 'custom_field.name' })
+		expect(result).toEqual({ content: [{ type: 'text', text: JSON.stringify(settings) }] })
+	})
+
+	it('asana_custom_field_list_for_portfolio forwards pagination options', async () => {
+		listForPortfolioMock.mockResolvedValue({ data: [] })
+		const server = createServer()
+		registerCustomFieldTools(server as any)
+
+		await server.handlers.get('asana_custom_field_list_for_portfolio')?.({ portfolio_gid: 'port1', limit: 10 })
+
+		expect(listForPortfolioMock).toHaveBeenCalledWith('port1', { limit: 10 })
+	})
+
+	it('asana_custom_field_list_for_goal forwards the goal gid', async () => {
+		listForGoalMock.mockResolvedValue({ data: [] })
+		const server = createServer()
+		registerCustomFieldTools(server as any)
+
+		await server.handlers.get('asana_custom_field_list_for_goal')?.({ goal_gid: 'goal1' })
+
+		expect(listForGoalMock).toHaveBeenCalledWith('goal1', {})
+	})
+
+	it('asana_custom_field_list_for_team forwards the team gid', async () => {
+		listForTeamMock.mockResolvedValue({ data: [] })
+		const server = createServer()
+		registerCustomFieldTools(server as any)
+
+		await server.handlers.get('asana_custom_field_list_for_team')?.({ team_gid: 'team1' })
+
+		expect(listForTeamMock).toHaveBeenCalledWith('team1', {})
+	})
+
+	it('the settings tools can use an injected api dependency', async () => {
+		const injected = vi.fn().mockResolvedValue({ data: [] })
+		const server = createServer()
+		registerCustomFieldTools(server as any, {
+			listCustomFields: vi.fn(),
+			getCustomField: vi.fn(),
+			listCustomFieldSettingsForProject: injected,
+			listCustomFieldSettingsForPortfolio: vi.fn(),
+			listCustomFieldSettingsForGoal: vi.fn(),
+			listCustomFieldSettingsForTeam: vi.fn(),
+		})
+
+		await server.handlers.get('asana_custom_field_list_for_project')?.({ project_gid: 'proj1' })
+
+		expect(injected).toHaveBeenCalledWith('proj1', {})
 	})
 })

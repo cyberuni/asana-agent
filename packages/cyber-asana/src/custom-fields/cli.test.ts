@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const listCustomFieldsMock = vi.fn()
 const getCustomFieldMock = vi.fn()
+const listForProjectMock = vi.fn()
+const listForPortfolioMock = vi.fn()
+const listForGoalMock = vi.fn()
+const listForTeamMock = vi.fn()
 
 vi.mock('./api.js', async () => {
 	const actual = await vi.importActual<typeof import('./api.js')>('./api.js')
@@ -10,6 +14,10 @@ vi.mock('./api.js', async () => {
 		...actual,
 		listCustomFields: listCustomFieldsMock,
 		getCustomField: getCustomFieldMock,
+		listCustomFieldSettingsForProject: listForProjectMock,
+		listCustomFieldSettingsForPortfolio: listForPortfolioMock,
+		listCustomFieldSettingsForGoal: listForGoalMock,
+		listCustomFieldSettingsForTeam: listForTeamMock,
 	}
 })
 
@@ -110,11 +118,159 @@ describe('custom-fields/cli', () => {
 			customFieldCommand({
 				listCustomFields: vi.fn(),
 				getCustomField: injectedGetCustomField,
+				listCustomFieldSettingsForProject: vi.fn(),
+				listCustomFieldSettingsForPortfolio: vi.fn(),
+				listCustomFieldSettingsForGoal: vi.fn(),
+				listCustomFieldSettingsForTeam: vi.fn(),
 			}),
 		)
 
 		await program.parseAsync(['node', 'test', 'custom-field', 'get', 'cf1'], { from: 'node' })
 
 		expect(injectedGetCustomField).toHaveBeenCalledWith('cf1')
+	})
+})
+
+function settingsApiStub() {
+	return {
+		listCustomFields: vi.fn(),
+		getCustomField: vi.fn(),
+		listCustomFieldSettingsForProject: vi.fn(),
+		listCustomFieldSettingsForPortfolio: vi.fn(),
+		listCustomFieldSettingsForGoal: vi.fn(),
+		listCustomFieldSettingsForTeam: vi.fn(),
+	}
+}
+
+const SETTINGS_DEFAULT_FIELDS =
+	'custom_field.gid,custom_field.name,custom_field.resource_subtype,custom_field.enum_options.gid,custom_field.enum_options.name'
+
+describe('custom-fields/cli custom field settings', () => {
+	const originalArgv = [...process.argv]
+
+	afterEach(() => {
+		vi.clearAllMocks()
+		process.argv = [...originalArgv]
+	})
+
+	it('custom-field project applies a minimal default field set, a count summary, and next steps', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listCustomFieldSettingsForProject = vi.fn().mockResolvedValue([
+			{
+				gid: 'cfs1',
+				custom_field: {
+					gid: 'cf1',
+					name: 'Priority',
+					resource_subtype: 'enum',
+					enum_options: [
+						{ gid: 'eo1', name: 'High' },
+						{ gid: 'eo2', name: 'Low' },
+					],
+				},
+			},
+		])
+		const program = new Command().addCommand(
+			customFieldCommand({ ...settingsApiStub(), listCustomFieldSettingsForProject }),
+		)
+
+		await program.parseAsync(['node', 'test', 'custom-field', 'project', 'proj1'], { from: 'node' })
+
+		expect(listCustomFieldSettingsForProject).toHaveBeenCalledWith(
+			'proj1',
+			expect.objectContaining({ optFields: SETTINGS_DEFAULT_FIELDS }),
+		)
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines.some((l) => l.includes('Priority') && l.includes('enum') && l.includes('High, Low'))).toBe(true)
+		expect(lines).toContain('\n1 custom field(s)')
+		expect(lines.some((l) => l.includes('cyber-asana task update <gid> --custom-field'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
+	it('custom-field project names the entity when nothing is attached', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const program = new Command().addCommand(
+			customFieldCommand({ ...settingsApiStub(), listCustomFieldSettingsForProject: vi.fn().mockResolvedValue([]) }),
+		)
+
+		await program.parseAsync(['node', 'test', 'custom-field', 'project', 'proj1'], { from: 'node' })
+
+		expect(logSpy.mock.calls.map((c) => String(c[0]))).toContain('0 custom fields found')
+		logSpy.mockRestore()
+	})
+
+	it('custom-field project respects an explicit --opt-fields override', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listCustomFieldSettingsForProject = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			customFieldCommand({ ...settingsApiStub(), listCustomFieldSettingsForProject }),
+		)
+
+		await program.parseAsync(
+			['node', 'test', 'custom-field', 'project', 'proj1', '--opt-fields', 'custom_field.name'],
+			{
+				from: 'node',
+			},
+		)
+
+		expect(listCustomFieldSettingsForProject).toHaveBeenCalledWith(
+			'proj1',
+			expect.objectContaining({ optFields: 'custom_field.name' }),
+		)
+		vi.restoreAllMocks()
+	})
+
+	it('custom-field portfolio forwards the gid and pagination options', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		listForPortfolioMock.mockResolvedValue({ data: [] })
+		const program = new Command().addCommand(customFieldCommand())
+
+		await program.parseAsync(['node', 'test', 'custom-field', 'portfolio', 'port1', '--limit', '25'], { from: 'node' })
+
+		expect(listForPortfolioMock).toHaveBeenCalledWith(
+			'port1',
+			expect.objectContaining({ limit: 25, optFields: SETTINGS_DEFAULT_FIELDS }),
+		)
+		vi.restoreAllMocks()
+	})
+
+	it('custom-field goal forwards the gid', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		listForGoalMock.mockResolvedValue({ data: [] })
+		const program = new Command().addCommand(customFieldCommand())
+
+		await program.parseAsync(['node', 'test', 'custom-field', 'goal', 'goal1'], { from: 'node' })
+
+		expect(listForGoalMock).toHaveBeenCalledWith(
+			'goal1',
+			expect.objectContaining({ optFields: SETTINGS_DEFAULT_FIELDS }),
+		)
+		vi.restoreAllMocks()
+	})
+
+	it('custom-field team forwards the gid', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		listForTeamMock.mockResolvedValue({ data: [] })
+		const program = new Command().addCommand(customFieldCommand())
+
+		await program.parseAsync(['node', 'test', 'custom-field', 'team', 'team1'], { from: 'node' })
+
+		expect(listForTeamMock).toHaveBeenCalledWith(
+			'team1',
+			expect.objectContaining({ optFields: SETTINGS_DEFAULT_FIELDS }),
+		)
+		vi.restoreAllMocks()
+	})
+
+	it('custom-field project emits structured output with --json', async () => {
+		const settings = [{ gid: 'cfs1', custom_field: { gid: 'cf1', name: 'Priority' } }]
+		listForProjectMock.mockResolvedValue(settings)
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		process.argv = ['node', 'test', '--json']
+		const program = new Command().option('--json').addCommand(customFieldCommand())
+
+		await program.parseAsync(['node', 'test', '--json', 'custom-field', 'project', 'proj1'], { from: 'node' })
+
+		expect(logSpy).toHaveBeenCalledWith(JSON.stringify(settings, null, 2))
+		logSpy.mockRestore()
 	})
 })
