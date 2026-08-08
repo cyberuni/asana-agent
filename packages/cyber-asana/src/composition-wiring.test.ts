@@ -50,7 +50,14 @@ function mockRuntimeContext(): RuntimeContext {
 		},
 		users: { listUsers: vi.fn(), getUser: vi.fn(), getMe: vi.fn() },
 		teams: { listTeams: vi.fn(), getTeam: vi.fn() },
-		customFields: { listCustomFields: vi.fn(), getCustomField: vi.fn() },
+		customFields: {
+			listCustomFields: vi.fn(),
+			getCustomField: vi.fn(),
+			listCustomFieldSettingsForProject: vi.fn(),
+			listCustomFieldSettingsForPortfolio: vi.fn(),
+			listCustomFieldSettingsForGoal: vi.fn(),
+			listCustomFieldSettingsForTeam: vi.fn(),
+		},
 		portfolios: {
 			listPortfolios: vi.fn(),
 			listPortfolioItems: vi.fn(),
@@ -253,6 +260,31 @@ describe('composition wiring', () => {
 		await program.parseAsync(['node', 'test', 'custom-field', 'get', 'cf1'], { from: 'node' })
 
 		expect(ctx.customFields.getCustomField).toHaveBeenCalledWith('cf1')
+	})
+
+	it('CLI custom-field project uses runtime context customFields api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.customFields.listCustomFieldSettingsForProject = vi.fn().mockResolvedValue([])
+		const program = new Command()
+		registerCliCommands(program, () => ctx)
+
+		await program.parseAsync(['node', 'test', 'custom-field', 'project', 'proj1'], { from: 'node' })
+
+		expect(ctx.customFields.listCustomFieldSettingsForProject).toHaveBeenCalledWith(
+			'proj1',
+			expect.objectContaining({ optFields: expect.stringContaining('custom_field.name') }),
+		)
+	})
+
+	it('MCP asana_custom_field_list_for_project uses runtime context customFields api', async () => {
+		const ctx = mockRuntimeContext()
+		ctx.customFields.listCustomFieldSettingsForProject = vi.fn().mockResolvedValue([])
+		const server = createMcpServer()
+		registerMcpTools(server as never, () => ctx)
+
+		await server.handlers.get('asana_custom_field_list_for_project')?.({ project_gid: 'proj1' })
+
+		expect(ctx.customFields.listCustomFieldSettingsForProject).toHaveBeenCalledWith('proj1', {})
 	})
 
 	it('MCP asana_custom_field_list uses runtime context customFields api', async () => {

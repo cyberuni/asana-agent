@@ -35,7 +35,7 @@ describe('extractCyberTools', () => {
 		expect(tools).toContain('asana_attachment_create')
 		expect(tools).toContain('asana_rule_trigger')
 		expect(tools).toContain('asana_event_list')
-		expect(tools.length).toBe(91)
+		expect(tools.length).toBe(95)
 	})
 })
 
