@@ -40,7 +40,7 @@
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.30.0",
 		"asana": "^3.1.12",
-		"commander": "^14.0.0",
+		"commander": "^15.0.0",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
