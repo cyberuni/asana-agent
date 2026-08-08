@@ -54,13 +54,15 @@ If a token has already been sitting in a shared or committed file, treat it as c
 
 A PAT is the simpler choice for a single user. OAuth is worth the setup when several people use the same install, or when you want a credential that refreshes itself.
 
-cyber-asana uses **your own** Asana app, so no third-party registration ever sees your data. Create one at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps), then:
+cyber-asana uses **your own** Asana app, so no third-party registration ever sees your data. Create one at [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps) — it must be an **API app**, not an **MCP app**, whose tokens only work with Asana's hosted MCP server. Then:
 
 ```bash
-export ASANA_CLIENT_ID=<client-id>
-export ASANA_CLIENT_SECRET=<client-secret>
+export ASANA_API_CLIENT_ID=<client-id>
+export ASANA_API_CLIENT_SECRET=<client-secret>
 cyber-asana auth login
 ```
+
+`ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET` still work as a fallback, but the prefixed names let cyber-asana's API app coexist with an MCP app registered under Asana's documented names.
 
 See the [full OAuth documentation](https://github.com/cyberuni/cyber-asana#oauth) for redirect URL options, token management, and logout.
 
