@@ -59,14 +59,14 @@ Shared wiring lives in `src/composition.ts`, while common concerns such as clien
 Run system tests:
 
 ```sh
-ASANA_SYSTEM_TEST=1 ASANA_TOKEN=<pat> pnpm test:system
+ASANA_SYSTEM_TEST=1 ASANA_ACCESS_TOKEN=<pat> pnpm test:system
 ```
 
 Optional env vars for specific suites:
 
 | Variable | Used by |
 | --- | --- |
-| `ASANA_WORKSPACE` | workspace-scoped list pagination system tests |
+| `ASANA_WORKSPACE_GID` | workspace-scoped list pagination system tests |
 | `ASANA_SYSTEM_TEST_PROJECT_GID` | sections and tasks list pagination system tests |
 | `ASANA_SYSTEM_TEST_TASK_GID` | tasks batch lookup; attachments and stories list pagination |
 | `ASANA_SYSTEM_TEST_SECOND_TASK_GID` | tasks batch lookup (multi-GID order) |
@@ -75,8 +75,8 @@ Shared acceptance helpers: `src/testing/list-pagination.acceptance.ts`, `src/tes
 
 ## Key Conventions
 
-- **Authentication**: `ASANA_TOKEN` env var (personal access token); override per-invocation with `--token <pat>`
-- **Workspace**: `ASANA_WORKSPACE` env var for workspace GID; override with `--workspace <gid>`
+- **Authentication**: `ASANA_ACCESS_TOKEN` env var (personal access token); override per-invocation with `--token <pat>`
+- **Workspace**: `ASANA_WORKSPACE_GID` env var for workspace GID; override with `--workspace <gid>`
 - **Asana SDK**: `asana` npm package v3.x — API methods return `{ data: ... }`; always unwrap to `res.data`
 - **No duplication**: CLI and MCP both call `api.ts`; never inline Asana SDK calls in cli.ts or mcp.ts
 - **Workspace GID in requests**: pass as a plain string (`workspace: workspaceGid`), not as an object (`workspace: { gid: ... }`)
@@ -134,15 +134,18 @@ Both servers can run together with separate config keys and credentials. Tool na
 ## Environment
 
 ```
-ASANA_TOKEN=<personal access token>
-ASANA_WORKSPACE=<workspace GID>   # optional; avoids --workspace on every command
+ASANA_ACCESS_TOKEN=<personal access token>
+ASANA_WORKSPACE_GID=<workspace GID>   # optional; avoids --workspace on every command
 ```
+
+`ASANA_TOKEN` and `ASANA_WORKSPACE` still resolve as deprecated fallbacks (see
+`src/env.ts`), but new code and docs should use the names above.
 
 System tests (see **Testing** above):
 
 ```
 ASANA_SYSTEM_TEST=1                    # enable *.system.ts suites
-ASANA_WORKSPACE=...                    # workspace-scoped list pagination
+ASANA_WORKSPACE_GID=...                # workspace-scoped list pagination
 ASANA_SYSTEM_TEST_PROJECT_GID=...      # sections/tasks list pagination
 ASANA_SYSTEM_TEST_TASK_GID=...         # batch lookup, attachments/stories lists
 ASANA_SYSTEM_TEST_SECOND_TASK_GID=...  # tasks batch lookup (multi-GID)

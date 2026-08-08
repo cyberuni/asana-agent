@@ -6,8 +6,8 @@ Guide for developing `cyber-asana` locally. AI coding assistants should also rea
 
 ```sh
 pnpm install
-export ASANA_TOKEN=<your-pat>              # required for system tests
-export ASANA_WORKSPACE=<workspace-gid>     # optional default workspace
+export ASANA_ACCESS_TOKEN=<your-pat>        # required for system tests
+export ASANA_WORKSPACE_GID=<workspace-gid>  # optional default workspace
 ```
 
 ## Build and test
@@ -44,8 +44,8 @@ In `~/.cursor/mcp.json` or `.cursor/mcp.json`:
       "command": "node",
       "args": ["/absolute/path/to/cyber-asana/dist/mcp.js"],
       "env": {
-        "ASANA_TOKEN": "${ASANA_TOKEN}",
-        "ASANA_WORKSPACE": "${ASANA_WORKSPACE}"
+        "ASANA_ACCESS_TOKEN": "${ASANA_ACCESS_TOKEN}",
+        "ASANA_WORKSPACE_GID": "${ASANA_WORKSPACE_GID}"
       }
     }
   }
@@ -76,8 +76,8 @@ Debug tools and schemas without an agent host. UI defaults to [http://localhost:
 ```sh
 pnpm build
 npx @modelcontextprotocol/inspector \
-  -e ASANA_TOKEN="$ASANA_TOKEN" \
-  -e ASANA_WORKSPACE="$ASANA_WORKSPACE" \
+  -e ASANA_ACCESS_TOKEN="$ASANA_ACCESS_TOKEN" \
+  -e ASANA_WORKSPACE_GID="$ASANA_WORKSPACE_GID" \
   -- node dist/cli.js mcp
 ```
 
