@@ -13,6 +13,10 @@ permissions:
   contents: read
   issues: write
 
+concurrency:
+  group: mcp-catalog-watch
+  cancel-in-progress: false
+
 jobs:
   watch:
     runs-on: ubuntu-latest

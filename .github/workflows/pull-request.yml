@@ -7,9 +7,17 @@ on:
   # a queued PR waits forever on checks that never start.
   merge_group:
 
+# Cancel superseded runs on a PR, but never on a merge-group branch — cancelling
+# there would stall the queue on a check that never reports.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   code:
     uses: cyberuni/.github/.github/workflows/pnpm-verify.yml@main
+    permissions:
+      contents: read
     with:
       os: '["ubuntu-latest"]'
       skip-playwright: true
@@ -17,6 +25,8 @@ jobs:
 
   mcp-catalog:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
