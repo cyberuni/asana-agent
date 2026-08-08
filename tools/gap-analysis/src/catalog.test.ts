@@ -32,7 +32,7 @@ describe('extractCyberTools', () => {
 		expect(tools).toContain('asana_search_objects')
 		expect(tools).toContain('asana_status_overview')
 		expect(tools).toContain('asana_custom_field_list')
-		expect(tools.length).toBe(78)
+		expect(tools.length).toBe(84)
 	})
 })
 
