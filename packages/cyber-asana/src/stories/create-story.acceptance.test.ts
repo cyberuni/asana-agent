@@ -9,6 +9,9 @@ function createStoryGatewayDouble(): StoryGateway {
 	return {
 		listStories: vi.fn(),
 		createStory: vi.fn().mockResolvedValue({ gid: 'story1', text: 'Ship it' }),
+		getStory: vi.fn(),
+		updateStory: vi.fn(),
+		deleteStory: vi.fn(),
 		getTaskTemplateData: vi.fn(),
 	}
 }

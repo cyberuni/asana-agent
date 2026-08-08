@@ -1,12 +1,25 @@
 import Asana from 'asana'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createStory, createStoryApi, interpolateTemplate, listStories } from './api.js'
+import { buildMcpToolErrorBody } from '../mcp-error.js'
+import {
+	createStory,
+	createStoryApi,
+	deleteStory,
+	getStory,
+	interpolateTemplate,
+	listStories,
+	updateStory,
+} from './api.js'
 
 vi.mock('../client.js', () => ({
 	createClient: () => ({}),
 }))
 
 const mockStory = { gid: '123', text: 'A comment', resource_type: 'story' }
+
+function forbidden() {
+	return { response: { status: 403, body: { errors: [{ message: 'Forbidden' }] } } }
+}
 
 describe('stories/api', () => {
 	afterEach(() => vi.restoreAllMocks())
@@ -73,12 +86,86 @@ describe('stories/api', () => {
 	})
 })
 
+describe('stories/api single-story operations', () => {
+	afterEach(() => vi.restoreAllMocks())
+
+	it('getStory calls getStory', async () => {
+		vi.spyOn(Asana.StoriesApi.prototype, 'getStory').mockResolvedValue({ data: mockStory } as never)
+
+		const result = await getStory('123')
+
+		expect(result).toEqual(mockStory)
+		expect(Asana.StoriesApi.prototype.getStory).toHaveBeenCalledWith('123', {})
+	})
+
+	it('updateStory calls updateStory with the replacement text', async () => {
+		vi.spyOn(Asana.StoriesApi.prototype, 'updateStory').mockResolvedValue({ data: mockStory } as never)
+
+		const result = await updateStory('123', { text: 'Corrected' })
+
+		expect(result).toEqual(mockStory)
+		expect(Asana.StoriesApi.prototype.updateStory).toHaveBeenCalledWith({ data: { text: 'Corrected' } }, '123', {})
+	})
+
+	it('updateStory rejects malformed html_text before calling Asana', async () => {
+		const update = vi.spyOn(Asana.StoriesApi.prototype, 'updateStory')
+
+		await expect(updateStory('123', { html_text: '<div>bad</div>' })).rejects.toThrow(
+			'html_text must be wrapped in a single <body>...</body> root element',
+		)
+		expect(update).not.toHaveBeenCalled()
+	})
+
+	it('deleteStory calls deleteStory', async () => {
+		vi.spyOn(Asana.StoriesApi.prototype, 'deleteStory').mockResolvedValue({ data: {} } as never)
+
+		await deleteStory('123')
+
+		expect(Asana.StoriesApi.prototype.deleteStory).toHaveBeenCalledWith('123')
+	})
+
+	it('updateStory explains that only comments you authored are editable when Asana forbids it', async () => {
+		vi.spyOn(Asana.StoriesApi.prototype, 'updateStory').mockRejectedValue(forbidden())
+
+		const error = await updateStory('123', { text: 'Corrected' }).catch((thrown: unknown) => thrown)
+
+		expect(buildMcpToolErrorBody(error).error).toMatchObject({
+			status: 403,
+			hint: expect.stringContaining('you authored'),
+		})
+	})
+
+	it('deleteStory explains that only comments you authored are deletable when Asana forbids it', async () => {
+		vi.spyOn(Asana.StoriesApi.prototype, 'deleteStory').mockRejectedValue(forbidden())
+
+		const error = await deleteStory('123').catch((thrown: unknown) => thrown)
+
+		expect(buildMcpToolErrorBody(error).error).toMatchObject({
+			status: 403,
+			hint: expect.stringContaining('you authored'),
+		})
+	})
+
+	it('leaves errors other than a permission refusal untouched', async () => {
+		vi.spyOn(Asana.StoriesApi.prototype, 'deleteStory').mockRejectedValue({
+			response: { status: 404, body: { errors: [{ message: 'Not Found' }] } },
+		})
+
+		const error = await deleteStory('123').catch((thrown: unknown) => thrown)
+
+		expect(buildMcpToolErrorBody(error).error.hint).toBeUndefined()
+	})
+})
+
 describe('createStoryApi', () => {
 	it('uses the provided gateway for story creation', async () => {
 		const gatewayCreateStory = vi.fn().mockResolvedValue(mockStory)
 		const api = createStoryApi({
 			listStories: vi.fn(),
 			createStory: gatewayCreateStory,
+			getStory: vi.fn(),
+			updateStory: vi.fn(),
+			deleteStory: vi.fn(),
 			getTaskTemplateData: vi.fn(),
 		})
 

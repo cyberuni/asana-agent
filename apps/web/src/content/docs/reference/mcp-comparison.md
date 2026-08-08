@@ -135,8 +135,9 @@ keyword search.
 
 ### Comments and stories
 
-`asana_story_list`, `asana_story_create`, `asana_comment_list` — the official server can
-add a comment but not read the thread back.
+`asana_story_list|get|create|update|delete` and the `asana_comment_*` aliases — the
+official server can add a comment but not read the thread back, and cannot correct or
+withdraw one it posted.
 
 ### No REST equivalent at all
 

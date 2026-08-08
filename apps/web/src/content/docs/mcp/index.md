@@ -134,8 +134,8 @@ Default: if both can do the job, prefer **official for discovery and previews** 
 | `tag` | `asana_tag_list`, `asana_tag_get`, `asana_tag_create`, `asana_tag_update`, `asana_tag_delete`, `asana_tag_list_for_task`, `asana_tag_list_tasks`, `asana_tag_add_to_task`, `asana_tag_remove_from_task` |
 | `attachment` | `asana_attachment_list`, `asana_attachment_get` |
 | `status` | `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
-| `story` | `asana_story_list`, `asana_story_create` |
-| `comment` | `asana_comment_list`, `asana_comment_create` (aliases for `story`) |
+| `story` | `asana_story_list`, `asana_story_get`, `asana_story_create`, `asana_story_update`, `asana_story_delete` |
+| `comment` | `asana_comment_list`, `asana_comment_get`, `asana_comment_create`, `asana_comment_update`, `asana_comment_delete` (aliases for `story`) |
 | `search` | `asana_search_objects` (typeahead; one `resource_type` per call, single capped page, not exhaustive) |
 | `url` | `asana_url_parse` (no API call; extracts GIDs from Asana app URLs) |
 
@@ -147,5 +147,6 @@ List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` 
 - `asana_task_create` — `project_gid`, `project_gids`, `follower_gids`, `html_notes`, `parent_gid`, `resource_subtype`, `custom_fields`
 - `asana_task_update` — `html_notes`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
+- `asana_story_update` / `asana_story_delete` (and the `comment` aliases) — take `story_gid`; only comment stories you authored can be changed, and a refusal is a `403` carrying that as a hint
 - `asana_search_objects` — `resource_type` (one per call), `query`, `count` (1–100, default 20), `opt_fields`. Turns a name into a GID; not paginated and not exhaustive
 - `asana_url_parse` — local URL parsing; use `workspace_gid` + `project_gid` for create; `list_view_gid` is not a section GID

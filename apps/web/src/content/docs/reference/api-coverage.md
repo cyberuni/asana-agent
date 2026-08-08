@@ -44,7 +44,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **16** of them.
 | Users | 🟡 | 3 / 8 | `user` | Read-only |
 | Teams | 🟡 | 2 / 7 | `team` | Read-only |
 | Workspaces | 🟡 | 2 / 6 | `workspace` | Read-only |
-| Stories | 🟡 | 2 / 7 | `story`, `comment` | List and create on tasks only |
+| Stories | 🟡 | 5 / 7 | `story`, `comment` | Full comment lifecycle on tasks; no goal stories |
 | Attachments | 🟡 | 2 / 4 | `attachment` | Read-only; no upload or delete |
 | Custom fields | 🟡 | 2 / 8 | `custom-field` | Read-only discovery; no field or enum-option authoring |
 | User task lists | 🟡 | — | `task my-tasks` | Only the "My Tasks" read path |
@@ -99,7 +99,7 @@ Not covered: `POST /tasks/{gid}/duplicate`, `GET /tasks/custom_id/{id}`.
 Not covered: members, followers, custom field settings, duplicate, save-as-template, and
 the team-scoped create/list variants.
 
-### Sections, tags, goals, portfolios, status updates
+### Sections, tags, goals, portfolios, status updates, comments
 
 | Resource | CLI | MCP tools |
 | --- | --- | --- |
@@ -108,6 +108,11 @@ the team-scoped create/list variants.
 | Goals | `goal list\|get\|create\|update\|delete` | `asana_goal_*` |
 | Portfolios | `portfolio list\|items\|get\|create\|update\|delete` | `asana_portfolio_*` |
 | Status updates | `status list\|get\|create\|delete` | `asana_status_*` |
+| Stories / comments | `story list\|get\|create\|update\|delete`, same under `comment` | `asana_story_*`, `asana_comment_*` |
+
+Asana only allows editing and deleting comment stories you authored — system stories
+(assignee changed, due date set) are immutable, and an attempt to change one comes back as
+a `403` carrying that explanation as a hint.
 
 ### Read-only resources
 
@@ -117,7 +122,6 @@ the team-scoped create/list variants.
 | Teams | `team list\|get` | `asana_team_list`, `asana_team_get` |
 | Workspaces | `workspace list\|get` | `asana_workspace_list`, `asana_workspace_get` |
 | Attachments | `attachment list\|get` | `asana_attachment_list`, `asana_attachment_get` |
-| Stories / comments | `story list\|create`, `comment list\|create` | `asana_story_*`, `asana_comment_*` |
 | Custom fields | `custom-field list\|get` | `asana_custom_field_list`, `asana_custom_field_get` |
 
 Custom fields are read-only here by design: `custom-field list` and `custom-field get`

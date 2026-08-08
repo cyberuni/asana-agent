@@ -7,10 +7,19 @@ import {
 	printNextPageHint,
 	requiredGid,
 } from '../cli-options.js'
+import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import { isFull, truncate } from '../truncate.js'
 import type { StoryApi } from './api.js'
-import { createStory, getTaskTemplateData, interpolateTemplate, listStories } from './api.js'
+import {
+	createStory,
+	deleteStory,
+	getStory,
+	getTaskTemplateData,
+	interpolateTemplate,
+	listStories,
+	updateStory,
+} from './api.js'
 
 const TEXT_COLUMN_LIMIT = 60
 
@@ -28,7 +37,7 @@ function fmtStory(s: Story) {
 
 function resolveStoryApi(api?: StoryApi | (() => StoryApi)): StoryApi {
 	if (typeof api === 'function') return api()
-	return api ?? { listStories, createStory, getTaskTemplateData }
+	return api ?? { listStories, createStory, getStory, updateStory, deleteStory, getTaskTemplateData }
 }
 
 // Minimal default schema for story lists — principle 2. Just the fields the
@@ -47,6 +56,11 @@ export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) 
 			'  cyber-asana story list --task-gid <gid> --toon',
 			'  cyber-asana story create "Looks good" --task-gid <gid>',
 			'  cyber-asana story create "<p>Rich</p>" --task-gid <gid> --html-text "<body><p>Rich</p></body>"',
+			'  cyber-asana story get <gid>',
+			'  cyber-asana story update <gid> "Corrected text"',
+			'  cyber-asana story delete <gid>',
+			'',
+			'Only comment stories you authored can be edited or deleted; system stories are immutable.',
 			'',
 			'Every subcommand supports --help for its own options.',
 		].join('\n'),
@@ -74,7 +88,9 @@ export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) 
 			printCountSummary(items.length, 'story(s)')
 			printNextPageHint(data)
 			printNextSteps([
-				`cyber-asana story create --task-gid ${requiredGid(opts, 'task', 'Task GID')} "<text>" — comment`,
+				`cyber-asana ${name} create --task-gid ${requiredGid(opts, 'task', 'Task GID')} "<text>" — comment`,
+				`cyber-asana ${name} update <gid> "<text>" — fix a comment you authored`,
+				`cyber-asana ${name} delete <gid> — withdraw a comment you authored`,
 			])
 		})
 	})
@@ -106,6 +122,34 @@ export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) 
 			output(data, () => fmtStory(data))
 		},
 	)
+
+	cmd
+		.command('get <gid>')
+		.description('Get a story (comment) by GID')
+		.action(async (gid: string) => {
+			const data = await resolveStoryApi(api).getStory(gid)
+			output(data, () => fmtStory(data))
+		})
+
+	cmd
+		.command('update <gid> [text]')
+		.description('Edit a comment you authored')
+		.option('--html-text <html>', 'Replacement rich text as Asana HTML')
+		.action(async (gid: string, text: string | undefined, opts: { htmlText?: string }) => {
+			const data = await resolveStoryApi(api).updateStory(gid, {
+				...(text !== undefined && { text }),
+				...(opts.htmlText !== undefined && { html_text: opts.htmlText }),
+			})
+			output(data, () => fmtStory(data))
+		})
+
+	cmd
+		.command('delete <gid>')
+		.description('Delete a comment you authored')
+		.action(async (gid: string) => {
+			const result = await deleteIdempotently('story', gid, () => resolveStoryApi(api).deleteStory(gid))
+			output(result, () => console.log(deleteMessage(result, 'Comment')))
+		})
 
 	return cmd
 }

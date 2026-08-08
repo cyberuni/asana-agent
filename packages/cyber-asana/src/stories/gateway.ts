@@ -5,7 +5,7 @@ import {
 	type PaginationOptions,
 	toAsanaPaginationOptions,
 } from '../pagination.js'
-import type { StoryCreateFields } from './write-options.js'
+import type { StoryCreateFields, StoryUpdateFields } from './write-options.js'
 
 export type TaskTemplateData = {
 	name?: string
@@ -17,6 +17,9 @@ export type TaskTemplateData = {
 export type StoryGateway = {
 	listStories(taskGid: string, opts?: PaginationOptions): Promise<ListResult<any>>
 	createStory(taskGid: string, fields: StoryCreateFields): Promise<any>
+	getStory(storyGid: string): Promise<any>
+	updateStory(storyGid: string, fields: StoryUpdateFields): Promise<any>
+	deleteStory(storyGid: string): Promise<void>
 	getTaskTemplateData(taskGid: string): Promise<TaskTemplateData>
 }
 
@@ -32,6 +35,17 @@ export function createAsanaStoryGateway(client: Asana.ApiClient): StoryGateway {
 		async createStory(taskGid, fields) {
 			const res = await storiesApi.createStoryForTask({ data: fields }, taskGid, {})
 			return res.data
+		},
+		async getStory(storyGid) {
+			const res = await storiesApi.getStory(storyGid, {})
+			return res.data
+		},
+		async updateStory(storyGid, fields) {
+			const res = await storiesApi.updateStory({ data: fields }, storyGid, {})
+			return res.data
+		},
+		async deleteStory(storyGid) {
+			await storiesApi.deleteStory(storyGid)
 		},
 		async getTaskTemplateData(taskGid) {
 			const res = await tasksApi.getTask(taskGid, {})

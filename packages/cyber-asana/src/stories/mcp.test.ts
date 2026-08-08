@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { StoryApi } from './api.js'
 
 const createStoryMock = vi.fn()
 const getTaskTemplateDataMock = vi.fn()
@@ -13,6 +14,18 @@ vi.mock('./api.js', async () => {
 })
 
 const { registerStoryTools } = await import('./mcp.js')
+
+function storyDeps(overrides: Partial<StoryApi> = {}): StoryApi {
+	return {
+		listStories: vi.fn(),
+		createStory: vi.fn(),
+		getStory: vi.fn(),
+		updateStory: vi.fn(),
+		deleteStory: vi.fn(),
+		getTaskTemplateData: vi.fn(),
+		...overrides,
+	}
+}
 
 type ToolHandler = (params: any) => Promise<any>
 
@@ -68,14 +81,66 @@ describe('stories/mcp', () => {
 		})
 	})
 
+	it('asana_story_get reads one story', async () => {
+		const getStory = vi.fn().mockResolvedValue({ gid: 'story1', text: 'Hi' })
+		const server = createServer()
+		registerStoryTools(server as any, storyDeps({ getStory }))
+
+		await server.handlers.get('asana_story_get')?.({ story_gid: 'story1' })
+
+		expect(getStory).toHaveBeenCalledWith('story1')
+	})
+
+	it('asana_comment_update replaces the comment text', async () => {
+		const updateStory = vi.fn().mockResolvedValue({ gid: 'story1', text: 'Corrected' })
+		const server = createServer()
+		registerStoryTools(server as any, storyDeps({ updateStory }))
+
+		await server.handlers.get('asana_comment_update')?.({ story_gid: 'story1', text: 'Corrected' })
+
+		expect(updateStory).toHaveBeenCalledWith('story1', { text: 'Corrected' })
+	})
+
+	it('asana_story_update forwards html_text', async () => {
+		const updateStory = vi.fn().mockResolvedValue({ gid: 'story1', text: 'Corrected' })
+		const server = createServer()
+		registerStoryTools(server as any, storyDeps({ updateStory }))
+
+		await server.handlers.get('asana_story_update')?.({
+			story_gid: 'story1',
+			html_text: '<body><strong>Corrected</strong></body>',
+		})
+
+		expect(updateStory).toHaveBeenCalledWith('story1', { html_text: '<body><strong>Corrected</strong></body>' })
+	})
+
+	it('asana_story_delete removes the comment and reports it', async () => {
+		const deleteStory = vi.fn().mockResolvedValue(undefined)
+		const server = createServer()
+		registerStoryTools(server as any, storyDeps({ deleteStory }))
+
+		const result = await server.handlers.get('asana_story_delete')?.({ story_gid: 'story1' })
+
+		expect(deleteStory).toHaveBeenCalledWith('story1')
+		expect(JSON.parse(result.content[0].text)).toMatchObject({ deleted: true, gid: 'story1' })
+	})
+
+	it('asana_story_delete succeeds when the comment is already gone', async () => {
+		const deleteStory = vi.fn().mockRejectedValue({
+			response: { status: 404, body: { errors: [{ message: 'Not Found' }] } },
+		})
+		const server = createServer()
+		registerStoryTools(server as any, storyDeps({ deleteStory }))
+
+		const result = await server.handlers.get('asana_story_delete')?.({ story_gid: 'story1' })
+
+		expect(JSON.parse(result.content[0].text)).toMatchObject({ deleted: true, already_absent: true })
+	})
+
 	it('story tools can use injected dependencies', async () => {
 		const injectedCreateStory = vi.fn().mockResolvedValue({ gid: 'story1', text: 'Comment' })
 		const server = createServer()
-		registerStoryTools(server as any, {
-			listStories: vi.fn(),
-			createStory: injectedCreateStory,
-			getTaskTemplateData: vi.fn(),
-		})
+		registerStoryTools(server as any, storyDeps({ createStory: injectedCreateStory }))
 
 		await server.handlers.get('asana_story_create')?.({
 			task_gid: 'task1',

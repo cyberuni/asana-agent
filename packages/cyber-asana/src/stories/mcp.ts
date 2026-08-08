@@ -1,13 +1,25 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
+import { deleteIdempotently } from '../idempotent-delete.js'
 import { paginationOptions, paginationParams } from '../mcp-options.js'
 import type { StoryApi } from './api.js'
-import { createStory, getTaskTemplateData, interpolateTemplate, listStories } from './api.js'
+import {
+	createStory,
+	deleteStory,
+	getStory,
+	getTaskTemplateData,
+	interpolateTemplate,
+	listStories,
+	updateStory,
+} from './api.js'
 
 function resolveStoryApi(api?: StoryApi | (() => StoryApi)): StoryApi {
 	if (typeof api === 'function') return api()
-	return api ?? { listStories, createStory, getTaskTemplateData }
+	return api ?? { listStories, createStory, getStory, updateStory, deleteStory, getTaskTemplateData }
 }
+
+const EDITABLE_STORY_NOTE =
+	'Only comment stories you authored can be changed; system stories (assignee changed, due date set) are immutable.'
 
 function registerStoryToolsWithPrefix(
 	server: McpServer,
@@ -67,6 +79,48 @@ function registerStoryToolsWithPrefix(
 					},
 				],
 			}
+		},
+	)
+
+	server.tool(
+		`asana_${prefix}_get`,
+		'Get an Asana story (comment) by GID',
+		{ story_gid: z.string().describe('Story GID') },
+		async ({ story_gid }) => ({
+			content: [{ type: 'text', text: JSON.stringify(await resolveStoryApi(api).getStory(story_gid)) }],
+		}),
+	)
+
+	server.tool(
+		`asana_${prefix}_update`,
+		`Edit the text of an Asana comment. ${EDITABLE_STORY_NOTE}`,
+		{
+			story_gid: z.string().describe('Story GID'),
+			text: z.string().optional().describe('Replacement comment text'),
+			html_text: z.string().optional().describe('Replacement comment rich text as Asana HTML'),
+		},
+		async ({ story_gid, text, html_text }) => ({
+			content: [
+				{
+					type: 'text',
+					text: JSON.stringify(
+						await resolveStoryApi(api).updateStory(story_gid, {
+							...(text !== undefined && { text }),
+							...(html_text !== undefined && { html_text }),
+						}),
+					),
+				},
+			],
+		}),
+	)
+
+	server.tool(
+		`asana_${prefix}_delete`,
+		`Delete an Asana comment. ${EDITABLE_STORY_NOTE}`,
+		{ story_gid: z.string().describe('Story GID') },
+		async ({ story_gid }) => {
+			const result = await deleteIdempotently('story', story_gid, () => resolveStoryApi(api).deleteStory(story_gid))
+			return { content: [{ type: 'text', text: JSON.stringify(result) }] }
 		},
 	)
 }

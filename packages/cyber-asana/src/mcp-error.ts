@@ -32,6 +32,14 @@ function asAsanaResponseError(error: unknown): AsanaResponseError | undefined {
 	return error as AsanaResponseError
 }
 
+// An operation that knows why Asana refused it can attach a `hint` to the thrown
+// error; both the CLI renderer and the MCP error body pass it straight through.
+function attachedHint(error: unknown): string | undefined {
+	if (!error || typeof error !== 'object' || !('hint' in error)) return undefined
+	const hint = (error as { hint?: unknown }).hint
+	return typeof hint === 'string' ? hint : undefined
+}
+
 function normalizeAsanaErrors(errors: unknown[] | undefined): AsanaApiErrorDetail[] | undefined {
 	if (!errors?.length) return undefined
 	return errors.map((entry) => {
@@ -50,6 +58,7 @@ function normalizeAsanaErrors(errors: unknown[] | undefined): AsanaApiErrorDetai
 export function buildMcpToolErrorBody(error: unknown): McpToolErrorBody {
 	const asanaError = asAsanaResponseError(error)
 	const asanaErrors = normalizeAsanaErrors(asanaError?.response?.body?.errors)
+	const hint = attachedHint(error)
 	if (asanaErrors?.length) {
 		return {
 			ok: false,
@@ -58,6 +67,7 @@ export function buildMcpToolErrorBody(error: unknown): McpToolErrorBody {
 				message: asanaErrors.map((entry) => entry.message).join('; '),
 				...(asanaError?.response?.status !== undefined && { status: asanaError.response.status }),
 				errors: asanaErrors,
+				...(hint !== undefined && { hint }),
 			},
 		}
 	}
