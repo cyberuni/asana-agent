@@ -20,6 +20,10 @@ import { goalCommand } from './goals/cli.js'
 import { createAsanaGoalGateway } from './goals/gateway.js'
 import { registerGoalTools } from './goals/mcp.js'
 import { mcpCommand } from './mcp-cli.js'
+import { createMembershipApi, type MembershipApi } from './memberships/api.js'
+import { membershipCommand } from './memberships/cli.js'
+import { createAsanaMembershipGateway } from './memberships/gateway.js'
+import { registerMembershipTools } from './memberships/mcp.js'
 import { createPortfolioApi, type PortfolioApi } from './portfolios/api.js'
 import { portfolioCommand } from './portfolios/cli.js'
 import { createAsanaPortfolioGateway } from './portfolios/gateway.js'
@@ -81,6 +85,7 @@ export type RuntimeContext = {
 	customFields: CustomFieldApi
 	events: EventApi
 	goals: GoalApi
+	memberships: MembershipApi
 	portfolios: PortfolioApi
 	projects: ProjectApi
 	rules: RuleApi
@@ -105,6 +110,7 @@ export function createRuntimeContext(): RuntimeContext {
 		customFields: createCustomFieldApi(createAsanaCustomFieldGateway(client)),
 		events: createEventApi(createAsanaEventGateway(client)),
 		goals: createGoalApi(createAsanaGoalGateway(client)),
+		memberships: createMembershipApi(createAsanaMembershipGateway(client)),
 		portfolios: createPortfolioApi(portfolioGateway),
 		projects: createProjectApi(projectGateway),
 		rules: createRuleApi(createAsanaRuleGateway(client)),
@@ -135,6 +141,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(teamCommand(() => getContext().teams))
 	program.addCommand(portfolioCommand(() => getContext().portfolios))
 	program.addCommand(goalCommand(() => getContext().goals))
+	program.addCommand(membershipCommand(() => getContext().memberships))
 	program.addCommand(tagCommand(() => getContext().tags))
 	program.addCommand(customFieldCommand(() => getContext().customFields))
 	program.addCommand(attachmentCommand(() => getContext().attachments))
@@ -161,6 +168,7 @@ export function registerMcpTools(server: McpServer, getContext: () => RuntimeCon
 	registerTeamTools(server, () => getContext().teams)
 	registerPortfolioTools(server, () => getContext().portfolios)
 	registerGoalTools(server, () => getContext().goals)
+	registerMembershipTools(server, () => getContext().memberships)
 	registerTagTools(server, () => getContext().tags)
 	registerCustomFieldTools(server, () => getContext().customFields)
 	registerAttachmentTools(server, () => getContext().attachments)

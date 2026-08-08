@@ -39,6 +39,7 @@ help text. Every resource group's `--help` ends with worked examples.
 | [Custom fields](/cyber-asana/cli/custom-fields/) | `list`, `get` (find the GIDs task writes are keyed by) |
 | [Authentication](/cyber-asana/cli/auth/) | `auth status`, `auth login`, `auth token`, `auth logout` |
 | [Repo config](/cyber-asana/cli/repo-config/) | `config show/list/path/resolve-project/add/remove/sync` |
+| [Memberships](/cyber-asana/cli/memberships/) | `list`, `get`, `create`, `update`, `delete` |
 | [Search](/cyber-asana/cli/search/) | `objects` (typeahead; turn a name into a GID) |
 | [Utilities](/cyber-asana/cli/utilities/) | `url parse`, `task scan-todos`, `setup hook`, `mcp` |
 

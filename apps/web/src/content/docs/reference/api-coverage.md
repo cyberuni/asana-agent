@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **20** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **21** of them.
 
 | Legend | Meaning |
 | --- | --- |
@@ -41,9 +41,10 @@ Asana documents **49 resource groups**. cyber-asana wraps **20** of them.
 | Tags | ✅ | 6 / 6 | `tag` | Complete, including task↔tag links |
 | Task templates | 🟡 | 3 / 4 | `task-template` | Read plus instantiate; no template deletion |
 | Attachments | ✅ | 4 / 4 | `attachment` | List, get, upload (file or external URL), and delete |
+| Memberships | ✅ | 5 / 5 | `membership` | Complete; the unified endpoint covering project, portfolio, and goal memberships |
 | Sections | ✅ | 7 / 7 | `section` | Complete, including section reordering and section-scoped task placement |
-| Portfolios | 🟡 | 6 / 13 | `portfolio` | CRUD + item listing; no membership edits |
-| Projects | 🟡 | 7 / 20 | `project` | CRUD, counts, search; no members/templates |
+| Portfolios | 🟡 | 6 / 13 | `portfolio` | CRUD + item listing; members are managed under `membership` |
+| Projects | 🟡 | 7 / 20 | `project` | CRUD, counts, search; no templates. Members are managed under `membership` |
 | Goals | 🟡 | 5 / 12 | `goal` | CRUD only; no metrics or followers |
 | Users | 🟡 | 3 / 8 | `user` | Read-only |
 | Teams | 🟡 | 2 / 7 | `team` | Read-only |
@@ -57,12 +58,16 @@ Asana documents **49 resource groups**. cyber-asana wraps **20** of them.
 ### Not wrapped
 
 Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custom types,
-Exports, Goal relationships, Jobs, Memberships, Ooo
-entries, Organization exports, Portfolio memberships, Project briefs, Project memberships,
+Exports, Goal relationships, Jobs, Ooo entries, Organization exports, Project briefs,
 Project portfolio settings, Project statuses (superseded by Status updates), Project
-templates, Rates, Reactions, Roles, Team memberships, Time periods,
-Time tracking categories, Time tracking entries, Timesheet approval statuses, Webhooks,
+templates, Rates, Reactions, Roles, Team memberships†, Time periods, Time tracking
+categories, Time tracking entries, Timesheet approval statuses, Webhooks,
 Workspace memberships.
+
+† **Team memberships** — who belongs to a team — stay on this list. Asana's unified
+Memberships endpoint, which `membership` wraps, takes projects, portfolios, goals, custom
+types, and custom fields as the parent; a team can be a *member* there, but team rosters
+themselves are a separate resource.
 
 For anything on this list, call the Asana API directly — cyber-asana does not proxy
 arbitrary endpoints.
@@ -119,7 +124,7 @@ Not covered: members, followers, attaching or detaching a custom field, duplicat
 save-as-template, and the team-scoped create/list variants. Reading a project's attached
 custom fields is covered — see `custom-field project` below.
 
-### Sections, tags, goals, portfolios, status updates, comments
+### Sections, tags, goals, portfolios, status updates, comments, memberships
 
 | Resource | CLI | MCP tools |
 | --- | --- | --- |
@@ -129,6 +134,7 @@ custom fields is covered — see `custom-field project` below.
 | Portfolios | `portfolio list\|items\|get\|create\|update\|delete` | `asana_portfolio_*` |
 | Status updates | `status list\|get\|create\|delete` | `asana_status_*` |
 | Stories / comments | `story list\|get\|create\|update\|delete`, same under `comment` | `asana_story_*`, `asana_comment_*` |
+| Memberships | `membership list\|get\|create\|update\|delete` | `asana_membership_*` |
 
 Asana only allows editing and deleting comment stories you authored — system stories
 (assignee changed, due date set) are immutable, and an attempt to change one comes back as
