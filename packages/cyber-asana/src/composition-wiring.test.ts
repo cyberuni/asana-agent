@@ -45,6 +45,8 @@ function mockRuntimeContext(): RuntimeContext {
 			createSection: vi.fn(),
 			updateSection: vi.fn(),
 			deleteSection: vi.fn(),
+			moveSection: vi.fn(),
+			addTaskToSection: vi.fn(),
 		},
 		users: { listUsers: vi.fn(), getUser: vi.fn(), getMe: vi.fn() },
 		teams: { listTeams: vi.fn(), getTeam: vi.fn() },

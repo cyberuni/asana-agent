@@ -1,6 +1,6 @@
 import { createClient } from '../client.js'
 import type { PaginationOptions } from '../pagination.js'
-import { createAsanaSectionGateway, type SectionGateway } from './gateway.js'
+import { createAsanaSectionGateway, type SectionGateway, type SectionPlacement, type TaskPlacement } from './gateway.js'
 
 export type SectionApi = ReturnType<typeof createSectionApi>
 
@@ -20,6 +20,12 @@ export function createSectionApi(gateway: SectionGateway) {
 		},
 		deleteSection(sectionGid: string) {
 			return gateway.deleteSection(sectionGid)
+		},
+		moveSection(projectGid: string, sectionGid: string, opts?: SectionPlacement) {
+			return gateway.moveSection(projectGid, sectionGid, opts)
+		},
+		addTaskToSection(sectionGid: string, taskGid: string, opts?: TaskPlacement) {
+			return gateway.addTaskToSection(sectionGid, taskGid, opts)
 		},
 	}
 }
@@ -46,4 +52,12 @@ export async function updateSection(sectionGid: string, name: string) {
 
 export async function deleteSection(sectionGid: string) {
 	return defaultSectionApi().deleteSection(sectionGid)
+}
+
+export async function moveSection(projectGid: string, sectionGid: string, opts?: SectionPlacement) {
+	return defaultSectionApi().moveSection(projectGid, sectionGid, opts)
+}
+
+export async function addTaskToSection(sectionGid: string, taskGid: string, opts?: TaskPlacement) {
+	return defaultSectionApi().addTaskToSection(sectionGid, taskGid, opts)
 }

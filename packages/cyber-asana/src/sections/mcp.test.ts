@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { SectionApi } from './api.js'
 
 const createSectionMock = vi.fn()
 const updateSectionMock = vi.fn()
@@ -15,6 +16,19 @@ vi.mock('./api.js', async () => {
 const { registerSectionTools } = await import('./mcp.js')
 
 type ToolHandler = (params: any) => Promise<any>
+
+function apiDouble(overrides: Partial<SectionApi> = {}): SectionApi {
+	return {
+		listSections: vi.fn(),
+		getSection: vi.fn(),
+		createSection: vi.fn(),
+		updateSection: vi.fn(),
+		deleteSection: vi.fn(),
+		moveSection: vi.fn(),
+		addTaskToSection: vi.fn(),
+		...overrides,
+	} as SectionApi
+}
 
 function createServer() {
 	const handlers = new Map<string, ToolHandler>()
@@ -60,13 +74,7 @@ describe('sections/mcp', () => {
 	it('section tools can use injected dependencies', async () => {
 		const injectedCreateSection = vi.fn().mockResolvedValue({ gid: 'sec1', name: 'In Progress' })
 		const server = createServer()
-		registerSectionTools(server as any, {
-			listSections: vi.fn(),
-			getSection: vi.fn(),
-			createSection: injectedCreateSection,
-			updateSection: vi.fn(),
-			deleteSection: vi.fn(),
-		})
+		registerSectionTools(server as any, apiDouble({ createSection: injectedCreateSection }))
 
 		await server.handlers.get('asana_section_create')?.({
 			project_gid: 'proj1',
@@ -74,5 +82,35 @@ describe('sections/mcp', () => {
 		})
 
 		expect(injectedCreateSection).toHaveBeenCalledWith('proj1', 'In Progress')
+	})
+
+	it('asana_section_move forwards the project, section, and placement', async () => {
+		const moveSection = vi.fn().mockResolvedValue(undefined)
+		const server = createServer()
+		registerSectionTools(server as any, apiDouble({ moveSection }))
+
+		const result = await server.handlers.get('asana_section_move')?.({
+			project_gid: 'proj1',
+			section_gid: 'sec1',
+			insert_before: 'sec2',
+		})
+
+		expect(moveSection).toHaveBeenCalledWith('proj1', 'sec1', { insertBefore: 'sec2', insertAfter: undefined })
+		expect(result.content[0].text).toContain('sec1')
+	})
+
+	it('asana_section_task_add forwards the section, task, and placement', async () => {
+		const addTaskToSection = vi.fn().mockResolvedValue(undefined)
+		const server = createServer()
+		registerSectionTools(server as any, apiDouble({ addTaskToSection }))
+
+		const result = await server.handlers.get('asana_section_task_add')?.({
+			section_gid: 'sec1',
+			task_gid: 'task1',
+			insert_after: 'task2',
+		})
+
+		expect(addTaskToSection).toHaveBeenCalledWith('sec1', 'task1', { insertAfter: 'task2', insertBefore: undefined })
+		expect(result.content[0].text).toContain('task1')
 	})
 })
