@@ -11,6 +11,10 @@ import { type CustomFieldApi, createCustomFieldApi } from './custom-fields/api.j
 import { customFieldCommand } from './custom-fields/cli.js'
 import { createAsanaCustomFieldGateway } from './custom-fields/gateway.js'
 import { registerCustomFieldTools } from './custom-fields/mcp.js'
+import { createEventApi, type EventApi } from './events/api.js'
+import { eventCommand } from './events/cli.js'
+import { createAsanaEventGateway } from './events/gateway.js'
+import { registerEventTools } from './events/mcp.js'
 import { createGoalApi, type GoalApi } from './goals/api.js'
 import { goalCommand } from './goals/cli.js'
 import { createAsanaGoalGateway } from './goals/gateway.js'
@@ -75,6 +79,7 @@ import { registerWorkspaceTools } from './workspaces/mcp.js'
 export type RuntimeContext = {
 	attachments: AttachmentApi
 	customFields: CustomFieldApi
+	events: EventApi
 	goals: GoalApi
 	portfolios: PortfolioApi
 	projects: ProjectApi
@@ -98,6 +103,7 @@ export function createRuntimeContext(): RuntimeContext {
 	return {
 		attachments: createAttachmentApi(createAsanaAttachmentGateway(client)),
 		customFields: createCustomFieldApi(createAsanaCustomFieldGateway(client)),
+		events: createEventApi(createAsanaEventGateway(client)),
 		goals: createGoalApi(createAsanaGoalGateway(client)),
 		portfolios: createPortfolioApi(portfolioGateway),
 		projects: createProjectApi(projectGateway),
@@ -134,6 +140,7 @@ export function registerCliCommands(program: Command, getContext: () => RuntimeC
 	program.addCommand(attachmentCommand(() => getContext().attachments))
 	program.addCommand(statusCommand(() => getContext().status))
 	program.addCommand(ruleCommand(() => getContext().rules))
+	program.addCommand(eventCommand(() => getContext().events))
 	program.addCommand(storyCommand('story', () => getContext().stories))
 	program.addCommand(storyCommand('comment', () => getContext().stories))
 	program.addCommand(authCommand())
@@ -159,6 +166,7 @@ export function registerMcpTools(server: McpServer, getContext: () => RuntimeCon
 	registerAttachmentTools(server, () => getContext().attachments)
 	registerStatusTools(server, () => getContext().status)
 	registerRuleTools(server, () => getContext().rules)
+	registerEventTools(server, () => getContext().events)
 	registerStoryTools(server, () => getContext().stories)
 	registerUrlTools(server)
 }
