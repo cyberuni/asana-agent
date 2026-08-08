@@ -86,7 +86,7 @@ describe('resolveAppCredentials', () => {
 			settings: { client_id: 'file-id', client_secret: 'file-secret' },
 			env: {},
 		})
-		expect(result).toEqual({ clientId: 'file-id', clientSecret: 'file-secret', source: 'settings.json' })
+		expect(result).toEqual({ clientId: 'file-id', clientSecret: 'file-secret', source: 'settings.json', shadowed: [] })
 	})
 
 	it('prefers environment variables over the settings file', () => {
@@ -94,7 +94,12 @@ describe('resolveAppCredentials', () => {
 			settings: { client_id: 'file-id', client_secret: 'file-secret' },
 			env: { ASANA_CLIENT_ID: 'env-id', ASANA_CLIENT_SECRET: 'env-secret' },
 		})
-		expect(result).toEqual({ clientId: 'env-id', clientSecret: 'env-secret', source: 'ASANA_CLIENT_ID' })
+		expect(result).toEqual({
+			clientId: 'env-id',
+			clientSecret: 'env-secret',
+			source: 'ASANA_CLIENT_ID',
+			shadowed: ['settings.json'],
+		})
 	})
 
 	it('reads the API-app variables in preference to the settings file', () => {
@@ -102,7 +107,12 @@ describe('resolveAppCredentials', () => {
 			settings: { client_id: 'file-id', client_secret: 'file-secret' },
 			env: { ASANA_API_CLIENT_ID: 'api-id', ASANA_API_CLIENT_SECRET: 'api-secret' },
 		})
-		expect(result).toEqual({ clientId: 'api-id', clientSecret: 'api-secret', source: 'ASANA_API_CLIENT_ID' })
+		expect(result).toEqual({
+			clientId: 'api-id',
+			clientSecret: 'api-secret',
+			source: 'ASANA_API_CLIENT_ID',
+			shadowed: ['settings.json'],
+		})
 	})
 
 	// ASANA_CLIENT_ID is also what Asana's docs tell you to export for the
@@ -118,7 +128,12 @@ describe('resolveAppCredentials', () => {
 				ASANA_CLIENT_SECRET: 'mcp-secret',
 			},
 		})
-		expect(result).toEqual({ clientId: 'api-id', clientSecret: 'api-secret', source: 'ASANA_API_CLIENT_ID' })
+		expect(result).toEqual({
+			clientId: 'api-id',
+			clientSecret: 'api-secret',
+			source: 'ASANA_API_CLIENT_ID',
+			shadowed: ['ASANA_CLIENT_ID'],
+		})
 	})
 
 	it('names the environment variable that supplied the client id', () => {
@@ -142,7 +157,12 @@ describe('resolveAppCredentials', () => {
 			settings: { client_id: 'file-id', client_secret: 'file-secret' },
 			env: { ASANA_CLIENT_ID: 'mcp-id', ASANA_API_CLIENT_SECRET: 'api-secret' },
 		})
-		expect(result).toEqual({ clientId: 'mcp-id', clientSecret: 'api-secret', source: 'ASANA_CLIENT_ID' })
+		expect(result).toEqual({
+			clientId: 'mcp-id',
+			clientSecret: 'api-secret',
+			source: 'ASANA_CLIENT_ID',
+			shadowed: ['settings.json'],
+		})
 	})
 
 	it('lets flags win over the API-app variables', () => {
@@ -151,7 +171,12 @@ describe('resolveAppCredentials', () => {
 			env: { ASANA_API_CLIENT_ID: 'api-id', ASANA_API_CLIENT_SECRET: 'api-secret' },
 			overrides: { clientId: 'flag-id', clientSecret: 'flag-secret' },
 		})
-		expect(result).toEqual({ clientId: 'flag-id', clientSecret: 'flag-secret', source: 'flags' })
+		expect(result).toEqual({
+			clientId: 'flag-id',
+			clientSecret: 'flag-secret',
+			source: 'flags',
+			shadowed: ['ASANA_API_CLIENT_ID'],
+		})
 	})
 
 	it('reports no registration when neither source has a client id', () => {
@@ -164,7 +189,12 @@ describe('resolveAppCredentials', () => {
 			env: { ASANA_CLIENT_ID: 'env-id', ASANA_CLIENT_SECRET: 'env-secret' },
 			overrides: { clientId: 'flag-id', clientSecret: 'flag-secret' },
 		})
-		expect(result).toEqual({ clientId: 'flag-id', clientSecret: 'flag-secret', source: 'flags' })
+		expect(result).toEqual({
+			clientId: 'flag-id',
+			clientSecret: 'flag-secret',
+			source: 'flags',
+			shadowed: ['ASANA_CLIENT_ID', 'settings.json'],
+		})
 	})
 
 	it('lets a passed client id combine with a secret from the environment', () => {
@@ -194,5 +224,29 @@ describe('resolveAppCredentials', () => {
 		})
 		expect(result?.clientId).toBe('env-id')
 		expect(result?.clientSecret).toBe('file-secret')
+	})
+
+	// Both pairs set at once is the dual-MCP setup the readme recommends, where
+	// precedence otherwise decides in silence.
+	it('reports the shared variable as shadowed when the API-app one wins', () => {
+		const result = resolveAppCredentials({
+			settings: {},
+			env: { ASANA_API_CLIENT_ID: 'api-id', ASANA_CLIENT_ID: 'mcp-id' },
+		})
+		expect(result?.shadowed).toEqual(['ASANA_CLIENT_ID'])
+	})
+
+	it('reports every losing source that holds a client id', () => {
+		const result = resolveAppCredentials({
+			settings: { client_id: 'file-id' },
+			env: { ASANA_API_CLIENT_ID: 'api-id', ASANA_CLIENT_ID: 'mcp-id' },
+			overrides: { clientId: 'flag-id' },
+		})
+		expect(result?.source).toBe('flags')
+		expect(result?.shadowed).toEqual(['ASANA_API_CLIENT_ID', 'ASANA_CLIENT_ID', 'settings.json'])
+	})
+
+	it('shadows nothing when only one source holds a client id', () => {
+		expect(resolveAppCredentials({ settings: {}, env: { ASANA_CLIENT_ID: 'mcp-id' } })?.shadowed).toEqual([])
 	})
 })

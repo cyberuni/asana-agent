@@ -35,6 +35,32 @@ Reports whether you are authenticated, which source won, the masked token, the a
 belongs to, expiry if any, and which other credentials were shadowed — all without calling
 the Asana API. When nothing is configured it prints the two ways to fix that.
 
+It also reports the app registration `auth login` would authorize with, which resolves from
+a [separate chain](#app-registration-sources) — so a token that works says nothing about
+whether the registration is the right one:
+
+```
+Status       authenticated
+Source       ASANA_TOKEN
+Token        …bbbb
+App          …cdef (ASANA_API_CLIENT_ID)
+App ignored  ASANA_CLIENT_ID
+```
+
+`App` names the masked client id and the source it came from; `App ignored` lists the
+registrations that source shadowed. With `--json` (or `--toon`) the same appears as an `app`
+object, `null` when no registration resolves:
+
+```json
+{
+  "app": {
+    "client_id_masked": "…cdef",
+    "source": "ASANA_API_CLIENT_ID",
+    "shadowed": ["ASANA_CLIENT_ID"]
+  }
+}
+```
+
 ## OAuth login
 
 ```sh
@@ -82,6 +108,11 @@ not official Asana variables. They exist because Asana's docs use `ASANA_CLIENT_
 `ASANA_CLIENT_SECRET` for the hosted MCP server's **MCP app**, whose credentials do not work
 here; the prefixed pair lets both registrations coexist. `ASANA_CLIENT_ID` /
 `ASANA_CLIENT_SECRET` still work as a fallback.
+
+Run [`auth status`](#checking-what-is-in-use) to see which of these won and which were
+shadowed. If an MCP app's id reaches the token endpoint anyway, Asana answers with
+`invalid_client`, and cyber-asana appends a hint naming this distinction to Asana's own
+message.
 
 ## Printing the stored token
 

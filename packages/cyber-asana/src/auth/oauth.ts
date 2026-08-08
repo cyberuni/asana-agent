@@ -69,6 +69,20 @@ function userFrom(payload: TokenResponse): OAuthUser | undefined {
 	return gid ? { gid, name, email } : undefined
 }
 
+// RFC 6749 §5.2's code for a client-authentication failure. The likeliest way
+// to hit it here is a client id registered as an Asana MCP app driving a flow
+// only an API app can complete — a cause the bare OAuth error never names. The
+// hint is appended, never substituted, so guessing wrong costs nothing.
+const CLIENT_AUTH_ERROR = 'invalid_client'
+const WRONG_APP_TYPE_HINT = `
+
+Asana rejected the client credentials. If this client id belongs to an MCP app,
+it cannot authorize the REST API — those tokens only work with Asana's hosted
+MCP server. Create an API app at https://app.asana.com/0/my-apps and export it
+as ASANA_API_CLIENT_ID / ASANA_API_CLIENT_SECRET.
+
+Run \`cyber-asana auth status\` to see which registration is in effect.`
+
 async function requestTokens(form: URLSearchParams, deps: OAuthDeps): Promise<TokenResponse> {
 	const res = await deps.fetch(TOKEN_ENDPOINT, {
 		method: 'POST',
@@ -78,7 +92,8 @@ async function requestTokens(form: URLSearchParams, deps: OAuthDeps): Promise<To
 	const payload = (await res.json().catch(() => ({}))) as TokenResponse
 	if (!res.ok || !payload.access_token) {
 		const reason = payload.error_description ?? payload.error ?? `HTTP ${res.status}`
-		throw new Error(`Asana rejected the token request: ${reason}`)
+		const hint = payload.error === CLIENT_AUTH_ERROR ? WRONG_APP_TYPE_HINT : ''
+		throw new Error(`Asana rejected the token request: ${reason}${hint}`)
 	}
 	return payload
 }

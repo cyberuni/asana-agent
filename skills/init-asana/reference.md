@@ -13,6 +13,7 @@ Asana's hosted MCP server does not support dynamic client registration, so you p
 
 - **Tokens** — MCP OAuth tokens from the official server cannot be used as `ASANA_ACCESS_TOKEN`. PATs cannot substitute for official MCP OAuth.
 - **Client ids and secrets** — an MCP app's pair cannot drive `cyber-asana auth login`, which needs an API app's. Asana documents the MCP app's pair under `ASANA_CLIENT_ID` / `ASANA_CLIENT_SECRET`, so one exported pair cannot serve both. Give cyber-asana its API app through `ASANA_API_CLIENT_ID` / `ASANA_API_CLIENT_SECRET` (names cyber-asana defines) or `~/.config/cyber-asana/settings.json`, and keep the official server's pair in the host config's `auth` block.
+- **Verifying which one won** — `cyber-asana auth status` reports the app registration alongside the token credential: an `App` line with the masked client id and its source, and `App ignored` for the registrations it shadows (`app.client_id_masked` / `app.source` / `app.shadowed` under `--json`). Check it whenever both pairs are exported. A wrong registration that reaches Asana fails with `invalid_client`, and the CLI appends a hint about the API-app / MCP-app distinction.
 
 Dual-config example (Cursor-style):
 
