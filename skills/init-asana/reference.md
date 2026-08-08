@@ -4,8 +4,8 @@ Run the [official Asana MCP](https://developers.asana.com/docs/mcp-tools-referen
 
 | Server | Config key | Auth | Env vars |
 | --- | --- | --- | --- |
-| Official Asana MCP | `asana` | OAuth 2.0 | `ASANA_CLIENT_ID`, `ASANA_CLIENT_SECRET` |
-| cyber-asana | `cyber-asana` | Personal access token | `ASANA_ACCESS_TOKEN`, optional `ASANA_WORKSPACE_GID` |
+| Official Asana MCP | `asana` | OAuth 2.0 (hosted, host-managed app) | `ASANA_CLIENT_ID`, `ASANA_CLIENT_SECRET` |
+| cyber-asana | `cyber-asana` | Personal access token, or OAuth 2.0 + PKCE via `cyber-asana auth login` (your own Asana app) | `ASANA_ACCESS_TOKEN`, optional `ASANA_WORKSPACE_GID` |
 
 **Credentials are not interchangeable:** MCP OAuth tokens from the official server cannot be used as `ASANA_ACCESS_TOKEN`. PATs cannot substitute for official MCP OAuth.
 
