@@ -28,8 +28,9 @@ cyber-asana portfolio delete <gid>
 
 `items` lists the projects a portfolio contains.
 
-Adding and removing portfolio items, and portfolio memberships, are not wrapped — see
-[API coverage](/cyber-asana/reference/api-coverage/).
+Adding and removing portfolio items is not wrapped — see
+[API coverage](/cyber-asana/reference/api-coverage/). Portfolio members are managed with
+[`membership`](/cyber-asana/cli/memberships/).
 
 ## Related
 
