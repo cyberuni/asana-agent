@@ -37,7 +37,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **15** of them.
 | Status updates | ✅ | 4 / 4 | `status` | Complete |
 | Typeahead | ✅ | 1 / 1 | `search` | Complete; one resource type per call, single capped page |
 | Tags | ✅ | 6 / 6 | `tag` | Complete, including task↔tag links |
-| Sections | 🟡 | 5 / 7 | `section` | No reorder, no move-task-to-section |
+| Sections | 🟡 | 5 / 7 | `section` | No section reordering, and no section-scoped add — but `task project add --section` does place a task |
 | Portfolios | 🟡 | 6 / 13 | `portfolio` | CRUD + item listing; no membership edits |
 | Projects | 🟡 | 7 / 20 | `project` | CRUD, counts, search; no members/templates |
 | Goals | 🟡 | 5 / 12 | `goal` | CRUD only; no metrics or followers |
@@ -52,12 +52,18 @@ Asana documents **49 resource groups**. cyber-asana wraps **15** of them.
 ### Not wrapped
 
 Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custom field
-settings, Custom fields, Custom types, Events, Exports, Goal relationships, Jobs,
+settings, Custom fields\*, Custom types, Events, Exports, Goal relationships, Jobs,
 Memberships, Ooo entries, Organization exports, Portfolio memberships, Project briefs,
 Project memberships, Project portfolio settings, Project statuses (superseded by Status
 updates), Project templates, Rates, Reactions, Roles, Rules, Task templates, Team
 memberships, Time periods, Time tracking categories, Time tracking entries, Timesheet
 approval statuses, Webhooks, Workspace memberships.
+
+\* **Custom fields** are half-covered in a way the row above cannot show: `task create` and
+`task update` accept `--custom-field` / `--custom-fields-json` and send a `custom_fields`
+payload. What is missing is *discovery* — Asana keys those writes by GID, and nothing here
+lists a workspace's fields or their enum options, so the values have to come from
+elsewhere.
 
 For anything on this list, call the Asana API directly — cyber-asana does not proxy
 arbitrary endpoints.
