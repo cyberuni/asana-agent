@@ -112,7 +112,7 @@ You can run **both** the [official Asana MCP](https://developers.asana.com/docs/
 
 | Prefer official `asana` | Prefer `cyber-asana` |
 | --- | --- |
-| Typeahead/object search | `asana_url_parse`, repo config |
+| Cross-type object search in one call | Single-type object search (`asana_search_objects`), `asana_url_parse`, repo config |
 | Interactive previews | Subtasks, dependencies, followers, section placement |
 | Asana AI agents | `asana_task_scan_todos`, `asana_project_export`, rich REST-backed writes |
 | New MCP-only capabilities | Goals/tags/portfolios CRUD, portfolio items, status updates |
@@ -136,6 +136,7 @@ Default: if both can do the job, prefer **official for discovery and previews** 
 | `status` | `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
 | `story` | `asana_story_list`, `asana_story_create` |
 | `comment` | `asana_comment_list`, `asana_comment_create` (aliases for `story`) |
+| `search` | `asana_search_objects` (typeahead; one `resource_type` per call, single capped page, not exhaustive) |
 | `url` | `asana_url_parse` (no API call; extracts GIDs from Asana app URLs) |
 
 List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` where Asana supports them.
@@ -146,4 +147,5 @@ List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` 
 - `asana_task_create` — `project_gid`, `project_gids`, `follower_gids`, `html_notes`, `parent_gid`, `resource_subtype`, `custom_fields`
 - `asana_task_update` — `html_notes`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
+- `asana_search_objects` — `resource_type` (one per call), `query`, `count` (1–100, default 20), `opt_fields`. Turns a name into a GID; not paginated and not exhaustive
 - `asana_url_parse` — local URL parsing; use `workspace_gid` + `project_gid` for create; `list_view_gid` is not a section GID

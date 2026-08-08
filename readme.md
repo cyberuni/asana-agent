@@ -246,7 +246,7 @@ If your host reads the official server's credentials from the environment instea
 
 | Prefer official `asana` | Prefer `cyber-asana` |
 | --- | --- |
-| Typeahead/object search: `search_objects`, `search_tasks_preview` | `asana_url_parse`, repo config (`.agents/cyber-asana.json`) |
+| Cross-type object search in one call: `search_objects`, `search_tasks_preview` | Single-type object search (`asana_search_objects`), `asana_url_parse`, repo config (`.agents/cyber-asana.json`) |
 | Interactive previews: `create_task_preview`, `create_project_preview` | Subtasks, dependencies, followers, section placement |
 | Asana AI agents: `get_agent`, `get_workspace_agents` | `asana_task_scan_todos`, `asana_project_export`, rich REST-backed writes |
 | New MCP-only capabilities Asana ships first | Goals/tags/portfolios CRUD beyond V2 scope, portfolio items (`asana_portfolio_item_list`) |
@@ -400,6 +400,7 @@ Tools are named `asana_<resource>_<action>` (e.g. `asana_task_create`).
 | `status` | `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
 | `story` | `asana_story_list`, `asana_story_create` |
 | `comment` | `asana_comment_list`, `asana_comment_create` (aliases for `story`) |
+| `search` | `asana_search_objects` (typeahead; one `resource_type` per call, single capped page, not exhaustive) |
 | `url` | `asana_url_parse` (no API call; extracts GIDs from Asana app URLs) |
 
 List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` where Asana supports them.
@@ -416,6 +417,7 @@ Notable parameters:
 - `asana_project_search` — `text`, `completed`, team/owner/member/portfolio filters, date filters, `sort_by`, `sort_ascending`, `opt_fields`
 - `asana_project_counts` — `opt_fields` defaults to `num_tasks,num_incomplete_tasks,num_completed_tasks`
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
+- `asana_search_objects` — `resource_type` (one of `actor`, `agent`, `custom_field`, `goal`, `portfolio`, `project`, `project_template`, `tag`, `task`, `team`, `user`), `query`, `count` (1–100, default 20), `opt_fields`. Turns a name into a GID; not paginated and not exhaustive
 - `asana_url_parse` — local URL parsing; use `workspace_gid` + `project_gid` for create; `list_view_gid` is not a section GID
 
 Per-tool parameter schemas live in `src/<domain>/mcp.ts` (e.g. `src/tasks/mcp.ts`) and [`src/url-mcp.ts`](src/url-mcp.ts). MCP hosts also expose tool schemas at runtime when the server is connected.
@@ -761,6 +763,20 @@ Asana returns no fields from this endpoint unless `opt_fields` is supplied. This
 
 This endpoint has a stricter Asana rate/cost profile than ordinary project reads, so prefer the default field set unless you need additional count fields.
 
+### Object search (typeahead)
+
+Use `search objects` to turn a name into a GID — the entry point when you know what something is called but not its ID.
+
+```sh
+cyber-asana search objects project "website"
+cyber-asana search objects user "ada" --count 5
+cyber-asana search objects task --workspace-gid <gid> --toon
+```
+
+Asana accepts exactly one `resource-type` per call — `actor`, `agent`, `custom_field`, `goal`, `portfolio`, `project`, `project_template`, `tag`, `task`, `team`, or `user`. `actor` returns users and agents together.
+
+This endpoint is autocomplete, not search: it returns a single page capped by `--count` (1–100, default 20), ordered by relevance/recency, and Asana states the results are not exhaustive. There is no pagination, so `--all`, `--offset` and `--limit` do not apply. For exhaustive, filterable results use [`task search`](#task-search-filters) or [`project search`](#project-search-filters).
+
 ### Examples
 
 ```sh
@@ -769,6 +785,9 @@ cyber-asana project list
 
 # Search projects
 cyber-asana project search "launch" --workspace-gid <gid>
+
+# Find a project by name when you only have the name
+cyber-asana search objects project "website" --workspace-gid <gid>
 
 # Create a task
 cyber-asana task create "Fix the bug" --workspace-gid <gid> --project-gid <gid> --due-on 2026-06-01

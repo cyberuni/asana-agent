@@ -37,6 +37,7 @@ help text. Every resource group's `--help` ends with worked examples.
 | [People & places](/cyber-asana/cli/people/) | `user list/get/me`, `team list/get`, `workspace list/get` |
 | [Authentication](/cyber-asana/cli/auth/) | `auth status`, `auth login`, `auth token`, `auth logout` |
 | [Repo config](/cyber-asana/cli/repo-config/) | `config show/list/path/resolve-project/add/remove/sync` |
+| [Search](/cyber-asana/cli/search/) | `objects` (typeahead; turn a name into a GID) |
 | [Utilities](/cyber-asana/cli/utilities/) | `url parse`, `task scan-todos`, `setup hook`, `mcp` |
 
 ## Global options
