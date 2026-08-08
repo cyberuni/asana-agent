@@ -415,6 +415,7 @@ Tools are named `asana_<resource>_<action>` (e.g. `asana_task_create`).
 | `status` | `asana_status_overview`, `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
 | `story` | `asana_story_list`, `asana_story_create` |
 | `comment` | `asana_comment_list`, `asana_comment_create` (aliases for `story`) |
+| `custom-field` | `asana_custom_field_list`, `asana_custom_field_get` (discover the field and enum-option GIDs that `asana_task_create` / `asana_task_update` expect) |
 | `search` | `asana_search_objects` (typeahead; one `resource_type` per call, single capped page, not exhaustive) |
 | `url` | `asana_url_parse` (no API call; extracts GIDs from Asana app URLs) |
 
@@ -527,6 +528,7 @@ Installing twice is a no-op, and unrelated settings are preserved.
 | `status` | `list`, `get`, `create`, `delete` |
 | `story` | `list`, `create` |
 | `comment` | `list`, `create` (alias for `story`) |
+| `custom-field` | `list`, `get` |
 | `setup` | `hook` |
 
 ### GID options
@@ -629,6 +631,8 @@ cyber-asana task update <task-gid> \
 | `--follower <gid[,gid...]>` | `task create` | Add followers immediately after task creation |
 
 When both custom-field forms are provided, repeated `--custom-field` entries override duplicate keys from `--custom-fields-json`.
+
+Both forms are keyed by custom field GID. Use `cyber-asana custom-field list --workspace-gid <gid>` to find those GIDs, and `cyber-asana custom-field get <gid>` for an enum field's option GIDs.
 
 ### Task followers
 

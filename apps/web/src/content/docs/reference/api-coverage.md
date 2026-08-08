@@ -21,7 +21,7 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **15** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **16** of them.
 
 | Legend | Meaning |
 | --- | --- |
@@ -46,24 +46,19 @@ Asana documents **49 resource groups**. cyber-asana wraps **15** of them.
 | Workspaces | 🟡 | 2 / 6 | `workspace` | Read-only |
 | Stories | 🟡 | 2 / 7 | `story`, `comment` | List and create on tasks only |
 | Attachments | 🟡 | 2 / 4 | `attachment` | Read-only; no upload or delete |
+| Custom fields | 🟡 | 2 / 8 | `custom-field` | Read-only discovery; no field or enum-option authoring |
 | User task lists | 🟡 | — | `task my-tasks` | Only the "My Tasks" read path |
 | Batch API | 🟡 | — | `task get-many` | Used internally, not exposed generically |
 
 ### Not wrapped
 
 Access requests, Agents, AI Studio usage, Allocations, Audit log, Budgets, Custom field
-settings, Custom fields\*, Custom types, Events, Exports, Goal relationships, Jobs,
-Memberships, Ooo entries, Organization exports, Portfolio memberships, Project briefs,
-Project memberships, Project portfolio settings, Project statuses (superseded by Status
-updates), Project templates, Rates, Reactions, Roles, Rules, Task templates, Team
-memberships, Time periods, Time tracking categories, Time tracking entries, Timesheet
-approval statuses, Webhooks, Workspace memberships.
-
-\* **Custom fields** are half-covered in a way the row above cannot show: `task create` and
-`task update` accept `--custom-field` / `--custom-fields-json` and send a `custom_fields`
-payload. What is missing is *discovery* — Asana keys those writes by GID, and nothing here
-lists a workspace's fields or their enum options, so the values have to come from
-elsewhere.
+settings, Custom types, Events, Exports, Goal relationships, Jobs, Memberships, Ooo
+entries, Organization exports, Portfolio memberships, Project briefs, Project memberships,
+Project portfolio settings, Project statuses (superseded by Status updates), Project
+templates, Rates, Reactions, Roles, Rules, Task templates, Team memberships, Time periods,
+Time tracking categories, Time tracking entries, Timesheet approval statuses, Webhooks,
+Workspace memberships.
 
 For anything on this list, call the Asana API directly — cyber-asana does not proxy
 arbitrary endpoints.
@@ -123,6 +118,12 @@ the team-scoped create/list variants.
 | Workspaces | `workspace list\|get` | `asana_workspace_list`, `asana_workspace_get` |
 | Attachments | `attachment list\|get` | `asana_attachment_list`, `asana_attachment_get` |
 | Stories / comments | `story list\|create`, `comment list\|create` | `asana_story_*`, `asana_comment_*` |
+| Custom fields | `custom-field list\|get` | `asana_custom_field_list`, `asana_custom_field_get` |
+
+Custom fields are read-only here by design: `custom-field list` and `custom-field get`
+exist so the GIDs that `task create` / `task update` require in `--custom-field` and
+`--custom-fields-json` are discoverable — `get` returns the field's `enum_options` and
+their GIDs. Defining or editing fields is workspace administration and is not wrapped.
 
 ## What cyber-asana adds on top
 

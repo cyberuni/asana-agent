@@ -1,12 +1,14 @@
 {
 	"source": "src/**/mcp.ts",
 	"fetched_at": "2026-08-08",
-	"tool_count": 76,
+	"tool_count": 78,
 	"tools": [
 		"asana_attachment_get",
 		"asana_attachment_list",
 		"asana_comment_create",
 		"asana_comment_list",
+		"asana_custom_field_get",
+		"asana_custom_field_list",
 		"asana_goal_create",
 		"asana_goal_delete",
 		"asana_goal_get",
