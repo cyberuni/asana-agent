@@ -17,7 +17,7 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 
 | | Official Asana MCP | cyber-asana MCP |
 | --- | --- | --- |
-| Tools | 27 | 73 |
+| Tools | 27 | 74 |
 | Transport | Hosted remote (`https://mcp.asana.com/v2/mcp`) | Local stdio (`cyber-asana mcp`) |
 | Auth | OAuth 2.0 (hosted, an **MCP app** you register) | Personal access token, or OAuth 2.0 + PKCE via `cyber-asana auth login` (your own **API app**) |
 | Config key | `asana` | `cyber-asana` |
@@ -25,7 +25,7 @@ also exposes undocumented internal/widget tools in some hosts; those are out of 
 | Output | JSON | JSON, or TOON via `CYBER_ASANA_MCP_FORMAT=toon` |
 | Also available as a CLI | No | Yes — same core, same operations |
 
-**Overlap: 21 tool pairs. Official-only: 6. cyber-asana-only: 52.**
+**Overlap: 21 tool pairs. Official-only: 6. cyber-asana-only: 53.**
 
 ## What only the official server has
 
@@ -41,7 +41,7 @@ each is below, so you can tell a deliberate boundary from an oversight.
 | `create_project_preview` | Interactive preview of a project before creating it | None by design — same reason; `asana_project_create` writes directly |
 | `get_agent` | Fetch an Asana AI agent | None while Asana's agent endpoints stay early-access and require an opt-in header |
 | `get_workspace_agents` | List a workspace's AI agents | Same — though `asana_search_objects` covers basic discovery via typeahead's `agent` / `actor` types |
-| `get_status_overview` | Aggregated status report across projects and portfolios — task summaries and flagged blockers, found by its own keyword search | None for the search half. `asana_status_list` lists the updates on one parent you name by GID; a deterministic parent-scoped roll-up is planned |
+| `get_status_overview` | Aggregated status report across projects and portfolios — task summaries and flagged blockers, found by its own keyword search | None for the search half. Once you know the GID, `asana_status_overview` rolls up the latest status and task counts for a project or portfolio in one call — deterministic and parent-scoped, with no keyword search and no blocker flagging |
 
 If your workflow depends on preview-then-confirm flows, Asana AI agents, or searched
 status reporting, keep the official server installed.
@@ -92,7 +92,7 @@ Where the pairs are 🟡, the scope differs — and not always in cyber-asana's 
 
 ## What only cyber-asana has
 
-52 tools, mostly relationship edits and resources outside the official server's V2 scope.
+53 tools, mostly relationship edits and resources outside the official server's V2 scope.
 
 ### Task relationships
 
@@ -122,8 +122,11 @@ all, so board-column workflows need cyber-asana.
 
 `asana_project_update`, `asana_project_delete`, `asana_project_counts`,
 `asana_project_search`, `asana_portfolio_create|update|delete`,
-`asana_status_list|get|delete`. The official server creates projects and portfolios but
-does not update or delete them, and has no way to list the status updates on one parent.
+`asana_status_list|get|delete`, `asana_status_overview`. The official server creates
+projects and portfolios but does not update or delete them, and has no way to list the
+status updates on one parent. `asana_status_overview` rolls a parent's latest status and
+task counts into one call — the deterministic half of `get_status_overview`, without its
+keyword search.
 
 ### Workspaces and teams
 

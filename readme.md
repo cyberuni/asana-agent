@@ -412,7 +412,7 @@ Tools are named `asana_<resource>_<action>` (e.g. `asana_task_create`).
 | `goal` | `asana_goal_list`, `asana_goal_get`, `asana_goal_create`, `asana_goal_update`, `asana_goal_delete` |
 | `tag` | `asana_tag_list`, `asana_tag_get`, `asana_tag_create`, `asana_tag_update`, `asana_tag_delete`, `asana_tag_list_for_task`, `asana_tag_list_tasks`, `asana_tag_add_to_task`, `asana_tag_remove_from_task` |
 | `attachment` | `asana_attachment_list`, `asana_attachment_get` |
-| `status` | `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
+| `status` | `asana_status_overview`, `asana_status_list`, `asana_status_get`, `asana_status_create`, `asana_status_delete` |
 | `story` | `asana_story_list`, `asana_story_create` |
 | `comment` | `asana_comment_list`, `asana_comment_create` (aliases for `story`) |
 | `search` | `asana_search_objects` (typeahead; one `resource_type` per call, single capped page, not exhaustive) |
@@ -424,6 +424,7 @@ Paginated responses include `data`, `next_page`, and `limit`; fetch-all response
 
 Notable parameters:
 
+- `asana_status_overview` — `parent_gid` is a project or portfolio GID; `limit` caps the portfolio item fan-out (default 25) and `truncated` reports the cap; `parent_type` skips detection and saves one call
 - `asana_task_list`, `asana_task_my_tasks`, `asana_task_subtask_list` — `incomplete: true` filters to incomplete tasks
 - `asana_task_subtask_list` — `assignee_email`, `follower_emails`, `num_subtasks`, `custom_fields` expand returned fields
 - `asana_task_create` — `project_gid`, `project_gids`, `follower_gids`, `html_notes`, `parent_gid`, `resource_subtype`, `custom_fields`

@@ -78,14 +78,19 @@ export type RuntimeContext = {
 
 export function createRuntimeContext(): RuntimeContext {
 	const client = createClient()
+	const portfolioGateway = createAsanaPortfolioGateway(client)
+	const projectGateway = createAsanaProjectGateway(client)
 	return {
 		attachments: createAttachmentApi(createAsanaAttachmentGateway(client)),
 		goals: createGoalApi(createAsanaGoalGateway(client)),
-		portfolios: createPortfolioApi(createAsanaPortfolioGateway(client)),
-		projects: createProjectApi(createAsanaProjectGateway(client)),
+		portfolios: createPortfolioApi(portfolioGateway),
+		projects: createProjectApi(projectGateway),
 		search: createSearchApi(createAsanaSearchGateway(client)),
 		sections: createSectionApi(createAsanaSectionGateway(client)),
-		status: createStatusApi(createAsanaStatusGateway(client)),
+		status: createStatusApi(createAsanaStatusGateway(client), {
+			portfolios: portfolioGateway,
+			projects: projectGateway,
+		}),
 		stories: createStoryApi(createAsanaStoryGateway(client)),
 		tags: createTagApi(createAsanaTagGateway(client)),
 		tasks: createTaskApi(createAsanaTaskGateway(client)),

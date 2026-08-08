@@ -2,11 +2,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { paginationOptions, paginationParams } from '../mcp-options.js'
 import type { StatusApi } from './api.js'
-import { createStatus, deleteStatus, getStatus, listStatuses } from './api.js'
+import { createStatus, deleteStatus, getStatus, getStatusOverview, listStatuses } from './api.js'
 
 function resolveStatusApi(api?: StatusApi | (() => StatusApi)): StatusApi {
 	if (typeof api === 'function') return api()
-	return api ?? { listStatuses, getStatus, createStatus, deleteStatus }
+	return api ?? { listStatuses, getStatus, createStatus, deleteStatus, getStatusOverview }
 }
 
 export function registerStatusTools(server: McpServer, api?: StatusApi | (() => StatusApi)) {
@@ -22,6 +22,34 @@ export function registerStatusTools(server: McpServer, api?: StatusApi | (() => 
 				{
 					type: 'text',
 					text: JSON.stringify(await resolveStatusApi(api).listStatuses(parent_gid, paginationOptions(params))),
+				},
+			],
+		}),
+	)
+
+	server.tool(
+		'asana_status_overview',
+		'Roll up the latest status update and task counts for an Asana project or portfolio in one call. ' +
+			'Deterministic and parent-scoped — it takes a GID and does not search. For a portfolio it returns one entry ' +
+			'per item, capped by `limit` (default 25) with `truncated` set when the portfolio holds more.',
+		{
+			parent_gid: z.string().describe('Parent GID (project or portfolio)'),
+			limit: z.number().int().min(1).max(100).optional().describe('Portfolio items to roll up (default 25)'),
+			parent_type: z
+				.enum(['project', 'portfolio'])
+				.optional()
+				.describe('Skip parent-type detection and save one API call'),
+		},
+		async ({ parent_gid, limit, parent_type }) => ({
+			content: [
+				{
+					type: 'text',
+					text: JSON.stringify(
+						await resolveStatusApi(api).getStatusOverview(parent_gid, {
+							...(limit !== undefined && { limit }),
+							...(parent_type !== undefined && { parentType: parent_type }),
+						}),
+					),
 				},
 			],
 		}),

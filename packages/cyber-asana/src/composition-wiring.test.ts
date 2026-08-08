@@ -76,7 +76,13 @@ function mockRuntimeContext(): RuntimeContext {
 		},
 		attachments: { listAttachments: vi.fn(), getAttachment: vi.fn() },
 		stories: { listStories: vi.fn(), createStory: vi.fn(), getTaskTemplateData: vi.fn() },
-		status: { listStatuses: vi.fn(), getStatus: vi.fn(), createStatus: vi.fn(), deleteStatus: vi.fn() },
+		status: {
+			listStatuses: vi.fn(),
+			getStatus: vi.fn(),
+			createStatus: vi.fn(),
+			deleteStatus: vi.fn(),
+			getStatusOverview: vi.fn(),
+		},
 	}
 }
 

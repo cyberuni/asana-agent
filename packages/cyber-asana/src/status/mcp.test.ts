@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const listStatusesMock = vi.fn()
 const createStatusMock = vi.fn()
+const getStatusOverviewMock = vi.fn()
 
 vi.mock('./api.js', async () => {
 	const actual = await vi.importActual<typeof import('./api.js')>('./api.js')
@@ -9,6 +10,7 @@ vi.mock('./api.js', async () => {
 		...actual,
 		listStatuses: listStatusesMock,
 		createStatus: createStatusMock,
+		getStatusOverview: getStatusOverviewMock,
 	}
 })
 
@@ -41,6 +43,34 @@ describe('status/mcp', () => {
 		expect(listStatusesMock).toHaveBeenCalledWith('proj1', { limit: 25 })
 	})
 
+	it('asana_status_overview returns the roll-up for a parent gid', async () => {
+		const overview = {
+			parent: { gid: 'pf1', name: 'Q3 bets', resource_type: 'portfolio', status: null, counts: null },
+			items: [],
+			item_count: 0,
+			item_limit: 25,
+			truncated: false,
+		}
+		getStatusOverviewMock.mockResolvedValue(overview)
+		const server = createServer()
+		registerStatusTools(server as any)
+
+		const result = await server.handlers.get('asana_status_overview')?.({ parent_gid: 'pf1' })
+
+		expect(getStatusOverviewMock).toHaveBeenCalledWith('pf1', {})
+		expect(result.content[0].text).toBe(JSON.stringify(overview))
+	})
+
+	it('asana_status_overview forwards the item cap and the parent type', async () => {
+		getStatusOverviewMock.mockResolvedValue({})
+		const server = createServer()
+		registerStatusTools(server as any)
+
+		await server.handlers.get('asana_status_overview')?.({ parent_gid: 'pf1', limit: 5, parent_type: 'portfolio' })
+
+		expect(getStatusOverviewMock).toHaveBeenCalledWith('pf1', { limit: 5, parentType: 'portfolio' })
+	})
+
 	it('asana_status_create forwards parent gid and fields', async () => {
 		createStatusMock.mockResolvedValue({ gid: 'st1', status_type: 'on_track' })
 		const server = createServer()
@@ -63,6 +93,7 @@ describe('status/mcp', () => {
 			getStatus: vi.fn(),
 			createStatus: injectedCreateStatus,
 			deleteStatus: vi.fn(),
+			getStatusOverview: vi.fn(),
 		})
 
 		await server.handlers.get('asana_status_create')?.({

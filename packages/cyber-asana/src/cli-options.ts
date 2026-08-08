@@ -14,7 +14,7 @@ export type PaginationCliOptions = {
 
 export type CliGidOptions = Record<string, unknown>
 
-function parseLimit(value: string) {
+export function parseLimit(value: string) {
 	const limit = Number(value)
 	if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
 		throw new InvalidArgumentError('limit must be an integer from 1 to 100')
