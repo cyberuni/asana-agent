@@ -2,6 +2,10 @@ name: pull-request
 on:
   pull_request:
     types: [opened, synchronize]
+  # The merge queue builds a temporary merge-group branch and looks for the required
+  # contexts there. It fires neither `pull_request` nor `push`, so without this trigger
+  # a queued PR waits forever on checks that never start.
+  merge_group:
 
 jobs:
   code:
@@ -9,6 +13,7 @@ jobs:
     with:
       os: '["ubuntu-latest"]'
       skip-playwright: true
+      skip-codecov: true
 
   mcp-catalog:
     runs-on: ubuntu-latest
