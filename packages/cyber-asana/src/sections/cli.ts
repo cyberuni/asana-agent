@@ -10,7 +10,15 @@ import {
 import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { SectionApi } from './api.js'
-import { createSection, deleteSection, getSection, listSections, updateSection } from './api.js'
+import {
+	addTaskToSection,
+	createSection,
+	deleteSection,
+	getSection,
+	listSections,
+	moveSection,
+	updateSection,
+} from './api.js'
 
 type Section = { gid: string; name: string }
 
@@ -27,8 +35,17 @@ function resolveSectionApi(api?: SectionApi | (() => SectionApi)): SectionApi {
 			createSection,
 			updateSection,
 			deleteSection,
+			moveSection,
+			addTaskToSection,
 		}
 	)
+}
+
+// Mirrors `task project add`: the two placements name a position, so only one can win.
+function assertSinglePlacement(opts: { insertBefore?: string; insertAfter?: string }) {
+	if (opts.insertAfter && opts.insertBefore) {
+		throw new Error('--insert-after and --insert-before are mutually exclusive')
+	}
 }
 
 // Minimal default schema for section lists — principle 2.
@@ -51,6 +68,8 @@ export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 			'  cyber-asana section get <gid> --toon',
 			'  cyber-asana section create "In Progress" --project-gid <gid>',
 			'  cyber-asana section update <gid> --name "Done"',
+			'  cyber-asana section move <gid> --project-gid <gid> --insert-after <section-gid>',
+			'  cyber-asana section task add <section-gid> <task-gid> --insert-before <task-gid>',
 			'  cyber-asana section delete <gid>',
 			'',
 			'Every subcommand supports --help for its own options.',
@@ -105,6 +124,52 @@ export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 		.action(async (gid: string, opts: { name: string }) => {
 			const data = await resolveSectionApi(api).updateSection(gid, opts.name)
 			output(data, () => fmtSection(data))
+		})
+
+	addGidOption(
+		cmd
+			.command('move <gid>')
+			.description('Move a section before or after another section in the same project')
+			.option('--insert-before <gid>', 'Insert before this section GID')
+			.option('--insert-after <gid>', 'Insert after this section GID'),
+		'project',
+		'Project GID',
+	).action(
+		async (
+			gid: string,
+			opts: { project?: string; projectGid?: string; insertBefore?: string; insertAfter?: string },
+		) => {
+			assertSinglePlacement(opts)
+			if (!opts.insertBefore && !opts.insertAfter) {
+				throw new Error('one of --insert-before or --insert-after is required')
+			}
+			const projectGid = requiredGid(opts, 'project', 'Project GID')
+			await resolveSectionApi(api).moveSection(projectGid, gid, {
+				insertBefore: opts.insertBefore,
+				insertAfter: opts.insertAfter,
+			})
+			output({ section: gid, project: projectGid, status: 'moved' }, () =>
+				console.log(`Moved section ${gid} in project ${projectGid}`),
+			)
+		},
+	)
+
+	const taskCmd = cmd.command('task').description('Manage the tasks in a section')
+
+	taskCmd
+		.command('add <section-gid> <task-gid>')
+		.description('Add a task directly to a section')
+		.option('--insert-before <gid>', 'Insert before this task GID')
+		.option('--insert-after <gid>', 'Insert after this task GID')
+		.action(async (sectionGid: string, taskGid: string, opts: { insertBefore?: string; insertAfter?: string }) => {
+			assertSinglePlacement(opts)
+			await resolveSectionApi(api).addTaskToSection(sectionGid, taskGid, {
+				insertBefore: opts.insertBefore,
+				insertAfter: opts.insertAfter,
+			})
+			output({ task: taskGid, section: sectionGid, status: 'added' }, () =>
+				console.log(`Added task ${taskGid} to section ${sectionGid}`),
+			)
 		})
 
 	cmd

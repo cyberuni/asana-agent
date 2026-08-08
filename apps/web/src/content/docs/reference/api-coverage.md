@@ -37,7 +37,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **15** of them.
 | Status updates | ✅ | 4 / 4 | `status` | Complete |
 | Typeahead | ✅ | 1 / 1 | `search` | Complete; one resource type per call, single capped page |
 | Tags | ✅ | 6 / 6 | `tag` | Complete, including task↔tag links |
-| Sections | 🟡 | 5 / 7 | `section` | No section reordering, and no section-scoped add — but `task project add --section` does place a task |
+| Sections | ✅ | 7 / 7 | `section` | Complete, including section reordering and section-scoped task placement |
 | Portfolios | 🟡 | 6 / 13 | `portfolio` | CRUD + item listing; no membership edits |
 | Projects | 🟡 | 7 / 20 | `project` | CRUD, counts, search; no members/templates |
 | Goals | 🟡 | 5 / 12 | `goal` | CRUD only; no metrics or followers |
@@ -108,7 +108,7 @@ the team-scoped create/list variants.
 
 | Resource | CLI | MCP tools |
 | --- | --- | --- |
-| Sections | `section list\|get\|create\|update\|delete` | `asana_section_*` |
+| Sections | `section list\|get\|create\|update\|move\|delete`, `section task add` | `asana_section_*` |
 | Tags | `tag list\|get\|create\|update\|delete`, `tag task list\|add\|remove`, `tag tasks` | `asana_tag_*` |
 | Goals | `goal list\|get\|create\|update\|delete` | `asana_goal_*` |
 | Portfolios | `portfolio list\|items\|get\|create\|update\|delete` | `asana_portfolio_*` |

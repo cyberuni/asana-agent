@@ -14,6 +14,8 @@ function createPaginatingSectionGateway(): SectionGateway {
 		createSection: vi.fn(),
 		updateSection: vi.fn(),
 		deleteSection: vi.fn(),
+		moveSection: vi.fn(),
+		addTaskToSection: vi.fn(),
 	}
 }
 

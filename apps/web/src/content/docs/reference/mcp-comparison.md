@@ -106,8 +106,9 @@ only.
 
 ### Sections
 
-`asana_section_list|get|create|update|delete`. The official server has no section tools at
-all, so board-column workflows need cyber-asana.
+`asana_section_list|get|create|update|move|delete`, plus `asana_section_task_add`. The
+official server has no section tools at all, so board-column workflows — including
+reordering the columns and dropping a task straight into one — need cyber-asana.
 
 ### Tags
 

@@ -1,7 +1,7 @@
 {
 	"source": "src/**/mcp.ts",
 	"fetched_at": "2026-08-08",
-	"tool_count": 74,
+	"tool_count": 76,
 	"tools": [
 		"asana_attachment_get",
 		"asana_attachment_list",
@@ -31,6 +31,8 @@
 		"asana_section_delete",
 		"asana_section_get",
 		"asana_section_list",
+		"asana_section_move",
+		"asana_section_task_add",
 		"asana_section_update",
 		"asana_status_create",
 		"asana_status_delete",
