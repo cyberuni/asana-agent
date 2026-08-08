@@ -120,6 +120,151 @@ describe('status/cli', () => {
 		logSpy.mockRestore()
 	})
 
+	it('status overview prints the parent roll-up and its items', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const getStatusOverview = vi.fn().mockResolvedValue({
+			parent: {
+				gid: 'pf1',
+				name: 'Q3 bets',
+				resource_type: 'portfolio',
+				status: { gid: 'st0', status_type: 'at_risk', title: 'Week 12' },
+				counts: null,
+			},
+			items: [
+				{
+					gid: 'p1',
+					name: 'Apollo',
+					resource_type: 'project',
+					status: { gid: 'st1', status_type: 'on_track' },
+					counts: { num_tasks: 10, num_completed_tasks: 4 },
+				},
+			],
+			item_count: 1,
+			item_limit: 25,
+			truncated: false,
+		})
+		const program = new Command().addCommand(
+			statusCommand({
+				listStatuses: vi.fn(),
+				getStatus: vi.fn(),
+				createStatus: vi.fn(),
+				deleteStatus: vi.fn(),
+				getStatusOverview,
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'status', 'overview', 'pf1'], { from: 'node' })
+
+		expect(getStatusOverview).toHaveBeenCalledWith('pf1', {})
+		const lines = logSpy.mock.calls.map((c) => String(c[0]))
+		expect(lines.some((l) => l.includes('Q3 bets'))).toBe(true)
+		expect(lines.some((l) => l.includes('Apollo') && l.includes('on_track'))).toBe(true)
+		expect(lines).toContain('\n1 item(s) rolled up')
+		expect(lines.some((l) => l.includes('cyber-asana status list'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
+	it('status overview names the empty state when a portfolio has no items', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const getStatusOverview = vi.fn().mockResolvedValue({
+			parent: { gid: 'pf1', name: 'Q3 bets', resource_type: 'portfolio', status: null, counts: null },
+			items: [],
+			item_count: 0,
+			item_limit: 25,
+			truncated: false,
+		})
+		const program = new Command().addCommand(
+			statusCommand({
+				listStatuses: vi.fn(),
+				getStatus: vi.fn(),
+				createStatus: vi.fn(),
+				deleteStatus: vi.fn(),
+				getStatusOverview,
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'status', 'overview', 'pf1'], { from: 'node' })
+
+		expect(logSpy.mock.calls.map((c) => String(c[0]))).toContain('0 portfolio items found')
+		logSpy.mockRestore()
+	})
+
+	it('status overview says so when the item roll-up was capped', async () => {
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+		const getStatusOverview = vi.fn().mockResolvedValue({
+			parent: { gid: 'pf1', name: 'Q3 bets', resource_type: 'portfolio', status: null, counts: null },
+			items: [{ gid: 'p1', name: 'Apollo', resource_type: 'project', status: null, counts: null }],
+			item_count: 1,
+			item_limit: 1,
+			truncated: true,
+		})
+		const program = new Command().addCommand(
+			statusCommand({
+				listStatuses: vi.fn(),
+				getStatus: vi.fn(),
+				createStatus: vi.fn(),
+				deleteStatus: vi.fn(),
+				getStatusOverview,
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'status', 'overview', 'pf1', '--limit', '1'], { from: 'node' })
+
+		expect(getStatusOverview).toHaveBeenCalledWith('pf1', { limit: 1 })
+		expect(logSpy.mock.calls.map((c) => String(c[0])).some((l) => l.includes('capped at 1'))).toBe(true)
+		logSpy.mockRestore()
+	})
+
+	it('status overview forwards an explicit --parent-type', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const getStatusOverview = vi.fn().mockResolvedValue({
+			parent: {
+				gid: 'proj1',
+				name: 'Apollo',
+				resource_type: 'project',
+				status: null,
+				counts: { num_tasks: 3, num_completed_tasks: 1, num_incomplete_tasks: 2 },
+			},
+			items: [],
+			item_count: 0,
+			item_limit: 25,
+			truncated: false,
+		})
+		const program = new Command().addCommand(
+			statusCommand({
+				listStatuses: vi.fn(),
+				getStatus: vi.fn(),
+				createStatus: vi.fn(),
+				deleteStatus: vi.fn(),
+				getStatusOverview,
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'status', 'overview', 'proj1', '--parent-type', 'project'], {
+			from: 'node',
+		})
+
+		expect(getStatusOverview).toHaveBeenCalledWith('proj1', { parentType: 'project' })
+		vi.restoreAllMocks()
+	})
+
+	it('status overview rejects a --parent-type outside the two parent kinds', async () => {
+		const status = statusCommand({
+			listStatuses: vi.fn(),
+			getStatus: vi.fn(),
+			createStatus: vi.fn(),
+			deleteStatus: vi.fn(),
+			getStatusOverview: vi.fn(),
+		})
+		status.exitOverride()
+		for (const sub of status.commands) sub.exitOverride()
+		const program = new Command().exitOverride().addCommand(status)
+
+		await expect(
+			program.parseAsync(['node', 'test', 'status', 'overview', 'pf1', '--parent-type', 'goal'], { from: 'node' }),
+		).rejects.toThrow(/parent-type/)
+	})
+
 	it('status list forwards parent gid and pagination options', async () => {
 		listStatusesMock.mockResolvedValue({ data: [{ gid: 'st1', status_type: 'on_track' }], next_page: null, limit: 100 })
 		const program = new Command().addCommand(statusCommand())

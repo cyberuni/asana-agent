@@ -45,14 +45,14 @@ export type StatusOverview = {
 }
 
 /** Minimal default schema for the rolled-up status — principle 2. */
-export const STATUS_OVERVIEW_STATUS_FIELDS = 'gid,title,status_type,created_at,text'
+const STATUS_OVERVIEW_STATUS_FIELDS = 'gid,title,status_type,created_at,text'
 const PORTFOLIO_ITEM_FIELDS = 'gid,name,resource_type'
 
 /**
  * Default item cap. A portfolio roll-up costs 3 + 2N calls, so 25 items keep a
  * single roll-up under Asana's 150-requests-per-minute budget.
  */
-export const DEFAULT_STATUS_OVERVIEW_LIMIT = 25
+const DEFAULT_STATUS_OVERVIEW_LIMIT = 25
 
 async function latestStatus(deps: StatusOverviewDeps, gid: string) {
 	const statuses = await deps.status.listStatuses(gid, { limit: 1, optFields: STATUS_OVERVIEW_STATUS_FIELDS })
