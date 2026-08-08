@@ -1,7 +1,7 @@
 {
 	"source": "src/**/mcp.ts",
 	"fetched_at": "2026-08-08",
-	"tool_count": 86,
+	"tool_count": 87,
 	"tools": [
 		"asana_attachment_create",
 		"asana_attachment_delete",
@@ -33,6 +33,7 @@
 		"asana_project_list",
 		"asana_project_search",
 		"asana_project_update",
+		"asana_rule_trigger",
 		"asana_search_objects",
 		"asana_section_create",
 		"asana_section_delete",
