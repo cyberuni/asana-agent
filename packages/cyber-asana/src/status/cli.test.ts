@@ -29,7 +29,13 @@ describe('status/cli', () => {
 		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 		const listStatuses = vi.fn().mockResolvedValue([{ gid: 'st1', status_type: 'on_track' }])
 		const program = new Command().addCommand(
-			statusCommand({ listStatuses, getStatus: vi.fn(), createStatus: vi.fn(), deleteStatus: vi.fn() }),
+			statusCommand({
+				listStatuses,
+				getStatus: vi.fn(),
+				createStatus: vi.fn(),
+				deleteStatus: vi.fn(),
+				getStatusOverview: vi.fn(),
+			}),
 		)
 
 		await program.parseAsync(['node', 'test', 'status', 'list', '--parent-gid', 'proj1'], { from: 'node' })
@@ -48,7 +54,13 @@ describe('status/cli', () => {
 		vi.spyOn(console, 'log').mockImplementation(() => {})
 		const listStatuses = vi.fn().mockResolvedValue([])
 		const program = new Command().addCommand(
-			statusCommand({ listStatuses, getStatus: vi.fn(), createStatus: vi.fn(), deleteStatus: vi.fn() }),
+			statusCommand({
+				listStatuses,
+				getStatus: vi.fn(),
+				createStatus: vi.fn(),
+				deleteStatus: vi.fn(),
+				getStatusOverview: vi.fn(),
+			}),
 		)
 
 		await program.parseAsync(['node', 'test', 'status', 'list', '--parent-gid', 'proj1', '--opt-fields', 'gid,text'], {
@@ -62,7 +74,13 @@ describe('status/cli', () => {
 	it('status get truncates a long update body by default and shows it all with --full', async () => {
 		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 		const getStatus = vi.fn().mockResolvedValue({ gid: 'st1', status_type: 'on_track', text: 'x'.repeat(600) })
-		const deps = { listStatuses: vi.fn(), getStatus, createStatus: vi.fn(), deleteStatus: vi.fn() }
+		const deps = {
+			listStatuses: vi.fn(),
+			getStatus,
+			createStatus: vi.fn(),
+			deleteStatus: vi.fn(),
+			getStatusOverview: vi.fn(),
+		}
 
 		await new Command()
 			.addCommand(statusCommand(deps))
@@ -90,6 +108,7 @@ describe('status/cli', () => {
 				getStatus: vi.fn(),
 				createStatus: vi.fn(),
 				deleteStatus: vi.fn().mockResolvedValue(undefined),
+				getStatusOverview: vi.fn(),
 			}),
 		)
 
@@ -144,6 +163,7 @@ describe('status/cli', () => {
 				getStatus: vi.fn(),
 				createStatus: injectedCreateStatus,
 				deleteStatus: vi.fn(),
+				getStatusOverview: vi.fn(),
 			}),
 		)
 

@@ -2,11 +2,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { paginationOptions, paginationParams } from '../mcp-options.js'
 import type { StatusApi } from './api.js'
-import { createStatus, deleteStatus, getStatus, listStatuses } from './api.js'
+import { createStatus, deleteStatus, getStatus, getStatusOverview, listStatuses } from './api.js'
 
 function resolveStatusApi(api?: StatusApi | (() => StatusApi)): StatusApi {
 	if (typeof api === 'function') return api()
-	return api ?? { listStatuses, getStatus, createStatus, deleteStatus }
+	return api ?? { listStatuses, getStatus, createStatus, deleteStatus, getStatusOverview }
 }
 
 export function registerStatusTools(server: McpServer, api?: StatusApi | (() => StatusApi)) {

@@ -11,7 +11,7 @@ import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import { isFull, truncate } from '../truncate.js'
 import type { StatusApi } from './api.js'
-import { createStatus, deleteStatus, getStatus, listStatuses } from './api.js'
+import { createStatus, deleteStatus, getStatus, getStatusOverview, listStatuses } from './api.js'
 
 type Status = { gid: string; status_type?: string; title?: string; text?: string; created_at?: string }
 
@@ -27,7 +27,7 @@ function fmtStatus(s: Status) {
 
 function resolveStatusApi(api?: StatusApi | (() => StatusApi)): StatusApi {
 	if (typeof api === 'function') return api()
-	return api ?? { listStatuses, getStatus, createStatus, deleteStatus }
+	return api ?? { listStatuses, getStatus, createStatus, deleteStatus, getStatusOverview }
 }
 
 // Minimal default schema for status lists — principle 2. The body text is

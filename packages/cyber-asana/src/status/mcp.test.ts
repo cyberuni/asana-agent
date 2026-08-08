@@ -63,6 +63,7 @@ describe('status/mcp', () => {
 			getStatus: vi.fn(),
 			createStatus: injectedCreateStatus,
 			deleteStatus: vi.fn(),
+			getStatusOverview: vi.fn(),
 		})
 
 		await server.handlers.get('asana_status_create')?.({
