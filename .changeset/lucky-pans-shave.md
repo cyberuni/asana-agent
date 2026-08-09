@@ -20,5 +20,9 @@ The spec expands only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}`, so the previous
 `"ASANA_ACCESS_TOKEN": "${ASANA_ACCESS_TOKEN}"` entry would arrive as that
 literal string and shadow the real token. Export `ASANA_ACCESS_TOKEN` (and
 optionally `ASANA_WORKSPACE_GID`) in the environment that launches the agent.
-Claude Code reads `.mcp.json`, which still expands `${VAR}`, so nothing changes
-there.
+
+Claude Code reads `.mcp.json`, which still expands `${VAR}`, so a configured
+token keeps working unchanged. Those entries now carry an empty default —
+`${ASANA_ACCESS_TOKEN:-}` — because Claude Code forwards the unexpanded `${VAR}`
+text when a variable is unset. Previously that literal was accepted as a token
+and failed with a `401`; now a missing credential is reported as missing.

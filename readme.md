@@ -187,7 +187,9 @@ cyber-asana/                    # the package as installed
 
 `plugin.json` and `mcp.json` follow the [Agent Plugins specification](https://github.com/agentplugins/agent-plugins-spec) v1.0.0, whose manifest schema is closed: components are discovered from the fixed `skills/` and `mcp.json` locations rather than declared inline. Clients that predate the spec read their own manifest from the vendor directory beside it.
 
-The spec expands only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}`, so the portable `mcp.json` sets no `env` block — a `"${ASANA_ACCESS_TOKEN}"` value there would reach the server as that literal string and shadow the real token. Under a spec-conformant client, export the [authentication](#authentication) variables in the environment that launches the agent. Claude Code's `.mcp.json` does expand `${VAR}`, so it passes them through directly.
+The spec expands only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}`, so the portable `mcp.json` sets no `env` block — a `"${ASANA_ACCESS_TOKEN}"` value there would reach the server as that literal string and shadow the real token. Under a spec-conformant client, export the [authentication](#authentication) variables in the environment that launches the agent.
+
+Claude Code's `.mcp.json` does expand `${VAR}`, so it passes the variables through explicitly. It writes them as `${ASANA_ACCESS_TOKEN:-}` rather than `${ASANA_ACCESS_TOKEN}`: when a variable is unset and has no default, [Claude Code forwards the unexpanded `${VAR}` text as-is](https://code.claude.com/docs/en/mcp#environment-variable-expansion-in-mcp-json), which the server would accept as a token and fail on with a `401`. The empty default makes an unset variable arrive empty, so `ASANA_TOKEN` still gets its turn and a missing credential reports itself as missing.
 
 Sources live under `packages/cyber-asana/`; the canonical universal manifest is `packages/cyber-asana/.plugin/plugin.json`, and `pnpm version` syncs every manifest's version from the package.
 

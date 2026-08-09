@@ -49,7 +49,9 @@ Everything the plugin needs lives in `packages/cyber-asana/` and must stay liste
 
 `.claude-plugin/marketplace.json` at the **repo root** lists the plugin with an `npm` source. Version bumps flow from `packages/cyber-asana/package.json` through `scripts/sync-plugin-version.mjs` on `pnpm version` — add any new manifest to that script's list.
 
-Only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}` expand in `mcp.json`; never put a `"${SOME_VAR}"` value in its `env`, as it arrives literally and shadows the real variable. Claude Code's `.mcp.json` does expand `${VAR}`.
+Only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}` expand in `mcp.json`; never put a `"${SOME_VAR}"` value in its `env`, as it arrives literally and shadows the real variable.
+
+Claude Code's `.mcp.json` does expand `${VAR}`, but forwards the literal text when the variable is unset — so always write the empty default, `"${SOME_VAR:-}"`. `envValue` in `src/env.ts` treats `''` as absent, so an empty value falls through to the deprecated alias and then to a clean "no credential" error, while the literal would be accepted as a real value.
 
 ## Commands
 
