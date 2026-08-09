@@ -32,6 +32,24 @@ Before writing any production code, invoke the `test-driven-development` skill. 
 `cyber-asana` — an npm package that wraps the Asana API as:
 - A CLI (`cyber-asana <resource> <action>`) powered by Commander
 - A local MCP server powered by `@modelcontextprotocol/sdk` — see [CONTRIBUTING.md](CONTRIBUTING.md) for in-repo setup
+- An agent plugin — the package root *is* the plugin root, so the tarball ships `plugin.json`, `mcp.json`, `skills/`, and the per-vendor manifests
+
+### Plugin layout
+
+Everything the plugin needs lives in `packages/cyber-asana/` and must stay listed in that package's `files`, or it will not reach consumers.
+
+| Path | Read by |
+| --- | --- |
+| `plugin.json` / `mcp.json` | [Agent Plugins 1.0.0](https://github.com/agentplugins/agent-plugins-spec) clients. Manifest schema is **closed** — components come from fixed locations, never inline fields |
+| `.claude-plugin/plugin.json` / `.mcp.json` | Claude Code |
+| `.cursor-plugin/plugin.json` | Cursor |
+| `.codex-plugin/plugin.json` | Codex |
+| `.plugin/plugin.json` | Canonical universal-plugin source; not published |
+| `skills/<name>/SKILL.md` | All of them (fixed location) |
+
+`.claude-plugin/marketplace.json` at the **repo root** lists the plugin with an `npm` source. Version bumps flow from `packages/cyber-asana/package.json` through `scripts/sync-plugin-version.mjs` on `pnpm version` — add any new manifest to that script's list.
+
+Only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}` expand in `mcp.json`; never put a `"${SOME_VAR}"` value in its `env`, as it arrives literally and shadows the real variable. Claude Code's `.mcp.json` does expand `${VAR}`.
 
 ## Commands
 

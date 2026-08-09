@@ -122,7 +122,16 @@ curl -H "Authorization: Bearer $(cyber-asana auth token)" https://app.asana.com/
 
 ### Install skills
 
-From this repo or after cloning:
+The skills, the MCP server, and the CLI ship together as a plugin inside the `cyber-asana` npm package. Installing the plugin gets you all three at once:
+
+```sh
+/plugin marketplace add cyberuni/cyber-asana
+/plugin install cyber-asana@cyberuni
+```
+
+Claude Code installs the plugin with `npm install cyber-asana` and updates it when you bump the package, so there is no clone to keep in sync. See [Plugin distribution](#plugin-distribution) for what the package contains.
+
+To take the skills on their own:
 
 ```sh
 npx skills add cyberuni/cyber-asana
@@ -159,6 +168,28 @@ cyber-asana config show
 ```
 
 `asana_project_get` and `project get` opportunistically update cached names when results include `{ gid, name }`.
+
+## Plugin distribution
+
+The published npm package **is** the plugin root, so `npm install cyber-asana` yields a complete, installable plugin — no separate download and no repo clone.
+
+```text
+cyber-asana/                    # the package as installed
+├── plugin.json                 # Agent Plugins 1.0.0 manifest
+├── mcp.json                    # Agent Plugins 1.0.0 MCP config
+├── skills/<name>/SKILL.md      # discovered from the fixed location
+├── .claude-plugin/plugin.json  # Claude Code
+├── .mcp.json                   # Claude Code MCP config
+├── .cursor-plugin/plugin.json  # Cursor
+├── .codex-plugin/plugin.json   # Codex
+└── dist/                       # CLI and MCP server
+```
+
+`plugin.json` and `mcp.json` follow the [Agent Plugins specification](https://github.com/agentplugins/agent-plugins-spec) v1.0.0, whose manifest schema is closed: components are discovered from the fixed `skills/` and `mcp.json` locations rather than declared inline. Clients that predate the spec read their own manifest from the vendor directory beside it.
+
+The spec expands only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}`, so the portable `mcp.json` sets no `env` block — a `"${ASANA_ACCESS_TOKEN}"` value there would reach the server as that literal string and shadow the real token. Under a spec-conformant client, export the [authentication](#authentication) variables in the environment that launches the agent. Claude Code's `.mcp.json` does expand `${VAR}`, so it passes them through directly.
+
+Sources live under `packages/cyber-asana/`; the canonical universal manifest is `packages/cyber-asana/.plugin/plugin.json`, and `pnpm version` syncs every manifest's version from the package.
 
 ## MCP Server
 
