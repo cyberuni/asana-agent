@@ -41,7 +41,8 @@ https://app.asana.com/0/my-apps`
 /** Refresh this far ahead of expiry so a command never runs with a token that dies mid-flight. */
 const REFRESH_WINDOW_MS = 60_000
 
-const UNEXPANDED_HINT = 'set, but holds an unexpanded ${VAR} reference — the agent host did not substitute a value'
+const UNEXPANDED_ENV_REFERENCE = '$' + '{VAR}'
+const UNEXPANDED_HINT = `set, but holds an unexpanded ${UNEXPANDED_ENV_REFERENCE} reference — the agent host did not substitute a value`
 
 export type AuthCommandDeps = {
 	readCredential: (input?: { stored?: StoredCredential }) => Credential
