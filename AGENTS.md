@@ -51,7 +51,7 @@ Everything the plugin needs lives in `packages/cyber-asana/` and must stay liste
 
 Only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}` expand in `mcp.json`; never put a `"${SOME_VAR}"` value in its `env`, as it arrives literally and shadows the real variable.
 
-Claude Code's `.mcp.json` does expand `${VAR}`, but forwards the literal text when the variable is unset — so always write the empty default, `"${SOME_VAR:-}"`. `envValue` in `src/env.ts` treats `''` as absent, so an empty value falls through to the deprecated alias and then to a clean "no credential" error, while the literal would be accepted as a real value.
+Claude Code's `.mcp.json` does expand `${VAR}`, but forwards the literal text when the variable is unset. `envValue` in `src/env.ts` is the guard: a value that is exactly an unexpanded reference counts as absent, so the fallback alias still applies and a missing credential reports itself as missing. Keep that guard rather than working around it per manifest — it is the only thing covering configs this repo does not author.
 
 ## Commands
 
