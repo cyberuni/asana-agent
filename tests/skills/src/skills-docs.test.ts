@@ -3,7 +3,10 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const repoRoot = path.resolve(import.meta.dirname, '../../..')
-const files = ['skills/init-asana/SKILL.md', 'skills/pin-asana-projects/SKILL.md']
+const files = [
+	'packages/cyber-asana/skills/init-asana/SKILL.md',
+	'packages/cyber-asana/skills/pin-asana-projects/SKILL.md',
+]
 
 describe('skill docs', () => {
 	it('pin `npx cyber-asana` invocations to an explicit version', async () => {

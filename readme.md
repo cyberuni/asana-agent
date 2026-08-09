@@ -118,7 +118,7 @@ curl -H "Authorization: Bearer $(cyber-asana auth token)" https://app.asana.com/
 
 ## Agent skills
 
-`cyber-asana` ships workflow skills under [`skills/`](skills/) for Cursor, Claude Code, and other agents. **Start here** — skills encode when to use MCP tools vs CLI, how to resolve projects from repo config, and common workflows (standups, sprint reports, task creation).
+`cyber-asana` ships workflow skills under [`packages/cyber-asana/skills/`](packages/cyber-asana/skills/) for Cursor, Claude Code, and other agents. **Start here** — skills encode when to use MCP tools vs CLI, how to resolve projects from repo config, and common workflows (standups, sprint reports, task creation).
 
 ### Install skills
 
@@ -136,14 +136,14 @@ Set [authentication](#authentication) before running any workflow.
 
 | Skill | Use when |
 | --- | --- |
-| [`init-asana`](skills/init-asana/SKILL.md) | First-time setup; `ASANA_ACCESS_TOKEN`, workspace GID, verify connection |
-| [`pin-asana-projects`](skills/pin-asana-projects/SKILL.md) | Pin repo projects in `.agents/cyber-asana.json` via `project search` keywords |
-| [`create-asana-task`](skills/create-asana-task/SKILL.md) | Create or file a task (URL parse, repo project lookup, MCP `asana_task_create`) |
-| [`asana-standup`](skills/asana-standup/SKILL.md) | Standup update — recent completions and due-soon tasks |
-| [`asana-sprint-report`](skills/asana-sprint-report/SKILL.md) | Sprint retro — completed vs incomplete in a project/section |
-| [`sync-asana-project`](skills/sync-asana-project/SKILL.md) | Pull project tasks into local markdown for planning |
-| [`create-tasks-from-code`](skills/create-tasks-from-code/SKILL.md) | Scan TODO/FIXME comments and create actionable Asana tasks |
-| [`link-pr-to-task`](skills/link-pr-to-task/SKILL.md) | Post a GitHub PR URL as a comment on the related task |
+| [`init-asana`](packages/cyber-asana/skills/init-asana/SKILL.md) | First-time setup; `ASANA_ACCESS_TOKEN`, workspace GID, verify connection |
+| [`pin-asana-projects`](packages/cyber-asana/skills/pin-asana-projects/SKILL.md) | Pin repo projects in `.agents/cyber-asana.json` via `project search` keywords |
+| [`create-asana-task`](packages/cyber-asana/skills/create-asana-task/SKILL.md) | Create or file a task (URL parse, repo project lookup, MCP `asana_task_create`) |
+| [`asana-standup`](packages/cyber-asana/skills/asana-standup/SKILL.md) | Standup update — recent completions and due-soon tasks |
+| [`asana-sprint-report`](packages/cyber-asana/skills/asana-sprint-report/SKILL.md) | Sprint retro — completed vs incomplete in a project/section |
+| [`sync-asana-project`](packages/cyber-asana/skills/sync-asana-project/SKILL.md) | Pull project tasks into local markdown for planning |
+| [`create-tasks-from-code`](packages/cyber-asana/skills/create-tasks-from-code/SKILL.md) | Scan TODO/FIXME comments and create actionable Asana tasks |
+| [`link-pr-to-task`](packages/cyber-asana/skills/link-pr-to-task/SKILL.md) | Post a GitHub PR URL as a comment on the related task |
 
 Prefer **`create-asana-task`** over ad-hoc `asana_task_create` calls so agents resolve workspace, project, and URL fields consistently.
 
@@ -453,7 +453,7 @@ Notable parameters:
 
 Per-tool parameter schemas live in `src/<domain>/mcp.ts` (e.g. `src/tasks/mcp.ts`) and [`src/url-mcp.ts`](src/url-mcp.ts). MCP hosts also expose tool schemas at runtime when the server is connected.
 
-For task creation workflows, use the [`create-asana-task`](skills/create-asana-task/SKILL.md) skill ([Agent skills](#agent-skills)).
+For task creation workflows, use the [`create-asana-task`](packages/cyber-asana/skills/create-asana-task/SKILL.md) skill ([Agent skills](#agent-skills)).
 
 ## CLI
 

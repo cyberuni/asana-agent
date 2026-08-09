@@ -8,13 +8,15 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 
 const SOURCE = 'packages/cyber-asana/package.json'
+// The plugin root is the npm package itself, so every manifest lives beside the
+// package.json that carries the version.
 const MANIFESTS = [
 	'.plugin/plugin.json',
 	'.claude-plugin/plugin.json',
 	'.cursor-plugin/plugin.json',
 	'.codex-plugin/plugin.json',
 	'plugin.json',
-]
+].map((file) => `packages/cyber-asana/${file}`)
 
 const { version } = JSON.parse(readFileSync(SOURCE, 'utf8'))
 if (!version) throw new Error(`no version field in ${SOURCE}`)

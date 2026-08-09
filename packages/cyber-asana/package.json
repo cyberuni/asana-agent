@@ -11,7 +11,14 @@
 	"files": [
 		"dist",
 		"!dist/**/*.test.*",
-		"!dist/**/*.system.*"
+		"!dist/**/*.system.*",
+		"skills",
+		"plugin.json",
+		"mcp.json",
+		".mcp.json",
+		".claude-plugin",
+		".cursor-plugin",
+		".codex-plugin"
 	],
 	"type": "module",
 	"exports": {

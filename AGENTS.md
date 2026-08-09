@@ -124,7 +124,7 @@ Reference (load on demand, not duplicated here):
 
 - Tool catalog by resource → `readme.md` MCP section
 - Per-tool params and Zod schemas → `src/<domain>/mcp.ts` for the domain you are editing
-- Task creation → [`skills/create-asana-task/SKILL.md`](skills/create-asana-task/SKILL.md); URL parsing → [`src/url.ts`](src/url.ts) when a URL is present; repo project registry → [`src/repo-config.ts`](src/repo-config.ts) / `.agents/cyber-asana.json`
+- Task creation → [`packages/cyber-asana/skills/create-asana-task/SKILL.md`](packages/cyber-asana/skills/create-asana-task/SKILL.md); URL parsing → [`src/url.ts`](src/url.ts) when a URL is present; repo project registry → [`src/repo-config.ts`](src/repo-config.ts) / `.agents/cyber-asana.json`
 - Adding or updating tools → `update-asana-sdk` skill
 
 #### Dual MCP (official + cyber-asana)
