@@ -6,13 +6,6 @@ on:
   # contexts there. It fires neither `pull_request` nor `push`, so without this trigger
   # a queued PR waits forever on checks that never start.
   merge_group:
-  # changesets opens the "Version Packages" PR with GITHUB_TOKEN, and GitHub
-  # deliberately does not fire `pull_request` for token-authored PRs. The required
-  # contexts would never report and the release PR could never merge. Running on
-  # push to that branch produces the same check contexts on the same head SHA,
-  # which is what the ruleset actually evaluates.
-  push:
-    branches: ['changeset-release/**']
 
 # Cancel superseded runs on a PR, but never on a merge-group branch — cancelling
 # there would stall the queue on a check that never reports.
