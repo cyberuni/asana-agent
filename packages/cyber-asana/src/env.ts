@@ -10,11 +10,16 @@ const ENV_ALIASES: Partial<Record<string, string[]>> = {
 // missing credential surfaces as a 401 rather than as missing.
 const UNEXPANDED_PLACEHOLDER = /^\$\{[A-Za-z_][A-Za-z0-9_]*(?::[-=?+][^}]*)?\}$/
 
+/** Whether a value is nothing but a `${VAR}` reference the host failed to expand. */
+export function isUnexpandedPlaceholder(value: string): boolean {
+	return UNEXPANDED_PLACEHOLDER.test(value)
+}
+
 export function envValue(name: string): string | undefined {
 	const candidates = ENV_ALIASES[name] ?? [name]
 	for (const candidate of candidates) {
 		const value = process.env[candidate]
-		if (value !== undefined && value !== '' && !UNEXPANDED_PLACEHOLDER.test(value)) {
+		if (value !== undefined && value !== '' && !isUnexpandedPlaceholder(value)) {
 			return value
 		}
 	}

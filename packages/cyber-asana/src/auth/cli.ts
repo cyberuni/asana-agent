@@ -41,6 +41,8 @@ https://app.asana.com/0/my-apps`
 /** Refresh this far ahead of expiry so a command never runs with a token that dies mid-flight. */
 const REFRESH_WINDOW_MS = 60_000
 
+const UNEXPANDED_HINT = 'set, but holds an unexpanded ${VAR} reference — the agent host did not substitute a value'
+
 export type AuthCommandDeps = {
 	readCredential: (input?: { stored?: StoredCredential }) => Credential
 	/** Stored OAuth credentials, refreshed when stale — undefined when not logged in. */
@@ -139,9 +141,13 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 			// The registration resolves from its own chain, so a working token says
 			// nothing about which app `auth login` would authorize with next.
 			const app = deps.readAppCredentials({ settings: await deps.readSettings(deps.configDir()) })
+			const unexpanded = credential.unexpanded ?? []
 			const appFields = {
 				App: app ? `${maskToken(app.clientId)} (${app.source})` : null,
 				'App ignored': app && app.shadowed.length > 0 ? app.shadowed.join(', ') : null,
+				// Set-but-unexpanded is the one state the user cannot diagnose from
+				// the outside: the variable looks configured everywhere they check.
+				Unexpanded: unexpanded.length > 0 ? `${unexpanded.join(', ')} (${UNEXPANDED_HINT})` : null,
 			}
 			output(
 				{
@@ -149,6 +155,7 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 					source: credential.source ?? null,
 					masked_token: credential.token ? maskToken(credential.token) : null,
 					shadowed: credential.shadowed,
+					unexpanded,
 					expires_at: expires,
 					user: credential.user ?? null,
 					app: app ? { client_id_masked: maskToken(app.clientId), source: app.source, shadowed: app.shadowed } : null,

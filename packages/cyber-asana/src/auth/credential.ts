@@ -1,3 +1,5 @@
+import { isUnexpandedPlaceholder } from '../env.js'
+
 // Which credential this process will actually use — and which ones it is
 // ignoring. The precedence chain is otherwise invisible: a stale env var
 // silently shadowing a newer one looks identical to a bad token.
@@ -21,6 +23,12 @@ export type Credential = {
 	token?: string
 	/** Labels of sources that hold a token but lost to `source`. */
 	shadowed: string[]
+	/**
+	 * Environment variables holding an unexpanded `${VAR}` reference instead of a
+	 * value. Not credentials, but naming them turns a bare "not authenticated"
+	 * into something the user can act on.
+	 */
+	unexpanded: string[]
 	/** Only stored OAuth credentials carry an expiry; a PAT never expires. */
 	expiresAt?: number
 	user?: StoredCredential['user']
@@ -39,22 +47,31 @@ export type ResolveCredentialInput = {
 
 export function resolveCredential({ tokenOverride, env = process.env, stored }: ResolveCredentialInput): Credential {
 	const candidates: Array<{ source: string; token: string; stored?: StoredCredential }> = []
+	const unexpanded: string[] = []
 	if (tokenOverride) candidates.push({ source: FLAG_SOURCE, token: tokenOverride })
 	for (const name of TOKEN_ENV_VARS) {
 		const token = env[name]
-		if (token) candidates.push({ source: name, token })
+		if (!token) continue
+		// A reference the host never expanded is not a token. Letting it compete
+		// would shadow every source below it with a value that cannot authenticate.
+		if (isUnexpandedPlaceholder(token)) {
+			unexpanded.push(name)
+			continue
+		}
+		candidates.push({ source: name, token })
 	}
 	// Last: an explicit flag or env var is a deliberate override of whatever
 	// `auth login` stored, and saying which one won is the point of `status`.
 	if (stored?.accessToken) candidates.push({ source: STORED_SOURCE, token: stored.accessToken, stored })
 
 	const [winner, ...rest] = candidates
-	if (!winner) return { authenticated: false, shadowed: [] }
+	if (!winner) return { authenticated: false, shadowed: [], unexpanded }
 	return {
 		authenticated: true,
 		source: winner.source,
 		token: winner.token,
 		shadowed: rest.map((c) => c.source),
+		unexpanded,
 		expiresAt: winner.stored?.expiresAt,
 		user: winner.stored?.user,
 	}

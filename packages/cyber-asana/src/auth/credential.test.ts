@@ -102,6 +102,47 @@ describe('resolveCredential', () => {
 		const result = resolveCredential({})
 		expect(result).toHaveProperty('authenticated')
 	})
+
+	// A host that cannot expand a ${VAR} reference passes the reference text
+	// through. Treating that as a token reports success and then fails with a 401.
+	describe('when a host forwards an unexpanded reference', () => {
+		// biome-ignore lint/suspicious/noTemplateCurlyInString: the literal placeholder text is the input under test
+		const placeholder = '${ASANA_ACCESS_TOKEN}'
+
+		it('does not accept the reference text as a credential', () => {
+			const result = resolveCredential({ env: { ASANA_ACCESS_TOKEN: placeholder } })
+			expect(result.authenticated).toBe(false)
+			expect(result.token).toBeUndefined()
+		})
+
+		it('names the variable so the cause is visible rather than inferred', () => {
+			const result = resolveCredential({ env: { ASANA_ACCESS_TOKEN: placeholder } })
+			expect(result.unexpanded).toEqual(['ASANA_ACCESS_TOKEN'])
+		})
+
+		it('lets a real credential further down the chain win', () => {
+			const result = resolveCredential({
+				env: { ASANA_ACCESS_TOKEN: placeholder, ASANA_TOKEN: 'legacy-token' },
+			})
+			expect(result.token).toBe('legacy-token')
+			expect(result.source).toBe('ASANA_TOKEN')
+			expect(result.shadowed).toEqual([])
+			expect(result.unexpanded).toEqual(['ASANA_ACCESS_TOKEN'])
+		})
+
+		it('lets stored OAuth credentials win', () => {
+			const result = resolveCredential({
+				env: { ASANA_ACCESS_TOKEN: placeholder },
+				stored: { accessToken: 'stored-token', expiresAt: 123 },
+			})
+			expect(result.source).toBe('credentials.json')
+		})
+
+		it('reports none when every value expanded', () => {
+			const result = resolveCredential({ env: { ASANA_ACCESS_TOKEN: 'access-token' } })
+			expect(result.unexpanded).toEqual([])
+		})
+	})
 })
 
 describe('maskToken', () => {

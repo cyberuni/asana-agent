@@ -30,3 +30,7 @@ Hosts that cannot expand a reference forward its text verbatim, and Claude Code
 does the same when the variable is unset and has no default. That literal
 previously outranked the `ASANA_TOKEN` fallback and turned a missing token into
 a `401`; a missing credential is now reported as missing.
+
+`auth status` names any variable in that state under `Unexpanded`, in both text
+and JSON output, so a variable that looks configured everywhere the user checks
+does not read as an unexplained "not authenticated".

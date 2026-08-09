@@ -40,6 +40,36 @@ describe('auth/cli', () => {
 		expect(out).toContain('2026-08-04')
 	})
 
+	// "not authenticated" when the variable *is* set reads as a broken token. Say
+	// that the host forwarded the reference text, which is the actual cause.
+	it('explains an unexpanded reference when nothing authenticated', async () => {
+		const out = await runStatus({ authenticated: false, shadowed: [], unexpanded: ['ASANA_ACCESS_TOKEN'] }, [
+			'node',
+			'test',
+		])
+		expect(out).toContain('ASANA_ACCESS_TOKEN')
+		expect(out).toMatch(/unexpanded|not expanded/i)
+	})
+
+	it('reports an unexpanded reference in JSON output', async () => {
+		const out = await runStatus({ authenticated: false, shadowed: [], unexpanded: ['ASANA_ACCESS_TOKEN'] })
+		expect(JSON.parse(out).unexpanded).toEqual(['ASANA_ACCESS_TOKEN'])
+	})
+
+	it('still explains an unexpanded reference when another source authenticated', async () => {
+		const out = await runStatus(
+			{
+				authenticated: true,
+				source: 'credentials.json',
+				token: 'stored-token',
+				shadowed: [],
+				unexpanded: ['ASANA_ACCESS_TOKEN'],
+			},
+			['node', 'test'],
+		)
+		expect(out).toContain('ASANA_ACCESS_TOKEN')
+	})
+
 	it('names the source the credential came from', async () => {
 		const out = await runStatus({
 			authenticated: true,

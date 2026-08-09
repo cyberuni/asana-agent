@@ -53,6 +53,15 @@ cyber-asana auth status
 
 It reads local state only, never calls the API, and exits `0` even when no credential is set — so it still answers when every other command is failing with `401`. The token is shown masked. Precedence is `--token` > `ASANA_ACCESS_TOKEN` > `ASANA_TOKEN`.
 
+It also names any variable that is set but holds an unexpanded `${VAR}` reference, which happens when an agent host passes the reference text through instead of substituting a value:
+
+```text
+Status      not authenticated
+Unexpanded  ASANA_ACCESS_TOKEN (set, but holds an unexpanded ${VAR} reference — the agent host did not substitute a value)
+```
+
+Such a value is never treated as a credential, so it cannot shadow a token further down the chain. Fix it by exporting the variable in the environment that launches the agent.
+
 ### OAuth
 
 A PAT is the simpler choice for a single user. OAuth is worth the setup when several people use the same install, or when you want a credential that refreshes itself instead of living forever in your shell profile.
