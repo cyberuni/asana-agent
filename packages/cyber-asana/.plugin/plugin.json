@@ -7,7 +7,6 @@
 	"homepage": "https://github.com/cyberuni/cyber-asana",
 	"repository": "https://github.com/cyberuni/cyber-asana.git",
 	"license": "MIT",
-	"packagePath": "packages/cyber-asana",
 	"keywords": ["asana", "mcp", "cli", "agent", "productivity"],
 	"skills": "./skills/",
 	"mcpServers": {
