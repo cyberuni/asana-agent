@@ -1,6 +1,6 @@
 ---
 name: analyze-official-asana-mcp
-description: Internal — run when official Asana MCP catalog changed or maintainer asks for MCP gap analysis. Compares baselines, updates overlap map and routing docs, recommends implementation vs docs-only.
+description: "Internal skill: Use this skill when official Asana MCP catalog changes or maintainers request gap analysis."
 metadata:
   internal: true
 ---
@@ -55,10 +55,11 @@ For each **removed** official tool:
 - Note deprecation in maintainer summary
 - Remove stale entries from `overlap-map.ts`
 
-### 4. Update routing and overlap map
+### 4. Update routing, overlap map, and web docs
 
 - Edit [`tools/gap-analysis/src/overlap-map.ts`](../../tools/gap-analysis/src/overlap-map.ts) for new or changed pairs
 - When dual-MCP readme routing exists, update the routing table there
+- Update [`apps/web/src/content/docs/reference/mcp-comparison.md`](../../apps/web/src/content/docs/reference/mcp-comparison.md): its tool totals, overlap/official-only/cyber-only summary, routing tables, and capability descriptions must match the report
 - Update affected skills under `skills/` if they reference MCP tool choice
 
 ### 5. Implementation handoff
@@ -70,7 +71,7 @@ If cyber-asana should gain tools:
 
 If docs-only:
 
-- Routing/readme/skills changes suffice
+- Routing/readme/web-docs/skills changes suffice
 
 ### 6. Refresh official baseline (separate commit)
 
@@ -95,7 +96,7 @@ Post or include in PR:
 
 - Added/removed official tools
 - Overlap map edits
-- Routing doc edits
+- Routing and web-doc edits
 - Recommended follow-up PRs (implement vs docs-only)
 
 ## Commands reference
