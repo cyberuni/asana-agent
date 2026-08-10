@@ -21,7 +21,9 @@ public REST API spec. Counts exclude duplicate SDK aliases (e.g. `createTag` vs
 
 ## Coverage at a glance
 
-Asana documents **49 resource groups**. cyber-asana wraps **24** of them.
+Asana documents **49 resource groups**. cyber-asana wraps **24** of them. A resource is
+fully covered only when every distinct REST operation in its SDK group is available; helper
+operations such as project export and TODO scanning are described separately below.
 
 | Legend | Meaning |
 | --- | --- |
@@ -33,7 +35,7 @@ Asana documents **49 resource groups**. cyber-asana wraps **24** of them.
 
 | Resource | Status | Ops | CLI namespace | Notes |
 | --- | --- | --- | --- | --- |
-| Tasks | ✅ | 25 / 27 | `task` | Missing duplicate and custom-ID lookup |
+| Tasks | 🟡 | 25 / 27 | `task` | Missing duplicate and custom-ID lookup |
 | Status updates | ✅ | 4 / 4 | `status` | Complete |
 | Rules | ✅ | 1 / 1 | `rule` | Complete — the whole Rules API is one trigger method (beta) |
 | Events | ✅ | 1 / 1 | `event` | Complete; sync-token change feed, not paginated |
