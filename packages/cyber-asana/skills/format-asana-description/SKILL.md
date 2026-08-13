@@ -1,6 +1,7 @@
 ---
 name: format-asana-description
-description: Use this skill when cleaning up or rewriting an Asana task or project description — or when `html_notes` fails with "XML is invalid".
+description: Use this skill when cleaning up an Asana task or project description, or when html_notes fails with "XML is invalid".
+argument-hint: [task-gid] [emoji] [template:prd|bug|research] [tone] [sources]
 ---
 
 # Format Asana Description
@@ -21,7 +22,7 @@ Plain prose with no formatting needs no HTML — use `--notes` / `notes` instead
 cyber-asana task get <gid> --json
 ```
 
-`html_notes` is the rich text; `notes` is the plain-text projection. Edit from `html_notes` when it exists — working from `notes` silently drops every link and list.
+Always edit from `html_notes`. `task get` and `asana_task_get` return it unconditionally — an empty description comes back as `<body></body>`, never absent — so there is no case where you need the plain-text `notes` projection, which drops every link and list.
 
 ### 2. Clean it up — light by default
 
@@ -58,7 +59,7 @@ Only when the user asks for them, in the same request or a follow-up. Each is op
 | Ask | Do |
 | --- | --- |
 | "add emoji" / "make it scannable" | Prefix each heading with one emoji matching the section. One per heading, never mid-sentence. |
-| "use the PRD / bug / research template" | Restructure into the matching skeleton below, mapping existing content into sections and leaving absent sections out. |
+| "use the PRD / bug / research template" | Load the template reference, then restructure into the matching skeleton, mapping existing content into sections and leaving absent sections out. |
 | "make it more formal / friendlier / terser" | Rewrite for tone. This is the one case where wording changes are the point. |
 | "back up the claims" / "add sources" | Research the assertions, then add `<a href="...">` citations. Never cite a source you did not read. Flag any claim you could not support instead of quietly dropping it. |
 
@@ -106,7 +107,7 @@ Verified against the live Asana API (`PUT /tasks/{gid}`, 2026-08).
 
 ### Line breaks are literal newlines
 
-There is no `<p>` and no `<br>`. Separate blocks with real newline characters inside `<body>`; Asana preserves them. This is why a cleanup pass collapses blank lines rather than deleting them — the newlines *are* the paragraph structure.
+There is no `<p>` and no `<br>`. Separate blocks with real newline characters inside `<body>`; Asana preserves them. A cleanup pass therefore collapses runs of blank lines rather than deleting them.
 
 ```html
 <body><h1>Summary</h1>
@@ -152,60 +153,9 @@ A raw `<` or `>` outside a tag is rejected with `Malformed rich text. Found < or
 | `---` | `<hr />` |
 | `- [ ] todo` | `<ul><li>☐ todo</li></ul>` — checklist markup is stripped |
 
-## Templates
-
-Use only when the user asks for one (see step 3). Leave a section out rather than filling it with a placeholder; an empty heading reads as an unanswered question.
-
-**PRD**
-
-```html
-<body><h1>Summary</h1>
-One paragraph on what and why.
-
-<h2>Goals</h2>
-<ul><li>Goal one</li><li>Goal two</li></ul>
-
-<h2>Non-goals</h2>
-<ul><li>Explicitly out of scope</li></ul>
-
-<h2>Acceptance criteria</h2>
-<ol><li>Observable outcome</li><li>Observable outcome</li></ol>
-</body>
-```
-
-**Research note**
-
-```html
-<body><h1>Question</h1>
-What are we trying to learn?
-
-<h2>Findings</h2>
-<ul><li><strong>Finding</strong> — evidence, with a <a href="https://example.com/source">source</a></li></ul>
-
-<h2>Open questions</h2>
-<ul><li>Still unknown</li></ul>
-</body>
-```
-
-**Bug report**
-
-```html
-<body><h1>Symptom</h1>
-What the user sees.
-
-<h2>Repro</h2>
-<ol><li>Step</li><li>Step</li></ol>
-
-<h2>Expected vs actual</h2>
-<ul><li><strong>Expected</strong> — …</li><li><strong>Actual</strong> — …</li></ul>
-
-<h2>Evidence</h2>
-<pre>Error: value &lt; 0 not allowed
-  at validate (input.ts:42)</pre>
-</body>
-```
-
 ## Troubleshooting
+
+A rejected update writes nothing — the stored description is left byte-identical. Fix the HTML and retry; there is nothing to recover.
 
 | Error | Cause |
 | --- | --- |
@@ -216,3 +166,7 @@ What the user sees.
 | `One of data-asana-gid or href is required in anchor attributes` | `<a>` with no `href` |
 | `invalid protocol in HREF field` | Relative or non-http(s) `href` |
 | `Oops! An unexpected error occurred…` | `<code>` nested inside `<pre>` |
+
+## References
+
+- `references/templates.md` — PRD, research-note, and bug-report skeletons. Load only when the user asks for a named template (step 3).
