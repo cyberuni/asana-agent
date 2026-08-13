@@ -5,19 +5,19 @@ project-path: packages/cyber-asana
 status: active
 todos:
   - content: Decide the node shape for skills and record the rationale
-    status: pending
+    status: completed
   - content: Extend the root spec.md placement map with a skills route
-    status: pending
+    status: completed
   - content: Author the skills/ behavioral node (README + frozen suite)
-    status: pending
+    status: completed
   - content: Place all 9 shipped skills as reference nodes
-    status: pending
+    status: completed
   - content: Extract the catalog contract so the suite's negative edges are verifiable
-    status: pending
+    status: completed
   - content: Cover the packaging edges the catalog contract never checked
-    status: pending
+    status: completed
   - content: pnpm verify, commit per unit, open the PR closing #162
-    status: pending
+    status: completed
 ---
 
 # github-162 — skills as a spec domain
@@ -52,6 +52,16 @@ names its subject and its boundary, or the corpus reads as covered where it is n
 `gateway/api/cli/mcp`, so `cli/` names the parent after one of two consumers, and `src/skills/`
 already exists so the sibling-surface goal needs no move. A neutral rename is a separate concern.
 
+## Follow-ups held out of scope
+
+- The `improve-description` behavioral eval is issue #161's, deliberately not absorbed here.
+- `pin-asana-projects` still names the deprecated `ASANA_TOKEN` / `ASANA_WORKSPACE` aliases. Recorded
+  in its reference node as a documentation-lag finding; correcting the skill text is a separate
+  concern from placing it.
+- `knip.json` still lists the removed `tests/skills` workspace (a leftover of #160). Unrelated to
+  this change and left alone.
+
 ## NEXT
 
-Author the `skills/` node and its frozen suite, then the nine reference nodes.
+Landed. The corpus admits skills, all nine are placed, and the catalog contract is frozen and
+verified. Nothing to resume.
