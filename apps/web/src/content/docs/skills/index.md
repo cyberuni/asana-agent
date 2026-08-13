@@ -24,6 +24,7 @@ Set [authentication](/cyber-asana/getting-started/#authentication) before runnin
 | [`init-asana`](https://github.com/cyberuni/cyber-asana/blob/main/skills/init-asana/SKILL.md) | First-time setup; `ASANA_ACCESS_TOKEN`, workspace GID, verify connection |
 | [`pin-asana-projects`](https://github.com/cyberuni/cyber-asana/blob/main/skills/pin-asana-projects/SKILL.md) | Pin repo projects in `.agents/cyber-asana.json` via `project search` keywords |
 | [`create-asana-task`](https://github.com/cyberuni/cyber-asana/blob/main/skills/create-asana-task/SKILL.md) | Create or file a task (URL parse, repo project lookup, MCP `asana_task_create`) |
+| [`improve-description`](https://github.com/cyberuni/cyber-asana/blob/main/skills/improve-description/SKILL.md) | Clean up or rewrite a description — light copy-edit by default, opt-in emoji/template/tone, Asana's HTML subset |
 | [`asana-standup`](https://github.com/cyberuni/cyber-asana/blob/main/skills/asana-standup/SKILL.md) | Standup update — recent completions and due-soon tasks |
 | [`asana-sprint-report`](https://github.com/cyberuni/cyber-asana/blob/main/skills/asana-sprint-report/SKILL.md) | Sprint retro — completed vs incomplete in a project/section |
 | [`sync-asana-project`](https://github.com/cyberuni/cyber-asana/blob/main/skills/sync-asana-project/SKILL.md) | Pull project tasks into local markdown for planning |
