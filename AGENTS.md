@@ -86,7 +86,7 @@ Optional env vars for specific suites:
 
 | Variable | Used by |
 | --- | --- |
-| `ASANA_WORKSPACE_GID` | workspace-scoped list pagination system tests |
+| `ASANA_WORKSPACE_GID` | workspace-scoped list pagination; `improve-description` HTML-subset probe |
 | `ASANA_SYSTEM_TEST_PROJECT_GID` | sections and tasks list pagination system tests |
 | `ASANA_SYSTEM_TEST_TASK_GID` | tasks batch lookup; attachments and stories list pagination |
 | `ASANA_SYSTEM_TEST_SECOND_TASK_GID` | tasks batch lookup (multi-GID order) |
