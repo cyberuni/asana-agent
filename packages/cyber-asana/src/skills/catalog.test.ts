@@ -66,6 +66,22 @@ describe('skill references', () => {
 	})
 })
 
+describe('skill docs', () => {
+	it('pin `npx cyber-asana` invocations to an explicit version', async () => {
+		// `@latest` or a bare invocation silently upgrades under agents mid-workflow.
+		const unpinned = /npx(?: --yes)? cyber-asana(?!@)/g
+
+		for (const name of await skillNames()) {
+			const dir = path.join(skillsRoot, name)
+			const markdown = (await readdir(dir)).filter((file) => file.endsWith('.md'))
+			for (const file of markdown) {
+				const content = await readFile(path.join(dir, file), 'utf8')
+				expect(content, `${name}/${file}: unpinned npx invocation`).not.toMatch(unpinned)
+			}
+		}
+	})
+})
+
 describe.each(docsListingSkills)('%s', (relativePath) => {
 	it('lists every shipped skill', async () => {
 		const content = await readFile(path.join(repoRoot, relativePath), 'utf8')
