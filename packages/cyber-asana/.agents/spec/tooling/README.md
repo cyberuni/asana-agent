@@ -28,10 +28,13 @@ Unused-export detection is **knip**. Git hooks are **husky**.
 
 ## What ships
 
-`package.json`'s `files` is `["dist", "!dist/**/*.test.*", "!dist/**/*.system.*"]` — the built output
-only, with test and system-test artifacts excluded. This is why the spec corpus under `.agents/` is
-never published: it is not on the allowlist. Two entry points are exported, `.` and `./mcp`, plus the
-`cyber-asana` binary.
+`package.json`'s `files` carries the built output (`dist`, with test and system-test artifacts
+excluded) **and the plugin surface**: `skills`, the per-vendor manifests (`plugin.json`, `mcp.json`,
+`.mcp.json`, `.claude-plugin`, `.cursor-plugin`, `.codex-plugin`). The package root *is* the plugin
+root, so those paths are product, not repository furniture — the allowlist entry for `skills` is a
+frozen edge of [skills](../skills/README.md), not a build convention. This is also why the spec
+corpus under `.agents/` is never published: it is not on the allowlist. Two entry points are
+exported, `.` and `./mcp`, plus the `cyber-asana` binary.
 
 ## CI
 
