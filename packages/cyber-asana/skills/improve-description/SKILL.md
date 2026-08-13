@@ -1,10 +1,10 @@
 ---
-name: format-asana-description
+name: improve-description
 description: Use this skill when cleaning up an Asana task or project description, or when html_notes fails with "XML is invalid".
 argument-hint: [task-gid] [emoji] [template:prd|bug|research] [tone] [sources]
 ---
 
-# Format Asana Description
+# Improve Description
 
 ## When to use
 

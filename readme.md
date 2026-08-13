@@ -157,7 +157,7 @@ Set [authentication](#authentication) before running any workflow.
 | [`init-asana`](packages/cyber-asana/skills/init-asana/SKILL.md) | First-time setup; `ASANA_ACCESS_TOKEN`, workspace GID, verify connection |
 | [`pin-asana-projects`](packages/cyber-asana/skills/pin-asana-projects/SKILL.md) | Pin repo projects in `.agents/cyber-asana.json` via `project search` keywords |
 | [`create-asana-task`](packages/cyber-asana/skills/create-asana-task/SKILL.md) | Create or file a task (URL parse, repo project lookup, MCP `asana_task_create`) |
-| [`format-asana-description`](packages/cyber-asana/skills/format-asana-description/SKILL.md) | Clean up or rewrite a description — light copy-edit by default, opt-in emoji/template/tone, Asana's HTML subset |
+| [`improve-description`](packages/cyber-asana/skills/improve-description/SKILL.md) | Clean up or rewrite a description — light copy-edit by default, opt-in emoji/template/tone, Asana's HTML subset |
 | [`asana-standup`](packages/cyber-asana/skills/asana-standup/SKILL.md) | Standup update — recent completions and due-soon tasks |
 | [`asana-sprint-report`](packages/cyber-asana/skills/asana-sprint-report/SKILL.md) | Sprint retro — completed vs incomplete in a project/section |
 | [`sync-asana-project`](packages/cyber-asana/skills/sync-asana-project/SKILL.md) | Pull project tasks into local markdown for planning |

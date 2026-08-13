@@ -2,7 +2,7 @@
 'cyber-asana': minor
 ---
 
-Add the `format-asana-description` skill for cleaning up and rewriting task and
+Add the `improve-description` skill for cleaning up and rewriting task and
 project descriptions.
 
 The default pass is a copy-edit, not a rewrite: collapse runs of blank lines, fix
