@@ -142,8 +142,20 @@ export type TaskGateway = {
 
 const TASK_BATCH_ACTION_LIMIT = 10
 
-function taskRelativePath(taskGid: string, optFields?: string) {
-	return optFields ? `/tasks/${taskGid}?opt_fields=${optFields}` : `/tasks/${taskGid}`
+type TaskBatchAction = {
+	method: 'get'
+	relative_path: string
+	options?: { fields: string[] }
+}
+
+// The Batch API rejects query parameters in `relative_path`; output options belong in `options`.
+function taskBatchAction(taskGid: string, optFields?: string): TaskBatchAction {
+	const fields = optFields
+		?.split(',')
+		.map((field) => field.trim())
+		.filter((field) => field.length > 0)
+	const action: TaskBatchAction = { method: 'get', relative_path: `/tasks/${taskGid}` }
+	return fields?.length ? { ...action, options: { fields } } : action
 }
 
 const DEFAULT_DEP_FIELDS = 'gid,name,completed,due_on'
@@ -181,10 +193,7 @@ export function createAsanaTaskGateway(client: Asana.ApiClient): TaskGateway {
 				const chunk = taskGids.slice(i, i + TASK_BATCH_ACTION_LIMIT)
 				const res = await batchApi.createBatchRequest({
 					data: {
-						actions: chunk.map((gid) => ({
-							method: 'get',
-							relative_path: taskRelativePath(gid, opts?.optFields),
-						})),
+						actions: chunk.map((gid) => taskBatchAction(gid, opts?.optFields)),
 					},
 				})
 				for (const [index, item] of (

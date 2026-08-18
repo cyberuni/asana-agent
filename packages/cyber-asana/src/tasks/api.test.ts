@@ -79,8 +79,8 @@ describe('tasks/api', () => {
 		expect(Asana.BatchAPIApi.prototype.createBatchRequest).toHaveBeenCalledWith({
 			data: {
 				actions: [
-					{ method: 'get', relative_path: '/tasks/456?opt_fields=gid,name' },
-					{ method: 'get', relative_path: '/tasks/789?opt_fields=gid,name' },
+					{ method: 'get', relative_path: '/tasks/456', options: { fields: ['gid', 'name'] } },
+					{ method: 'get', relative_path: '/tasks/789', options: { fields: ['gid', 'name'] } },
 				],
 			},
 		})

@@ -227,8 +227,8 @@ graph TD
   RN -->|many| RM[split the GIDs into chunks of ten]
   RM --> RMP[build one batch action per GID<br/>as a raw /tasks/gid relative path]
   RMP --> RMF{fields named?}
-  RMF -->|yes| RMFY[append them as an opt_fields query string on each path]
-  RMF -->|no| RMFN[leave the path bare]
+  RMF -->|yes| RMFY[carry them as the action's output option fields]
+  RMF -->|no| RMFN[omit the output options]
   RMFY --> RMS{per-action status}
   RMFN --> RMS
   RMS -->|2xx with a body| RMSK[record it as a task, keyed to its GID]
@@ -243,8 +243,9 @@ The load-bearing edges:
   ten because Asana's batch endpoint accepts at most ten actions; a longer list is split across
   successive batches and the results concatenated, so the caller never sees the seam.
 - **`RMP` bypasses the SDK.** The batch endpoint takes a *relative path string*, not a typed method
-  call, so this is the one place in the domain that constructs an Asana URL by hand. `opt_fields`
-  therefore has to be spliced on as a query string rather than passed as a parameter.
+  call, so this is the one place in the domain that constructs an Asana path by hand. That path stays
+  bare: the batch endpoint rejects a query string in `relative_path` with `Parameters are not accepted
+  in a batch action path`, so the requested fields ride in the action's own `options.fields` array.
 - **`RMS` is the reason `get-many` exists rather than a client-side loop.** A per-action failure is
   data, not an exception: the record carries its own status code and Asana's `errors` array, and the
   surrounding successes are still returned. A caller sweeping a list of possibly-stale GIDs learns
@@ -408,7 +409,7 @@ The load-bearing edges:
 | many GIDs → one record per GID in input order | three GIDs given in a deliberately unsorted order | `get-many returns one record per requested GID in the order given` |
 | more than ten GIDs → successive batches | twelve GIDs in one invocation | `get-many splits more than ten GIDs across separate batch requests` |
 | per-action failure → a failure record beside the successes | a batch where one GID answers 404 and the other answers 200 | `get-many reports a per-GID failure alongside the lookups that succeeded` |
-| fields named → spliced into each batched path | a batch lookup naming two fields | `get-many carries the requested fields in each batched task path` |
+| fields named → each action's output options | a batch lookup naming two fields | `get-many carries the requested fields as batch action output options` |
 | GID required → usage error | a single-task read with no GID argument | `get without a task GID is a usage error` |
 | GID required → usage error | a batch lookup with no GID arguments | `get-many without any task GID is a usage error` |
 
