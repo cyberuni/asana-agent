@@ -124,10 +124,11 @@ Feature: tasks
     And the record for "7399" carries the status 404
     And the record for "7399" carries the error message "Not Found"
 
-  Scenario: get-many carries the requested fields in each batched task path
+  Scenario: get-many carries the requested fields as batch action output options
     Given a task with GID "7301" named "Regrind the theodolite lens"
     When the task get-many entry point runs with the GID "7301" naming the fields "gid,permalink_url"
-    Then the action reaching the batch endpoint names the relative path "/tasks/7301?opt_fields=gid,permalink_url"
+    Then the action reaching the batch endpoint names the relative path "/tasks/7301" with no query string
+    And that action carries the output option fields "gid" and "permalink_url"
 
   Scenario: get without a task GID is a usage error
     Given the task command group
