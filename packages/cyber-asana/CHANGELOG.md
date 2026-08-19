@@ -1,5 +1,38 @@
 # cyber-asana
 
+## 0.10.0
+
+### Minor Changes
+
+- 38054a4: Add the `improve-description` skill for cleaning up and rewriting task and
+  project descriptions.
+  
+  The default pass is a copy-edit, not a rewrite: collapse runs of blank lines, fix
+  typos and broken markup, turn dash lists into real lists — while preserving the
+  author's message, wording, and section structure. Emoji, templates, tone changes,
+  and research-backed citations are opt-in modifiers the user asks for, never
+  applied by default.
+  
+  The skill also documents Asana's rich-text HTML subset, verified against the live
+  API, because the rejection is a bare `XML is invalid` that names neither the tag
+  nor the position. Notable corrections to what the tags are commonly assumed to
+  be: `<h1>`–`<h3>` and `<pre>` are supported; `<h4>`–`<h6>`, `<p>`, `<br>`, and
+  `<div>` are not. Paragraphs are separated by literal newlines. A bare `<body>`
+  wrapper is mandatory and may carry no attributes. A raw `<` or `>` is rejected
+  even inside `<code>` and `<pre>`, and `<code>` nested inside `<pre>` fails with
+  an opaque "unexpected error occurred".
+
+### Patch Changes
+
+- 8dd0938: Fix `task get-many --opt-fields` failing with HTTP 400 `Parameters are not
+  accepted in a batch action path`.
+  
+  Each batch action built its `relative_path` as `/tasks/<gid>?opt_fields=<fields>`,
+  and Asana's Batch API rejects a query string there. The requested fields now ride
+  in the action's own `options.fields` array — where the Batch API schema puts
+  output options — and the path stays bare. Without `--opt-fields` no query string
+  was ever appended, which is why only the flag path failed.
+
 ## 0.9.0
 
 ### Minor Changes
