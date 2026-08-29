@@ -13,6 +13,7 @@
 		"!dist/**/*.test.*",
 		"!dist/**/*.system.*",
 		"skills",
+		"SETUP.md",
 		"plugin.json",
 		"mcp.json",
 		".mcp.json",
