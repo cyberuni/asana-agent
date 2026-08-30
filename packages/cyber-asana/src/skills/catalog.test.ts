@@ -29,6 +29,8 @@ type Fixture = {
 	/** skills each published table names; defaults to every fixture skill */
 	readmeLists?: string[]
 	docsIndexLists?: string[]
+	/** SETUP.md at the plugin root; `null` writes no file at all */
+	setup?: string | null
 }
 
 function frontBlock(fields: Record<string, string>): string {
@@ -39,6 +41,9 @@ function frontBlock(fields: Record<string, string>): string {
 const conforming: Record<string, SkillFixture> = {
 	'asana-standup': { 'SKILL.md': frontBlock({ name: 'asana-standup', description: TRIGGER }) },
 }
+
+/** Hands off to a skill the fixture ships, so the default fixture reports nothing. */
+const conformingSetup = '# Setup\n\nThe rest lives in [asana-standup](./skills/asana-standup/SKILL.md).\n'
 
 const temporary: string[] = []
 
@@ -62,7 +67,12 @@ async function build(fixture: Fixture): Promise<CatalogSources> {
 		}
 	}
 
-	await writeFile(path.join(root, 'package.json'), JSON.stringify({ files: fixture.allowlist ?? ['dist', 'skills'] }))
+	if (fixture.setup !== null) await writeFile(path.join(root, 'SETUP.md'), fixture.setup ?? conformingSetup)
+
+	await writeFile(
+		path.join(root, 'package.json'),
+		JSON.stringify({ files: fixture.allowlist ?? ['dist', 'skills', 'SETUP.md'] }),
+	)
 	await mkdir(path.join(root, '.plugin'), { recursive: true })
 	await writeFile(path.join(root, '.plugin', 'plugin.json'), JSON.stringify({ skills: fixture.pointer ?? './skills/' }))
 
@@ -77,6 +87,7 @@ async function build(fixture: Fixture): Promise<CatalogSources> {
 		repoRoot: root,
 		packageJsonPath: path.join(root, 'package.json'),
 		pluginManifestPath: path.join(root, '.plugin', 'plugin.json'),
+		setupPath: path.join(root, 'SETUP.md'),
 		docsListings: ['readme.md', 'apps/web/src/content/docs/skills/index.md'],
 	}
 }
@@ -246,6 +257,55 @@ describe('discovering the catalog', () => {
 		const found = await violationsFor('docs-listing', { docsIndexLists: [] })
 		expect(found).toHaveLength(1)
 		expect(found[0].file).toBe('apps/web/src/content/docs/skills/index.md')
+	})
+})
+
+describe('finishing a plugin install', () => {
+	it('a SETUP.md at the plugin root is accepted', async () => {
+		expect(await violationsFor('setup-present', {})).toEqual([])
+	})
+
+	it('a plugin root with no SETUP.md is rejected naming the file', async () => {
+		const found = await violationsFor('setup-present', { setup: null })
+		expect(found).toHaveLength(1)
+		expect(found[0].file).toBe('SETUP.md')
+	})
+
+	it('a handoff SETUP.md links to a shipped skill is accepted', async () => {
+		expect(await violationsFor('setup-link-resolves', {})).toEqual([])
+	})
+
+	it('a handoff SETUP.md links to but does not ship is rejected by target', async () => {
+		const found = await violationsFor('setup-link-resolves', {
+			setup: '# Setup\n\nThe rest lives in [init](./skills/init-asana/SKILL.md).\n',
+		})
+		expect(found).toHaveLength(1)
+		expect(found[0].file).toBe('./skills/init-asana/SKILL.md')
+	})
+
+	it('an absolute link out of SETUP.md is left alone', async () => {
+		const found = await violationsFor('setup-link-resolves', {
+			setup: '# Setup\n\nSee [Asana](https://app.asana.com/) for the token.\n',
+		})
+		expect(found).toEqual([])
+	})
+
+	it('an unpinned invocation in SETUP.md is rejected naming SETUP.md', async () => {
+		const found = await violationsFor('npx-pinned', {
+			setup: '# Setup\n\n```sh\nnpx cyber-asana workspace list\n```\n',
+		})
+		expect(found).toHaveLength(1)
+		expect(found[0].file).toBe('SETUP.md')
+	})
+
+	it('a SETUP.md on the publish allowlist is accepted', async () => {
+		expect(await violationsFor('setup-allowlist', { allowlist: ['dist', 'skills', 'SETUP.md'] })).toEqual([])
+	})
+
+	it('a SETUP.md absent from the publish allowlist is rejected naming the manifest', async () => {
+		const found = await violationsFor('setup-allowlist', { allowlist: ['dist', 'skills'] })
+		expect(found).toHaveLength(1)
+		expect(found[0].file).toBe('package.json')
 	})
 })
 

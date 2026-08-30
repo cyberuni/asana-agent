@@ -5,6 +5,10 @@ Feature: skills
   followable to its own references, pinned in the commands it prescribes, listed in
   both published tables, and carried to the consumer by the packaging.
 
+  The plugin root's SETUP.md is held to the same bar. It sits outside skills/, so the
+  per-skill checks never see it, yet it is the first instruction file an agent reads
+  after a plugin install and it hands off to the skills by link.
+
   # ── loading a skill ──
 
   Scenario: a skill whose declared name matches its directory is accepted
@@ -129,6 +133,54 @@ Feature: skills
     When the catalog contract is checked
     Then a violation is reported for the rule "docs-listing"
     And that violation names the file "apps/web/src/content/docs/skills/index.md"
+
+  # ── finishing a plugin install ──
+
+  Scenario: a SETUP.md at the plugin root is accepted
+    Given a SETUP.md at the plugin root
+    When the catalog contract is checked
+    Then no violation is reported for the rule "setup-present"
+
+  Scenario: a plugin root with no SETUP.md is rejected naming the file
+    Given a plugin root that ships no SETUP.md
+    When the catalog contract is checked
+    Then a violation is reported for the rule "setup-present"
+    And that violation names the file "SETUP.md"
+
+  Scenario: a handoff SETUP.md links to a shipped skill is accepted
+    Given a skill directory "asana-standup"
+    And a SETUP.md linking to "./skills/asana-standup/SKILL.md"
+    When the catalog contract is checked
+    Then no violation is reported for the rule "setup-link-resolves"
+
+  Scenario: a handoff SETUP.md links to but does not ship is rejected by target
+    Given a SETUP.md linking to "./skills/init-asana/SKILL.md"
+    And no skill directory "init-asana"
+    When the catalog contract is checked
+    Then a violation is reported for the rule "setup-link-resolves"
+    And that violation names the file "./skills/init-asana/SKILL.md"
+
+  Scenario: an absolute link out of SETUP.md is left alone
+    Given a SETUP.md linking to "https://app.asana.com/"
+    When the catalog contract is checked
+    Then no violation is reported for the rule "setup-link-resolves"
+
+  Scenario: an unpinned invocation in SETUP.md is rejected naming SETUP.md
+    Given a SETUP.md containing the command "npx cyber-asana workspace list"
+    When the catalog contract is checked
+    Then a violation is reported for the rule "npx-pinned"
+    And that violation names the file "SETUP.md"
+
+  Scenario: a SETUP.md on the publish allowlist is accepted
+    Given a package manifest whose files list is "dist" and "skills" and "SETUP.md"
+    When the catalog contract is checked
+    Then no violation is reported for the rule "setup-allowlist"
+
+  Scenario: a SETUP.md absent from the publish allowlist is rejected naming the manifest
+    Given a package manifest whose files list is "dist" and "skills"
+    When the catalog contract is checked
+    Then a violation is reported for the rule "setup-allowlist"
+    And that violation names the file "package.json"
 
   # ── publishing the catalog ──
 

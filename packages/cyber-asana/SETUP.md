@@ -77,7 +77,7 @@ personal access token above. See
 
 This file covers the credentials the plugin needs to work at all. The shipped skills cover the rest:
 
-- **`init-asana`** — the same setup for someone using the CLI without the plugin, plus verification
-  and the dual-MCP layout.
-- **`pin-asana-projects`** — pin a repo's Asana projects into `.agents/cyber-asana.json` so skills
-  can resolve them by name.
+- [`init-asana`](./skills/init-asana/SKILL.md) — the same setup for someone using the CLI without
+  the plugin, plus verification and the dual-MCP layout.
+- [`pin-asana-projects`](./skills/pin-asana-projects/SKILL.md) — pin a repo's Asana projects into
+  `.agents/cyber-asana.json` so skills can resolve them by name.
