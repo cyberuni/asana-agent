@@ -11,8 +11,8 @@ the plugin cannot do for the user.
 
 ## What the install already did
 
-`mcp.json` registers a stdio server named `cyber-asana` that runs `npx -y cyber-asana mcp` and reads
-two variables from the environment:
+`mcp.json` registers a stdio server named `cyber-asana`, launched through `npx` from the published
+package. It reads two variables from the environment:
 
 | Variable | Purpose |
 | --- | --- |

@@ -229,6 +229,16 @@ describe('running a prescribed command', () => {
 		expect(found[0].file).toBe('SKILL.md')
 	})
 
+	it('an unpinned invocation abbreviating --yes to -y is rejected', async () => {
+		const found = await violationsFor('npx-pinned', {
+			skills: withCommand('asana-standup', {
+				'SKILL.md': skillMd('asana-standup', '\n```sh\nnpx -y cyber-asana task list\n```\n'),
+			}),
+		})
+		expect(found).toHaveLength(1)
+		expect(found[0].file).toBe('SKILL.md')
+	})
+
 	it('an unpinned invocation inside a reference file is rejected by file name', async () => {
 		const found = await violationsFor('npx-pinned', {
 			skills: withCommand('improve-description', {

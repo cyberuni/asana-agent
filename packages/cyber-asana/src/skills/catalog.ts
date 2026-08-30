@@ -53,8 +53,11 @@ const DESCRIPTION_BUDGET = 120
 /** A description without one of these never says *when* the skill applies. */
 const TRIGGER_LANGUAGE = /use this skill when|when to use/i
 
-/** `@latest` or a bare invocation silently upgrades under an agent mid-workflow. */
-const UNPINNED_INVOCATION = /npx(?: --yes)? cyber-asana(?!@)/
+/**
+ * `@latest` or a bare invocation silently upgrades under an agent mid-workflow. The install flag is
+ * spelled both ways in the wild, so both are skipped over to reach the package name.
+ */
+const UNPINNED_INVOCATION = /npx\s+(?:--yes\s+|-y\s+)?cyber-asana(?!@)/
 
 /** Where the plugin surface actually lives; a manifest pointing elsewhere finds nothing. */
 const SHIPPED_SKILLS_POINTER = './skills/'

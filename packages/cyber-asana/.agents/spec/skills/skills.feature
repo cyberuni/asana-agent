@@ -102,6 +102,13 @@ Feature: skills
     Then a violation is reported for the rule "npx-pinned"
     And that violation names the file "SKILL.md"
 
+  Scenario: an unpinned invocation abbreviating --yes to -y is rejected
+    Given a skill directory "asana-standup"
+    And its SKILL.md contains the command "npx -y cyber-asana task list"
+    When the catalog contract is checked
+    Then a violation is reported for the rule "npx-pinned"
+    And that violation names the file "SKILL.md"
+
   Scenario: an unpinned invocation inside a reference file is rejected by file name
     Given a skill directory "improve-description"
     And the file "references/templates.md" in that skill directory contains the command "npx --yes cyber-asana task list"
