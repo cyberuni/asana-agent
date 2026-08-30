@@ -17,6 +17,9 @@ export type CatalogRule =
 	| 'docs-listing'
 	| 'publish-allowlist'
 	| 'manifest-skills-pointer'
+	| 'setup-present'
+	| 'setup-link-resolves'
+	| 'setup-allowlist'
 
 export type CatalogViolation = {
 	rule: CatalogRule
@@ -38,6 +41,8 @@ export type CatalogSources = {
 	packageJsonPath: string
 	/** Universal plugin manifest whose `skills` field points a runtime at the catalog. */
 	pluginManifestPath: string
+	/** The plugin root's SETUP.md — what an agent reads to finish a plugin install. */
+	setupPath: string
 	/** Published tables that must name every shipped skill, repo-relative. */
 	docsListings: string[]
 }
@@ -48,8 +53,11 @@ const DESCRIPTION_BUDGET = 120
 /** A description without one of these never says *when* the skill applies. */
 const TRIGGER_LANGUAGE = /use this skill when|when to use/i
 
-/** `@latest` or a bare invocation silently upgrades under an agent mid-workflow. */
-const UNPINNED_INVOCATION = /npx(?: --yes)? cyber-asana(?!@)/
+/**
+ * `@latest` or a bare invocation silently upgrades under an agent mid-workflow. The install flag is
+ * spelled both ways in the wild, so both are skipped over to reach the package name.
+ */
+const UNPINNED_INVOCATION = /npx\s+(?:--yes\s+|-y\s+)?cyber-asana(?!@)/
 
 /** Where the plugin surface actually lives; a manifest pointing elsewhere finds nothing. */
 const SHIPPED_SKILLS_POINTER = './skills/'
@@ -60,6 +68,7 @@ export function repoCatalogSources(): CatalogSources {
 		repoRoot,
 		packageJsonPath: path.resolve(skillsRoot, '../package.json'),
 		pluginManifestPath: path.resolve(skillsRoot, '../.plugin/plugin.json'),
+		setupPath: path.resolve(skillsRoot, '../SETUP.md'),
 		docsListings: ['readme.md', 'apps/web/src/content/docs/skills/index.md'],
 	}
 }
@@ -191,6 +200,50 @@ async function checkDocsListings(names: string[], sources: CatalogSources): Prom
 	return violations
 }
 
+/** A link an agent is told to follow; anything with a scheme points outside the tarball. */
+const MARKDOWN_LINK = /\[[^\]]*\]\(([^)\s]+)\)/g
+
+/**
+ * SETUP.md is the one instruction file outside `skills/`, so the per-skill checks never see it —
+ * yet it is the first thing an agent reads after a plugin install, and it hands off by link.
+ */
+async function checkSetup(sources: CatalogSources): Promise<CatalogViolation[]> {
+	if (!(await exists(sources.setupPath))) {
+		return [
+			{
+				rule: 'setup-present',
+				file: 'SETUP.md',
+				message: 'SETUP.md: the plugin root ships no setup instructions',
+			},
+		]
+	}
+
+	const violations: CatalogViolation[] = []
+	const content = await readFile(sources.setupPath, 'utf8')
+	const root = path.dirname(sources.setupPath)
+
+	if (UNPINNED_INVOCATION.test(content)) {
+		violations.push({
+			rule: 'npx-pinned',
+			file: 'SETUP.md',
+			message: 'SETUP.md: npx cyber-asana invocation is not pinned to a version',
+		})
+	}
+
+	for (const [, target] of content.matchAll(MARKDOWN_LINK)) {
+		if (/^[a-z][a-z\d+.-]*:/i.test(target) || target.startsWith('#')) continue
+		const [file] = target.split('#')
+		if (await exists(path.resolve(root, file))) continue
+		violations.push({
+			rule: 'setup-link-resolves',
+			file: target,
+			message: `SETUP.md: ${target} is linked but not shipped`,
+		})
+	}
+
+	return violations
+}
+
 async function checkPackaging(sources: CatalogSources): Promise<CatalogViolation[]> {
 	const violations: CatalogViolation[] = []
 	const shipped = path.basename(sources.skillsRoot)
@@ -201,6 +254,15 @@ async function checkPackaging(sources: CatalogSources): Promise<CatalogViolation
 			rule: 'publish-allowlist',
 			file: 'package.json',
 			message: `package.json: "${shipped}" is not on the files allowlist, so the catalog never ships`,
+		})
+	}
+
+	const setup = path.basename(sources.setupPath)
+	if (!Array.isArray(files) || !files.includes(setup)) {
+		violations.push({
+			rule: 'setup-allowlist',
+			file: 'package.json',
+			message: `package.json: "${setup}" is not on the files allowlist, so setup never reaches an installer`,
 		})
 	}
 
@@ -234,6 +296,7 @@ export async function collectCatalogViolations(
 	}
 
 	violations.push(...(await checkDocsListings(names, sources)))
+	violations.push(...(await checkSetup(sources)))
 	violations.push(...(await checkPackaging(sources)))
 
 	return violations
