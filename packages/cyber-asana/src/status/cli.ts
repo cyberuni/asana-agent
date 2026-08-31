@@ -119,28 +119,40 @@ export function statusCommand(api?: StatusApi | (() => StatusApi)) {
 			'parent',
 			'Parent GID (project, portfolio, or goal)',
 		),
-	).action(
-		async (opts: { parent?: string; parentGid?: string; limit?: number; offset?: string; optFields?: string }) => {
-			const pagination = paginationOptionsFromCli(opts)
-			pagination.optFields ??= STATUS_LIST_FIELDS
-			const data = await resolveStatusApi(api).listStatuses(requiredGid(opts, 'parent', 'Parent GID'), pagination)
-			output(data, () => {
-				const items = itemsForOutput(data)
-				printTable(
-					items,
-					[
-						{ label: 'ID', get: (s: Status) => s.gid },
-						{ label: 'Type', get: (s: Status) => s.status_type ?? '' },
-						{ label: 'Title', get: (s: Status) => s.title ?? '' },
-					],
-					{ entity: 'status updates' },
-				)
-				printCountSummary(items.length, 'status update(s)')
-				printNextPageHint(data)
-				printNextSteps(STATUS_LIST_NEXT_STEPS)
-			})
-		},
 	)
+		.option('--created-since <timestamp>', 'Only status updates created since this ISO 8601 timestamp')
+		.action(
+			async (opts: {
+				parent?: string
+				parentGid?: string
+				limit?: number
+				offset?: string
+				optFields?: string
+				createdSince?: string
+			}) => {
+				const pagination = paginationOptionsFromCli(opts)
+				pagination.optFields ??= STATUS_LIST_FIELDS
+				const data = await resolveStatusApi(api).listStatuses(requiredGid(opts, 'parent', 'Parent GID'), {
+					...pagination,
+					...(opts.createdSince !== undefined && { createdSince: opts.createdSince }),
+				})
+				output(data, () => {
+					const items = itemsForOutput(data)
+					printTable(
+						items,
+						[
+							{ label: 'ID', get: (s: Status) => s.gid },
+							{ label: 'Type', get: (s: Status) => s.status_type ?? '' },
+							{ label: 'Title', get: (s: Status) => s.title ?? '' },
+						],
+						{ entity: 'status updates' },
+					)
+					printCountSummary(items.length, 'status update(s)')
+					printNextPageHint(data)
+					printNextSteps(STATUS_LIST_NEXT_STEPS)
+				})
+			},
+		)
 
 	cmd
 		.command('overview <parent-gid>')

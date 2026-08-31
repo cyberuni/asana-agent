@@ -319,4 +319,48 @@ describe('status/cli', () => {
 
 		expect(injectedCreateStatus).toHaveBeenCalledWith('proj1', { status_type: 'on_track', text: 'Hi' })
 	})
+
+	it('status list forwards --created-since to the api', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listStatuses = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			statusCommand({
+				listStatuses,
+				getStatus: vi.fn(),
+				createStatus: vi.fn(),
+				deleteStatus: vi.fn(),
+				getStatusOverview: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(
+			['node', 'test', 'status', 'list', '--parent-gid', 'proj1', '--created-since', '2026-01-01T00:00:00Z'],
+			{ from: 'node' },
+		)
+
+		expect(listStatuses).toHaveBeenCalledWith(
+			'proj1',
+			expect.objectContaining({ createdSince: '2026-01-01T00:00:00Z' }),
+		)
+		vi.restoreAllMocks()
+	})
+
+	it('status list sends no createdSince when the flag is omitted', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listStatuses = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			statusCommand({
+				listStatuses,
+				getStatus: vi.fn(),
+				createStatus: vi.fn(),
+				deleteStatus: vi.fn(),
+				getStatusOverview: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'status', 'list', '--parent-gid', 'proj1'], { from: 'node' })
+
+		expect(listStatuses.mock.calls[0][1]).not.toHaveProperty('createdSince')
+		vi.restoreAllMocks()
+	})
 })

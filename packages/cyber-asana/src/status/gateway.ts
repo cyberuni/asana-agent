@@ -13,8 +13,17 @@ export type StatusCreateFields = {
 	title?: string
 }
 
+/**
+ * Options for the status listing. `createdSince` is Asana's own filter on the
+ * endpoint — a timestamp that trims the history to updates posted after it,
+ * which is what "what changed since the last check-in?" asks for.
+ */
+export type StatusListOptions = PaginationOptions & {
+	createdSince?: string
+}
+
 export type StatusGateway = {
-	listStatuses(parentGid: string, opts?: PaginationOptions): Promise<ListResult<any>>
+	listStatuses(parentGid: string, opts?: StatusListOptions): Promise<ListResult<any>>
 	getStatus(statusGid: string): Promise<any>
 	createStatus(parentGid: string, fields: StatusCreateFields): Promise<any>
 	deleteStatus(statusGid: string): Promise<void>
@@ -25,7 +34,10 @@ export function createAsanaStatusGateway(client: Asana.ApiClient): StatusGateway
 
 	return {
 		async listStatuses(parentGid, opts) {
-			const res = await statusUpdatesApi.getStatusesForObject(parentGid, toAsanaPaginationOptions(opts))
+			const res = await statusUpdatesApi.getStatusesForObject(parentGid, {
+				...toAsanaPaginationOptions(opts),
+				...(opts?.createdSince !== undefined && { created_since: opts.createdSince }),
+			})
 			return await collectListResponse(res, opts)
 		},
 		async getStatus(statusGid) {

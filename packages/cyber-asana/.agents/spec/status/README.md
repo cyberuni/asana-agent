@@ -53,8 +53,8 @@ the two surfaces (CLI and MCP) that share one `api.ts`.
 
 | Entry point | Trigger | Inputs | Outcome |
 |---|---|---|---|
-| `status list` (CLI) | caller wants the update history of one project, portfolio, or goal | `--parent-gid` (or the legacy `--parent`), plus pagination options | that parent's status updates, rendered as an ID/Type/Title table in text mode |
-| `asana_status_list` (MCP) | agent wants the same history over MCP | `parent_gid` plus the shared pagination params | the same result, JSON-serialized |
+| `status list` (CLI) | caller wants the update history of one project, portfolio, or goal | `--parent-gid` (or the legacy `--parent`), optional `--created-since`, plus pagination options | that parent's status updates, rendered as an ID/Type/Title table in text mode |
+| `asana_status_list` (MCP) | agent wants the same history over MCP | `parent_gid`, optional `created_since`, plus the shared pagination params | the same result, JSON-serialized |
 | `status get <gid>` (CLI) | caller holds an update's GID and wants the full post | the update GID, positionally | the unwrapped update record, rendered as ID/Type/Title/At/Text fields in text mode |
 | `asana_status_get` (MCP) | same, over MCP | `status_gid` | the same record, JSON-serialized |
 | `status create` (CLI) | caller wants to post progress against a project, portfolio, or goal | `--parent-gid`, required `--status-type`, optional `--title`, `--text`, `--html-text` | the created update, rendered as fields in text mode |
@@ -73,7 +73,9 @@ graph TD
     L[invoked] --> LP{parent GID supplied?}
     LP -->|no| LE[usage error — parent GID required<br/>no environment default is consulted]
     LP -->|yes, under --parent-gid or legacy --parent| LT{parent kind named separately?}
-    LT -->|impossible — no such option is offered| LF[forward the one GID as the object to list<br/>plus pagination options]
+    LT -->|impossible — no such option is offered| LC{created-since given?}
+    LC -->|yes| LF[forward the one GID as the object to list,<br/>plus pagination options and the timestamp]
+    LC -->|no| LF
     LF --> LR[render ID / Type / Title table]
   end
 
@@ -131,6 +133,8 @@ The load-bearing edges:
 | no parent-kind option offered (barred) | the list subcommand's help text | `list offers no parent-type option` |
 | parent GID absent → usage error | no parent GID supplied | `list without a parent GID is a usage error` |
 | no environment default for the parent GID (barred) | `ASANA_WORKSPACE` set, no parent GID supplied | `list does not fall back to an environment variable for the parent GID` |
+| created-since given → carried to Asana as a filter | a parent GID and an ISO 8601 timestamp | `list forwards the created-since timestamp to Asana` |
+| created-since absent → no filter sent | a parent GID and no timestamp | `list sends no created-since filter when none was given` |
 
 ### `status get` / `asana_status_get`
 

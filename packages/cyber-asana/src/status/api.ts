@@ -1,8 +1,15 @@
 import { createClient } from '../client.js'
-import type { PaginationOptions } from '../pagination.js'
 import { createAsanaPortfolioGateway } from '../portfolios/gateway.js'
 import { createAsanaProjectGateway } from '../projects/gateway.js'
-import { createAsanaStatusGateway, type StatusCreateFields, type StatusGateway } from './gateway.js'
+import {
+	createAsanaStatusGateway,
+	type StatusCreateFields,
+	type StatusGateway,
+	type StatusListOptions,
+} from './gateway.js'
+
+export type { StatusListOptions } from './gateway.js'
+
 import { getStatusOverview as rollUpStatus, type StatusOverviewDeps, type StatusOverviewOptions } from './overview.js'
 
 export type {
@@ -19,7 +26,7 @@ export type StatusApi = ReturnType<typeof createStatusApi>
 
 export function createStatusApi(gateway: StatusGateway, overviewGateways: StatusOverviewGateways) {
 	return {
-		listStatuses(parentGid: string, opts?: PaginationOptions) {
+		listStatuses(parentGid: string, opts?: StatusListOptions) {
 			return gateway.listStatuses(parentGid, opts)
 		},
 		getStatus(statusGid: string) {
@@ -45,7 +52,7 @@ function defaultStatusApi() {
 	})
 }
 
-export async function listStatuses(parentGid: string, opts?: PaginationOptions) {
+export async function listStatuses(parentGid: string, opts?: StatusListOptions) {
 	return defaultStatusApi().listStatuses(parentGid, opts)
 }
 
