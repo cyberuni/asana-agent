@@ -1,5 +1,89 @@
 # cyber-asana
 
+## 0.12.0
+
+### Minor Changes
+
+- 0a839d6: Close the cross-surface gaps in the goals and status domains: `goal create` / `goal update` gain `--start-on` and `--html-notes`, `goal update` gains `--clear-due-on` and `--clear-start-on`, and `status list` gains `--created-since`. The matching MCP parameters land on `asana_goal_create`, `asana_goal_update`, and `asana_status_list`.
+  
+  Asana has always taken `start_on` and `html_notes` on both goal write endpoints and `created_since` on the status listing, but none of the three had a CLI or MCP surface. A goal's date range could only be half-set, a goal description could only be plain text, and asking what was posted since the last check-in meant paging the whole status history and filtering locally.
+  
+  Both goal dates are nullable, so unsetting one needs its own input — `--clear-due-on` and `--clear-start-on` send an explicit null, the way `task update` already does. Naming a date together with its clear flag, or `--notes` together with `--html-notes`, is a usage error caught locally before any request is sent.
+  
+  The custom-fields domain was swept for the same class of gap and is clean: every parameter the Asana SDK accepts on its six implemented operations is already reachable from both surfaces.
+- 7f3cfb3: `section create` and `asana_section_create` accept a placement
+  
+  Asana's create-section endpoint has always taken `insert_before` / `insert_after`, but
+  cyber-asana only sent the name — a new column had to be created and then moved. Both
+  surfaces now expose the same placement flags `section move` already had:
+  
+  ```sh
+  cyber-asana section create "In Review" --project-gid <gid> --insert-after <section-gid>
+  ```
+  
+  Naming both placements is a usage error, caught before any request is sent.
+- cca9677: Close cross-surface gaps in the stories, attachments, and tags domains — fields Asana accepts on
+  endpoints this package already wraps, but that reached neither the CLI nor the MCP tool.
+  
+  - `story create` / `story update` (and the `comment` aliases) gain `--pin`, `--unpin`, and
+    `--sticker <name>`; `asana_story_create` / `asana_story_update` gain `is_pinned` and
+    `sticker_name`. Pinning or stickering is an edit in its own right, so `update` no longer needs a
+    replacement body. `--pin` with `--unpin`, and a sticker outside Asana's twelve, are usage errors
+    caught before any request is sent.
+  - `tag create` gains `--follower <gid[,gid...]>` and `asana_tag_create` gains `follower_gids`.
+    Asana takes `followers` only at creation, so `update` deliberately has no counterpart.
+  - `tag update` gains `--clear-color` (`clear_color` over MCP) for Asana's nullable tag colour,
+    mirroring `task update --clear-due-on`.
+  - `asana_attachment_create` gains `connect_to_app`, and `attachment create` gains
+    `--connect-to-app`. Asana honours it only on an external `--url` attachment, so pairing it with a
+    file upload is a local usage error.
+  - `asana_tag_delete` is now idempotent, like the CLI and every other delete in the package. Its
+    response body changes from `{ ok: true, deleted: "<gid>" }` to the shared
+    `{ deleted, resource, gid, already_absent }` record.
+- 33d11a4: Close cross-surface gaps in the projects and project-templates domains.
+  
+  - `project list` gains `--archived` / `--no-archived`, and `asana_project_list` gains
+    `archived`. The gateway had threaded Asana's `archived` filter all along; neither
+    surface exposed it.
+  - `project create` / `project update` gain `--archived` (and `--no-archived` on update),
+    and `asana_project_create` / `asana_project_update` gain `archived`. Asana has accepted
+    `archived` on both endpoints all along; no surface could archive a project.
+  - `project create` / `project update` gain `--owner`, `project update` gains
+    `--clear-owner`, and the matching MCP tools gain `owner` / `clear_owner`. Asana's
+    nullable `owner` had no setter on any surface.
+  - `project create` / `project update` gain `--default-access-level`, and the matching
+    MCP tools gain `default_access_level`. Its sibling `privacy_setting` was already
+    exposed on both surfaces.
+  - `project-template instantiate` gains `--privacy-setting` and
+    `asana_project_template_instantiate` gains `privacy_setting`. Both surfaces exposed only
+    the `public` boolean, which Asana deprecated in favour of `privacy_setting`.
+  - `project-template instantiate` gains `--strict-dates` and
+    `asana_project_template_instantiate` gains `is_strict`. Asana's `is_strict` turns an
+    unfilled date variable into an error rather than a silently defaulted date; neither
+    surface could ask for it.
+  - `project-template instantiate` gains a repeatable `--requested-role` and
+    `asana_project_template_instantiate` gains `requested_roles`. `requested_dates` was
+    already plumbed on both surfaces; its role counterpart was not.
+- d21d4df: `auth status` accepts `--client-id` and `--client-secret`
+  
+  The flags already reached `auth login`, `auth token`, and `auth logout`, but the one command that explains which app registration wins could not see them. `cyber-asana auth status --client-id <id>` now reports the registration a given pair would resolve to, and which sources it shadows, before you authorize with it.
+- e43fd55: `asana_portfolio_delete` is now idempotent, like every other delete in the package. It was the one
+  delete calling Asana bare, so deleting a portfolio that was already gone handed the agent a 404 while
+  the same retry on `cyber-asana portfolio delete` reported it as already deleted. The tool now returns
+  the shared acknowledgement — `{ deleted, resource, gid, already_absent }` — instead of a fixed
+  `Deleted portfolio <gid>` sentence.
+- a13401c: `portfolio list` gains an owner filter on both surfaces. The `owner` parameter was already threaded
+  through the portfolios gateway and `api.ts` and sent to Asana, but neither caller could set it:
+  the CLI now takes `--owner-gid <gid>` (legacy alias `--owner`) and `asana_portfolio_list` now takes
+  `owner_gid`. Asana honors the filter for service-account tokens; a regular personal access token
+  lists only its own portfolios either way. When no owner is given, no `owner` key is sent.
+- fd8f7ba: Close the cross-surface field gaps in the `tasks` domain, so the CLI and MCP expose what Asana's task endpoints have always accepted.
+  
+  - `task create` gains `--start-on` and `--completed`; `asana_task_create` gains `start_on` and `completed`. Both were settable on update but not create, even though Asana's create body takes them.
+  - `task create` and `task update` gain `--due-at` and `--start-at`, and `task update` gains `--clear-due-at` and `--clear-start-at`. `task search` already filtered on the due *time*, so tasks with one were findable but not writable. A date paired with its date-time twin is a usage error caught locally, because Asana documents the two forms as not to be used together.
+  - `task update` gains `--clear-assignee` (`clear_assignee` on `asana_task_update`) — `assignee` is nullable, but it was the one nullable field the command wrote with no clear counterpart, so unassigning a task was not expressible.
+  - `task subtask create` and `asana_task_subtask_create` now take the same write fields as their `task create` siblings — rich notes, start dates, resource subtype, custom fields, and followers all previously fell off at the gateway. Callers of the programmatic `createSubtask` should note its options change from camelCase (`{ notes, assignee, dueOn }`) to the shared `CreateTaskFields` shape (`{ notes, assignee, due_on, ... }`).
+
 ## 0.11.0
 
 ### Minor Changes
