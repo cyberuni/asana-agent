@@ -1,5 +1,19 @@
 # cyber-asana
 
+## 0.11.0
+
+### Minor Changes
+
+- 30d1430: Add `--start-on` and `--clear-start-on` to `task update`, and the matching `start_on` / `clear_start_on` parameters to the `asana_task_update` MCP tool.
+  
+  Asana's task `start_on` field had no CLI or MCP surface on update, so setting a task's date range meant falling back to the raw API. `cyber-asana task update <gid> --start-on 2026-09-01 --due-on 2026-10-31` now sets both, and `--clear-start-on` sends an explicit null the way `--clear-due-on` does. Naming both `--start-on` and `--clear-start-on` is a usage error caught before any request is sent.
+
+### Patch Changes
+
+- ec491c5: Ship a `SETUP.md` at the plugin root so an agent can finish plugin setup — the Asana personal access token and workspace GID its bundled MCP server reads from the environment — without re-deriving the MCP wiring the install already did.
+- b6622d2: Catch `npx -y cyber-asana` as an unpinned invocation. The catalog contract's pinning rule skipped over `--yes` but not its `-y` abbreviation, so the shorter spelling passed unchecked in every skill and reference file.
+- a5565a6: Hold the plugin root's `SETUP.md` to the skill catalog contract: it must exist, sit on the publish allowlist, pin the `npx cyber-asana` commands it prescribes, and resolve every skill it hands off to — so a renamed or dropped skill breaks the build instead of leaving a dead handoff in the file a fresh install reads first.
+
 ## 0.10.0
 
 ### Minor Changes
