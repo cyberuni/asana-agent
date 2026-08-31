@@ -163,6 +163,13 @@ Feature: tags
     Then the request reaching Asana deletes tag "990213"
     And the returned body names "990213" as the deleted tag
 
+  Scenario: asana_tag_delete succeeds when the tag is already gone
+    Given the registered MCP delete tool
+    And Asana answers the delete for tag GID "77001" with a not-found status
+    When that tool runs with the tag GID "77001"
+    Then it answers with a success body naming the tag GID "77001"
+    And that body reports the tag as already absent
+
   # ── tag task list, tag tasks, tag task add, tag task remove and their MCP tools ──
 
   Scenario: task list returns the tags on the task GID it was given

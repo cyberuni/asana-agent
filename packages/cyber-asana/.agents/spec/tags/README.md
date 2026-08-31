@@ -83,7 +83,7 @@ tasks in both directions, over the two surfaces (CLI and MCP) that share one `ap
 | `tag update <gid>` (CLI) | caller wants to rename, recolour or re-note an existing tag | the tag GID positionally, plus any of `--name`, `--color`, `--clear-color`, `--notes` | the updated tag record, rendered as Name/ID/Color fields |
 | `asana_tag_update` (MCP) | same, over MCP | `tag_gid` required, `name` / `color` / `clear_color` / `notes` optional | the updated tag record, JSON-serialized |
 | `tag delete <gid>` (CLI) | caller wants a tag gone from the workspace | the tag GID, positionally | a plain confirmation line naming the deleted GID |
-| `asana_tag_delete` (MCP) | same, over MCP | `tag_gid` | a confirmation body naming the deleted GID |
+| `asana_tag_delete` (MCP) | same, over MCP | `tag_gid` | the confirmation record naming the deleted GID and whether it was already absent, JSON-serialized |
 | `tag task list <task-gid>` (CLI) | caller holds a task and wants its labels | the task GID positionally, plus pagination options | the task's tags, rendered as a Name/ID/Color table |
 | `asana_tag_list_for_task` (MCP) | same, over MCP | `task_gid` plus the shared pagination params | the same result, JSON-serialized |
 | `tag tasks <tag-gid>` (CLI) | caller holds a tag and wants everything carrying it | the tag GID positionally, plus pagination options | the tag's tasks, rendered as a Name/ID/Done/Due table |
@@ -134,9 +134,13 @@ graph TD
     UN -->|no| UZ[send an empty change set —<br/>no at-least-one-field guard]
 
     D[delete invoked with a tag GID] --> DD[delete the tag]
-    DD --> DC{which surface?}
+    DD --> DA{Asana says it is already gone?}
+    DA -->|yes| DI[treat it as done, flagging already_absent]
+    DA -->|no| DK[deleted outright]
+    DI --> DC{which surface?}
+    DK --> DC
     DC -->|CLI| DL[print a confirmation line —<br/>written directly, not through the format layer]
-    DC -->|MCP| DJ[return a confirmation body naming the deleted GID]
+    DC -->|MCP| DJ[return the same confirmation record, JSON-serialized]
   end
 
   subgraph association["tag task list / tag tasks / tag task add / tag task remove"]
@@ -179,6 +183,11 @@ The load-bearing edges:
   `data` block are written, everything else is left alone, and the complete record comes back. A
   guard here would reject a request Asana answers correctly.
 
+- **`delete` is idempotent on both surfaces.** Deleting a tag that is already gone is the state the
+  caller asked for, so a 404 from Asana is reported as a success carrying `already_absent: true`
+  rather than as a failure — the shared contract in [axi](../axi/README.md), reached through the
+  same `deleteIdempotently` helper every other delete in the package uses. Both surfaces answer
+  from the one record, so what the CLI prints and what the MCP tool returns cannot drift apart.
 - **`delete` is the one entry point that bypasses the shared output layer.** Asana returns nothing
   useful from a delete, so the CLI writes its own confirmation line naming the GID. The consequence
   is real and is frozen deliberately: the structured-format flags do not change what `delete` prints.
@@ -225,6 +234,7 @@ The load-bearing edges:
 | CLI delete confirms outside the format layer | a tag GID and the structured JSON flag | `delete prints the same confirmation line whatever output format is asked for` |
 | tag GID absent → usage error | no positional argument on the delete command | `delete without a tag GID is a usage error` |
 | MCP delete answers with a confirmation body | the registered MCP delete tool and a tag GID | `asana_tag_delete answers with a body naming the deleted tag GID` |
+| delete of a tag already gone → success | the registered MCP delete tool and a tag Asana no longer has | `asana_tag_delete succeeds when the tag is already gone` |
 
 ### `tag task list`, `tag tasks`, `tag task add`, `tag task remove` and their MCP tools
 

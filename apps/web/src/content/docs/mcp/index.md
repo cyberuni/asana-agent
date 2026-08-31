@@ -155,6 +155,7 @@ List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` 
 - `asana_task_subtask_create` — takes the same write fields as `asana_task_create`; the parent and its workspace come from `task_gid`
 - `asana_tag_create` — `color`, `notes`, `follower_gids` (array or comma-separated); Asana takes followers only at creation, so `asana_tag_update` has no counterpart
 - `asana_tag_update` — `name`, `color`, `clear_color` (Asana's tag colour is nullable), `notes`
+- `asana_tag_delete` — idempotent, like every other delete: deleting a tag that is already gone answers `{ deleted: true, already_absent: true }` rather than a 404
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
 - `asana_story_create` / `asana_story_update` (and the `comment` aliases) — `is_pinned` pins the comment to the top of its task; `sticker_name` attaches one of Asana's stickers
 - `asana_story_update` / `asana_story_delete` (and the `comment` aliases) — take `story_gid`; only comment stories you authored can be changed, and a refusal is a `403` carrying that as a hint

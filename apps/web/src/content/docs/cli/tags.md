@@ -29,6 +29,9 @@ cyber-asana tag delete <gid>
 
 `list` and `create` fall back to `ASANA_WORKSPACE` when `--workspace-gid` is omitted.
 
+`delete` is idempotent on both surfaces: removing a tag that is already gone still succeeds, and
+the result says which of the two happened.
+
 Asana's tag colour is nullable, so `--clear-color` sends `color: null` and takes the colour off.
 Naming it together with `--color` is a usage error, caught before any request is sent.
 

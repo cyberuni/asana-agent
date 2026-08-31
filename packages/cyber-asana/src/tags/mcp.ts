@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
+import { deleteIdempotently } from '../idempotent-delete.js'
 import { paginationOptions, paginationParams } from '../mcp-options.js'
 import type { TagApi } from './api.js'
 import {
@@ -118,8 +119,8 @@ export function registerTagTools(server: McpServer, api?: TagApi | (() => TagApi
 		'Delete an Asana tag',
 		{ tag_gid: z.string().describe('Tag GID') },
 		async ({ tag_gid }) => {
-			await resolveTagApi(api).deleteTag(tag_gid)
-			return { content: [{ type: 'text', text: JSON.stringify({ ok: true, deleted: tag_gid }) }] }
+			const result = await deleteIdempotently('tag', tag_gid, () => resolveTagApi(api).deleteTag(tag_gid))
+			return { content: [{ type: 'text', text: JSON.stringify(result) }] }
 		},
 	)
 
