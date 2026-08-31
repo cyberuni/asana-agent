@@ -275,4 +275,27 @@ describe('stories/cli', () => {
 		).rejects.toThrow('--pin and --unpin are mutually exclusive')
 		expect(updateStory).not.toHaveBeenCalled()
 	})
+	it('story create attaches a sticker with --sticker', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const createStory = vi.fn().mockResolvedValue({ gid: 'story1' })
+
+		await new Command()
+			.addCommand(storyCommand('story', storyDeps({ createStory })))
+			.parseAsync(['node', 'test', 'story', 'create', 'Nice', '--task-gid', 'task1', '--sticker', 'trophy'], {
+				from: 'node',
+			})
+
+		expect(createStory).toHaveBeenCalledWith('task1', { text: 'Nice', sticker_name: 'trophy' })
+	})
+
+	it('story update sets a sticker without replacing the comment text', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const updateStory = vi.fn().mockResolvedValue({ gid: 'story1' })
+
+		await new Command()
+			.addCommand(storyCommand('story', storyDeps({ updateStory })))
+			.parseAsync(['node', 'test', 'story', 'update', 'story1', '--sticker', 'heart'], { from: 'node' })
+
+		expect(updateStory).toHaveBeenCalledWith('story1', { sticker_name: 'heart' })
+	})
 })

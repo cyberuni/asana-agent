@@ -95,7 +95,24 @@ describe('stories/write-options', () => {
 		expect(buildStoryUpdateFields({ isPinned: false })).toEqual({ is_pinned: false })
 	})
 
-	it('buildStoryUpdateFields names the pin options when nothing was provided', () => {
-		expect(() => buildStoryUpdateFields({})).toThrow('Provide text, --html-text, --pin, or --unpin')
+	it('buildStoryUpdateFields names every option when nothing was provided', () => {
+		expect(() => buildStoryUpdateFields({})).toThrow('Provide text, --html-text, --pin, --unpin, or --sticker')
+	})
+
+	it('buildStoryCreateFields carries sticker_name alongside the comment body', () => {
+		expect(buildStoryCreateFields({ text: 'Nice', stickerName: 'trophy' })).toEqual({
+			text: 'Nice',
+			sticker_name: 'trophy',
+		})
+	})
+
+	it('buildStoryUpdateFields sets a sticker without replacing the comment body', () => {
+		expect(buildStoryUpdateFields({ stickerName: 'heart' })).toEqual({ sticker_name: 'heart' })
+	})
+
+	it('buildStoryCreateFields rejects a sticker Asana does not define, listing the ones it does', () => {
+		expect(() => buildStoryCreateFields({ text: 'Nice', stickerName: 'rocket' })).toThrow(
+			'sticker_name must be one of green_checkmark, people_dancing',
+		)
 	})
 })

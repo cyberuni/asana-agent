@@ -158,6 +158,18 @@ Feature: stories
     Then the request reaching the Asana stories endpoint carries the text field "Gravel arrives Tuesday"
     And that request carries the is_pinned field true
 
+  Scenario: create carries sticker_name when a known sticker is given
+    Given a task with GID "8801"
+    When the story create entry point runs with the task GID "8801", the text "Gravel arrives Tuesday" and the sticker "trophy"
+    Then the request reaching the Asana stories endpoint carries the sticker_name field "trophy"
+
+  Scenario: create rejects a sticker name Asana does not define
+    Given a task with GID "8801"
+    When the story create entry point runs with the task GID "8801", the text "Gravel arrives Tuesday" and the sticker "rocket"
+    Then the process exits with a non-zero status
+    And no request reaches the Asana stories endpoint
+    And stderr lists the sticker names Asana does define
+
   # ── story update / asana_story_update ──
 
   Scenario: update pins a comment without replacing its text
@@ -173,6 +185,12 @@ Feature: stories
     Then the request reaching the Asana story endpoint carries the is_pinned field false
     And that request carries no text field
 
+  Scenario: update sets a sticker without replacing its text
+    Given a comment with GID "5501"
+    When the story update entry point runs with the story GID "5501" and the sticker "heart" as its only input
+    Then the request reaching the Asana story endpoint carries the sticker_name field "heart"
+    And that request carries no text field
+
   Scenario: update with both pin and unpin is a usage error
     Given a comment with GID "5501"
     When the story update entry point runs with the story GID "5501", the pin flag and the unpin flag
@@ -184,7 +202,7 @@ Feature: stories
     Given a comment with GID "5501"
     When the story update entry point runs with the story GID "5501" as its only input
     Then the process exits with a non-zero status
-    And stderr states that text, html-text, pin or unpin must be provided
+    And stderr states that text, html-text, pin, unpin or sticker must be provided
     And no request reaches the Asana story endpoint
 
   # ── comment aliases ──

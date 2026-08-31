@@ -31,7 +31,8 @@ registered twice, once under `story` and once under `comment`, running the same 
 A comment can also be **pinned**, which keeps it at the top of its task. Asana carries that as the
 writable `is_pinned` field on the same request that carries the body, so both `create` and `update`
 take it — and because pinning is an edit in its own right, `update` accepts it with no replacement
-text at all.
+text at all. `sticker_name` behaves the same way, drawn from a fixed vocabulary of twelve names that
+is checked locally so a typo costs no request.
 
 **Key terms**
 
@@ -66,10 +67,10 @@ name.
 |---|---|---|---|
 | `story list` (CLI) | operator or agent wants to read a task's thread | `--task-gid <gid>` plus pagination options | the task's stories, rendered as an ID/Type/By/Text table in text mode |
 | `asana_story_list` (MCP) | agent wants the same thread over MCP | `task_gid` plus the shared pagination params | the same result, JSON-serialized |
-| `story create` (CLI) | operator or agent wants to comment on a task | `--task-gid <gid>`, the comment as a positional argument or `--html-text <html>`, optionally `--pin` and `--template` | the created story, rendered as ID/Type/By/At/Text fields in text mode |
-| `asana_story_create` (MCP) | agent wants to comment over MCP | `task_gid`, `text` or `html_text`, optional `is_pinned` and `template` | the created story, JSON-serialized |
-| `story update` (CLI) | operator or agent wants to correct or pin their own comment | `<gid>`, replacement text or `--html-text <html>`, and/or `--pin` / `--unpin` | the updated story, rendered as ID/Type/By/At/Text fields in text mode |
-| `asana_story_update` (MCP) | agent wants the same over MCP | `story_gid`, optional `text` or `html_text`, optional `is_pinned` | the updated story, JSON-serialized |
+| `story create` (CLI) | operator or agent wants to comment on a task | `--task-gid <gid>`, the comment as a positional argument or `--html-text <html>`, optionally `--pin`, `--sticker <name>` and `--template` | the created story, rendered as ID/Type/By/At/Text fields in text mode |
+| `asana_story_create` (MCP) | agent wants to comment over MCP | `task_gid`, `text` or `html_text`, optional `is_pinned`, `sticker_name` and `template` | the created story, JSON-serialized |
+| `story update` (CLI) | operator or agent wants to correct or pin their own comment | `<gid>`, replacement text or `--html-text <html>`, and/or `--pin` / `--unpin` / `--sticker <name>` | the updated story, rendered as ID/Type/By/At/Text fields in text mode |
+| `asana_story_update` (MCP) | agent wants the same over MCP | `story_gid`, optional `text` or `html_text`, optional `is_pinned`, `sticker_name` | the updated story, JSON-serialized |
 | `comment list` / `comment create` (CLI aliases) | caller reaches for the everyday word instead of Asana's | identical to the `story` forms | identical behavior |
 | `asana_comment_list` / `asana_comment_create` (MCP aliases) | same, over MCP | identical to the `asana_story_*` forms | identical behavior |
 
@@ -93,8 +94,10 @@ graph TD
   CF --> W
   W -->|both text and html_text| WB[usage error — mutually exclusive]
   W -->|neither, on create| WN[usage error — provide one]
-  W -->|neither and no pin change, on update| WU[usage error — provide text, html_text, --pin or --unpin]
-  W -->|neither, but --pin or --unpin on update| P
+  W -->|neither and nothing else asked for, on update| WU[usage error — provide text, html_text, --pin, --unpin or --sticker]
+  W -->|neither, but --pin, --unpin or --sticker on update| SK{sticker in Asana's vocabulary?}
+  SK -->|no| SE[usage error — nothing is sent to Asana]
+  SK -->|yes| P
   W -->|text| P[post the comment]
   W -->|html_text| H{one body root, tags balanced?}
   H -->|no| HE[usage error — nothing is sent to Asana]
@@ -122,6 +125,9 @@ The load-bearing edges:
   Asana only ever creates comment stories. An update may carry none, because setting `is_pinned` is
   itself the edit; only an update that asks for nothing at all is a usage error. `--pin` and
   `--unpin` collapse to one boolean, so naming both is caught locally before any request is sent.
+- **`sticker in Asana's vocabulary?`** is checked against the twelve names Asana defines, and the
+  rejection names them all — a misremembered sticker is a local error carrying the answer, not a
+  round trip.
 - **`Asana accepts?`** splits on whether the rejection names `html_text`. Only that case is
   re-raised with rich-text guidance; every other failure is passed through untouched, so a
   not-found or permission failure is not mislabeled as a formatting problem.
@@ -161,6 +167,8 @@ prints the whole comment — the same escape hatch every other free-text field i
 | both fields → usage error | plain wording and rich text supplied together | `create with both text and html_text is a usage error` |
 | neither field → usage error | an invocation supplying only the task GID | `create with neither text nor html_text is a usage error` |
 | pin flag → carried alongside the body | plain wording supplied with the pin flag | `create carries is_pinned when the pin flag is given` |
+| sticker → carried alongside the body | plain wording supplied with a sticker Asana defines | `create carries sticker_name when a known sticker is given` |
+| sticker outside the vocabulary → usage error | plain wording supplied with a sticker Asana does not define | `create rejects a sticker name Asana does not define` |
 | template → substitute into text | the template flag with placeholders in the plain wording | `create substitutes task fields into the text under the template flag` |
 | template → substitute into html_text | the template flag with placeholders inside the rich text | `create substitutes task fields into html_text under the template flag` |
 | template → every occurrence substituted | one placeholder written twice in the wording | `create substitutes every occurrence of a repeated placeholder` |
@@ -177,6 +185,7 @@ prints the whole comment — the same escape hatch every other free-text field i
 | pin with no body → allowed | an update invocation carrying only the pin flag | `update pins a comment without replacing its text` |
 | unpin with no body → allowed | an update invocation carrying only the unpin flag | `update unpins a comment without replacing its text` |
 | both pin flags → usage error | an update invocation naming pin and unpin together | `update with both pin and unpin is a usage error` |
+| sticker with no body → allowed | an update invocation carrying only a sticker | `update sets a sticker without replacing its text` |
 | nothing asked for → usage error | an update invocation carrying only the story GID | `update with nothing to change is a usage error` |
 
 ### `comment` aliases
@@ -191,7 +200,8 @@ prints the whole comment — the same escape hatch every other free-text field i
 
 - Asana API — [Stories](https://developers.asana.com/reference/stories) backs the claim that reading
   a comment is posted as either `text` or `html_text`, and that `is_pinned` is a writable field on
-  the same request — "only comment stories and attachment stories can be pinned".
+  the same request — "only comment stories and attachment stories can be pinned" — alongside
+  `sticker_name` and its twelve permitted values.
 
 ## Known bugs
 

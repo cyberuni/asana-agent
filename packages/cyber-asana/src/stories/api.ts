@@ -55,6 +55,7 @@ export function createStoryApi(gateway: StoryGateway) {
 				text: fields.text,
 				htmlText: fields.html_text,
 				isPinned: fields.is_pinned,
+				stickerName: fields.sticker_name,
 			})
 			try {
 				return await gateway.createStory(taskGid, payload)
@@ -72,6 +73,7 @@ export function createStoryApi(gateway: StoryGateway) {
 				text: fields.text,
 				htmlText: fields.html_text,
 				isPinned: fields.is_pinned,
+				stickerName: fields.sticker_name,
 			})
 			try {
 				return await gateway.updateStory(storyGid, payload)

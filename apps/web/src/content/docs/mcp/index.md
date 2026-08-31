@@ -154,7 +154,7 @@ List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` 
 - `asana_task_update` — `html_notes`, `due_on` / `clear_due_on`, `due_at` / `clear_due_at`, `start_on` / `clear_start_on`, `start_at` / `clear_start_at`, `assignee_gid` / `clear_assignee`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
 - `asana_task_subtask_create` — takes the same write fields as `asana_task_create`; the parent and its workspace come from `task_gid`
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
-- `asana_story_create` / `asana_story_update` (and the `comment` aliases) — `is_pinned` pins the comment to the top of its task
+- `asana_story_create` / `asana_story_update` (and the `comment` aliases) — `is_pinned` pins the comment to the top of its task; `sticker_name` attaches one of Asana's stickers
 - `asana_story_update` / `asana_story_delete` (and the `comment` aliases) — take `story_gid`; only comment stories you authored can be changed, and a refusal is a `403` carrying that as a hint
 - `asana_search_objects` — `resource_type` (one per call), `query`, `count` (1–100, default 20), `opt_fields`. Turns a name into a GID; not paginated and not exhaustive
 - `asana_url_parse` — local URL parsing; use `workspace_gid` + `project_gid` for create; `list_view_gid` is not a section GID

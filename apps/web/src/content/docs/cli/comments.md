@@ -20,9 +20,9 @@ cyber-asana story create "Great work!" --task <gid>
 | Command | Arguments | Options |
 | --- | --- | --- |
 | `list` | — | `--task-gid <gid>` / `--task <gid>`, [pagination](/cyber-asana/cli/#pagination) |
-| `create` | `[text]` | `--task-gid <gid>` / `--task <gid>`, `--html-text <html>`, `--pin`, `--template` |
+| `create` | `[text]` | `--task-gid <gid>` / `--task <gid>`, `--html-text <html>`, `--pin`, `--sticker <name>`, `--template` |
 | `get` | `<gid>` | — |
-| `update` | `<gid> [text]` | `--html-text <html>`, `--pin`, `--unpin` |
+| `update` | `<gid> [text]` | `--html-text <html>`, `--pin`, `--unpin`, `--sticker <name>` |
 | `delete` | `<gid>` | — |
 
 Comment bodies are truncated in list output with a size hint; pass `--full` for the
@@ -41,10 +41,15 @@ cyber-asana comment update <story-gid> --unpin
 cyber-asana comment delete <story-gid>
 ```
 
+`--sticker <name>` attaches one of Asana's stickers: `green_checkmark`, `people_dancing`,
+`dancing_unicorn`, `heart`, `party_popper`, `people_waving_flags`, `splashing_narwhal`, `trophy`,
+`yeti_riding_unicorn`, `celebrating_people`, `determined_climbers`, `phoenix_spreading_love`. Any
+other name is rejected locally, before a request is sent.
+
 `--pin` and `--unpin` set Asana's `is_pinned`, which keeps a comment at the top of its
 task. They are mutually exclusive, and `update` accepts either on its own — pinning is an
-edit in its own right, so no replacement text is needed. `create --pin` posts a comment
-already pinned.
+edit in its own right, so no replacement text is needed — and the same is true of `--sticker`.
+`create --pin` posts a comment already pinned.
 
 Asana only permits editing and deleting comment stories you authored — system stories
 (assignee changed, due date set) are immutable, and the refusal comes back as a `403` whose
