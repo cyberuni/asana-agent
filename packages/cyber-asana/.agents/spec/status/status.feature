@@ -45,6 +45,16 @@ Feature: status
     Then the process exits with a non-zero status
     And no request reaches the Asana status-updates endpoint
 
+  Scenario: list forwards the created-since timestamp to Asana
+    Given a project with GID "8801" carrying status updates from several weeks
+    When the status list entry point runs for the GID "8801" with the created-since timestamp "2026-01-01T00:00:00Z"
+    Then the request reaching the Asana status-updates endpoint carries a created_since of "2026-01-01T00:00:00Z"
+
+  Scenario: list sends no created-since filter when none was given
+    Given a project with GID "8801" carrying status updates from several weeks
+    When the status list entry point runs for the GID "8801" with no created-since input
+    Then the request reaching the Asana status-updates endpoint carries no created_since value
+
   # ── status get / asana_status_get ──
 
   Scenario: get returns the status update record for the GID it was given

@@ -78,6 +78,98 @@ describe('goals/mcp', () => {
 			name: 'Ship v1',
 		})
 
-		expect(injectedCreateGoal).toHaveBeenCalledWith('ws1', 'Ship v1', { notes: undefined, due_on: undefined })
+		expect(injectedCreateGoal).toHaveBeenCalledWith('ws1', 'Ship v1', {})
+	})
+
+	it('asana_goal_create forwards a start date alongside a due date', async () => {
+		createGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v1' })
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await server.handlers.get('asana_goal_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Ship v1',
+			start_on: '2026-01-01',
+			due_on: '2026-06-30',
+		})
+
+		expect(createGoalMock).toHaveBeenCalledWith('ws1', 'Ship v1', {
+			start_on: '2026-01-01',
+			due_on: '2026-06-30',
+		})
+	})
+
+	it('asana_goal_update forwards a start date', async () => {
+		updateGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v2' })
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await server.handlers.get('asana_goal_update')?.({ goal_gid: 'goal1', start_on: '2026-01-01' })
+
+		expect(updateGoalMock).toHaveBeenCalledWith('goal1', { start_on: '2026-01-01' })
+	})
+
+	it('asana_goal_update sends null for a cleared start date', async () => {
+		updateGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v2' })
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await server.handlers.get('asana_goal_update')?.({ goal_gid: 'goal1', clear_start_on: true })
+
+		expect(updateGoalMock).toHaveBeenCalledWith('goal1', { start_on: null })
+	})
+
+	it('asana_goal_update sends null for a cleared due date', async () => {
+		updateGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v2' })
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await server.handlers.get('asana_goal_update')?.({ goal_gid: 'goal1', clear_due_on: true })
+
+		expect(updateGoalMock).toHaveBeenCalledWith('goal1', { due_on: null })
+	})
+
+	it('asana_goal_update rejects a due date set and cleared at once', async () => {
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await expect(
+			server.handlers.get('asana_goal_update')?.({ goal_gid: 'goal1', due_on: '2026-06-30', clear_due_on: true }),
+		).rejects.toThrow('--due-on and --clear-due-on are mutually exclusive')
+		expect(updateGoalMock).not.toHaveBeenCalled()
+	})
+
+	it('asana_goal_create forwards rich-text notes', async () => {
+		createGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v1' })
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await server.handlers.get('asana_goal_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Ship v1',
+			html_notes: '<body>Q2</body>',
+		})
+
+		expect(createGoalMock).toHaveBeenCalledWith('ws1', 'Ship v1', { html_notes: '<body>Q2</body>' })
+	})
+
+	it('asana_goal_update forwards rich-text notes', async () => {
+		updateGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v2' })
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await server.handlers.get('asana_goal_update')?.({ goal_gid: 'goal1', html_notes: '<body>Q3</body>' })
+
+		expect(updateGoalMock).toHaveBeenCalledWith('goal1', { html_notes: '<body>Q3</body>' })
+	})
+
+	it('asana_goal_update rejects notes and html_notes at once', async () => {
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await expect(
+			server.handlers.get('asana_goal_update')?.({ goal_gid: 'goal1', notes: 'plain', html_notes: '<body>r</body>' }),
+		).rejects.toThrow('--notes and --html-notes are mutually exclusive')
+		expect(updateGoalMock).not.toHaveBeenCalled()
 	})
 })

@@ -148,6 +148,7 @@ List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` 
 
 ### Notable Parameters
 
+- `asana_status_list` — `created_since` trims the history to updates posted after an ISO 8601 timestamp, which is the cheap way to ask what changed since the last check-in
 - `asana_task_template_instantiate` — `name` names the created task; instantiation is a job, so the tool polls it for `timeout_seconds` (default 10) and returns the job with `new_task` once it succeeds. `wait: false` returns the pending job immediately
 - `asana_task_list`, `asana_task_my_tasks`, `asana_task_subtask_list` — `incomplete: true` filters to incomplete tasks
 - `asana_task_create` — `project_gid`, `project_gids`, `follower_gids`, `html_notes`, `completed`, `due_on`, `due_at`, `start_on`, `start_at`, `parent_gid`, `resource_subtype`, `custom_fields`
@@ -157,6 +158,8 @@ List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` 
 - `asana_tag_create` — `color`, `notes`, `follower_gids` (array or comma-separated); Asana takes followers only at creation, so `asana_tag_update` has no counterpart
 - `asana_tag_update` — `name`, `color`, `clear_color` (Asana's tag colour is nullable), `notes`
 - `asana_tag_delete` — idempotent, like every other delete: deleting a tag that is already gone answers `{ deleted: true, already_absent: true }` rather than a 404
+- `asana_goal_create` — `notes` or `html_notes` (mutually exclusive), `due_on`, `start_on` (Asana requires an accompanying due date)
+- `asana_goal_update` — `name`, `notes` or `html_notes` (mutually exclusive), `due_on`, `clear_due_on`, `start_on`, `clear_start_on`; the clear flags send an explicit null
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
 - `asana_story_create` / `asana_story_update` (and the `comment` aliases) — `is_pinned` pins the comment to the top of its task; `sticker_name` attaches one of Asana's stickers
 - `asana_story_update` / `asana_story_delete` (and the `comment` aliases) — take `story_gid`; only comment stories you authored can be changed, and a refusal is a `403` carrying that as a hint

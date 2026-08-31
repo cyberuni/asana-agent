@@ -15,13 +15,19 @@ export function registerStatusTools(server: McpServer, api?: StatusApi | (() => 
 		'List status updates for an Asana project, portfolio, or goal',
 		{
 			parent_gid: z.string().describe('Parent GID (project, portfolio, or goal)'),
+			created_since: z.string().optional().describe('Only status updates created since this ISO 8601 timestamp'),
 			...paginationParams,
 		},
-		async ({ parent_gid, ...params }) => ({
+		async ({ parent_gid, created_since, ...params }) => ({
 			content: [
 				{
 					type: 'text',
-					text: JSON.stringify(await resolveStatusApi(api).listStatuses(parent_gid, paginationOptions(params))),
+					text: JSON.stringify(
+						await resolveStatusApi(api).listStatuses(parent_gid, {
+							...paginationOptions(params),
+							...(created_since !== undefined && { createdSince: created_since }),
+						}),
+					),
 				},
 			],
 		}),

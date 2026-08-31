@@ -104,4 +104,42 @@ describe('status/mcp', () => {
 
 		expect(injectedCreateStatus).toHaveBeenCalledWith('proj1', { status_type: 'on_track', text: 'Hi' })
 	})
+
+	it('asana_status_list forwards created_since', async () => {
+		const listStatuses = vi.fn().mockResolvedValue([])
+		const server = createServer()
+		registerStatusTools(server as any, {
+			listStatuses,
+			getStatus: vi.fn(),
+			createStatus: vi.fn(),
+			deleteStatus: vi.fn(),
+			getStatusOverview: vi.fn(),
+		})
+
+		await server.handlers.get('asana_status_list')?.({
+			parent_gid: 'proj1',
+			created_since: '2026-01-01T00:00:00Z',
+		})
+
+		expect(listStatuses).toHaveBeenCalledWith(
+			'proj1',
+			expect.objectContaining({ createdSince: '2026-01-01T00:00:00Z' }),
+		)
+	})
+
+	it('asana_status_list sends no createdSince when the parameter is omitted', async () => {
+		const listStatuses = vi.fn().mockResolvedValue([])
+		const server = createServer()
+		registerStatusTools(server as any, {
+			listStatuses,
+			getStatus: vi.fn(),
+			createStatus: vi.fn(),
+			deleteStatus: vi.fn(),
+			getStatusOverview: vi.fn(),
+		})
+
+		await server.handlers.get('asana_status_list')?.({ parent_gid: 'proj1' })
+
+		expect(listStatuses.mock.calls[0][1]).not.toHaveProperty('createdSince')
+	})
 })

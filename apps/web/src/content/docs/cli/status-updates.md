@@ -15,6 +15,7 @@ cyber-asana status overview <portfolio-gid>
 cyber-asana status list --parent <project-gid>
 cyber-asana status list --parent <portfolio-gid>
 cyber-asana status list --parent <goal-gid>
+cyber-asana status list --parent <project-gid> --created-since 2026-01-01T00:00:00Z
 
 cyber-asana status get <gid>
 cyber-asana status create --parent <project-gid> --status-type on_track --text "Shipping on schedule"
@@ -24,10 +25,14 @@ cyber-asana status delete <gid>
 | Command | Arguments | Options |
 | --- | --- | --- |
 | `overview` | `<parent-gid>` | `--limit <number>`, `--parent-type <project\|portfolio>`, `--full` |
-| `list` | — | `--parent-gid <gid>` / `--parent <gid>`, [pagination](/cyber-asana/cli/#pagination) |
+| `list` | — | `--parent-gid <gid>` / `--parent <gid>`, `--created-since <timestamp>`, [pagination](/cyber-asana/cli/#pagination) |
 | `get` | `<gid>` | — |
 | `create` | — | `--parent-gid <gid>`, `--status-type <type>` (required), `--text <text>`, `--html-text <html>`, `--title <title>` |
 | `delete` | `<gid>` | — |
+
+`--created-since` takes an ISO 8601 timestamp and trims the history to the updates posted
+after it — the cheap way to ask what changed since the last check-in, rather than paging the
+whole history and filtering locally.
 
 ## Roll-up
 
