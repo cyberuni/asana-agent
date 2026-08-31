@@ -88,8 +88,11 @@ describe('tags/mcp', () => {
 		})
 
 		expect(deleteTagMock).toHaveBeenCalledWith('tag1')
-		expect(result).toEqual({
-			content: [{ type: 'text', text: JSON.stringify({ ok: true, deleted: 'tag1' }) }],
+		expect(JSON.parse(result.content[0].text)).toEqual({
+			deleted: true,
+			resource: 'tag',
+			gid: 'tag1',
+			already_absent: false,
 		})
 	})
 
@@ -174,5 +177,53 @@ describe('tags/mcp', () => {
 		})
 
 		expect(injectedUpdateTag).toHaveBeenCalledWith('tag1', { name: 'Urgent', color: undefined, notes: undefined })
+	})
+
+	it('asana_tag_create forwards follower_gids', async () => {
+		createTagMock.mockResolvedValue({ gid: 'tag1', name: 'Urgent' })
+		const server = createServer()
+		registerTagTools(server as any)
+
+		await server.handlers.get('asana_tag_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Urgent',
+			follower_gids: ['u1', 'u2'],
+		})
+
+		expect(createTagMock).toHaveBeenCalledWith('ws1', 'Urgent', { followers: ['u1', 'u2'] })
+	})
+
+	it('asana_tag_create accepts follower_gids as a comma-separated string', async () => {
+		createTagMock.mockResolvedValue({ gid: 'tag1', name: 'Urgent' })
+		const server = createServer()
+		registerTagTools(server as any)
+
+		await server.handlers.get('asana_tag_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Urgent',
+			follower_gids: 'u1,u2',
+		})
+
+		expect(createTagMock).toHaveBeenCalledWith('ws1', 'Urgent', { followers: ['u1', 'u2'] })
+	})
+
+	it('asana_tag_update clears the colour with clear_color', async () => {
+		updateTagMock.mockResolvedValue({ gid: 'tag1', name: 'Urgent' })
+		const server = createServer()
+		registerTagTools(server as any)
+
+		await server.handlers.get('asana_tag_update')?.({ tag_gid: 'tag1', clear_color: true })
+
+		expect(updateTagMock).toHaveBeenCalledWith('tag1', { color: null })
+	})
+
+	it('asana_tag_delete succeeds when the tag is already gone', async () => {
+		deleteTagMock.mockRejectedValue({ response: { status: 404, body: { errors: [{ message: 'Not Found' }] } } })
+		const server = createServer()
+		registerTagTools(server as any)
+
+		const result = await server.handlers.get('asana_tag_delete')?.({ tag_gid: 'tag1' })
+
+		expect(JSON.parse(result.content[0].text)).toMatchObject({ deleted: true, already_absent: true })
 	})
 })

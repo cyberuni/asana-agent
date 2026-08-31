@@ -18,4 +18,24 @@ describe('createAttachmentApi', () => {
 		expect(result).toEqual({ data: [mockAttachment], next_page: null, limit: 100 })
 		expect(mockListAttachments).toHaveBeenCalledWith('task1', undefined)
 	})
+
+	it('passes connectToApp through to the gateway for a url attachment', async () => {
+		const createAttachment = vi.fn().mockResolvedValue(mockAttachment)
+		const api = createAttachmentApi({
+			listAttachments: vi.fn(),
+			getAttachment: vi.fn(),
+			createAttachment,
+			deleteAttachment: vi.fn(),
+		})
+
+		await api.createAttachment('task1', { url: 'https://example.com/design', connectToApp: true })
+
+		expect(createAttachment).toHaveBeenCalledWith({
+			parent: 'task1',
+			url: 'https://example.com/design',
+			name: 'https://example.com/design',
+			resourceSubtype: 'external',
+			connectToApp: true,
+		})
+	})
 })

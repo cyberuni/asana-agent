@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
+import { deleteIdempotently } from '../idempotent-delete.js'
 import { paginationOptions, paginationParams } from '../mcp-options.js'
 import type { TagApi } from './api.js'
 import {
@@ -13,6 +14,7 @@ import {
 	removeTagFromTask,
 	updateTag,
 } from './api.js'
+import { buildTagUpdateFields, parseFollowerGids } from './write-options.js'
 
 function resolveTagApi(api?: TagApi | (() => TagApi)): TagApi {
 	if (typeof api === 'function') return api()
@@ -63,15 +65,28 @@ export function registerTagTools(server: McpServer, api?: TagApi | (() => TagApi
 			name: z.string().describe('Tag name'),
 			color: z.string().optional().describe('Tag color'),
 			notes: z.string().optional().describe('Tag notes'),
+			follower_gids: z
+				.union([z.array(z.string()), z.string()])
+				.optional()
+				.describe('Follower user GIDs'),
 		},
-		async ({ workspace_gid, name, color, notes }) => ({
-			content: [
-				{
-					type: 'text',
-					text: JSON.stringify(await resolveTagApi(api).createTag(workspace_gid, name, { color, notes })),
-				},
-			],
-		}),
+		async ({ workspace_gid, name, color, notes, follower_gids }) => {
+			const followers = parseFollowerGids(follower_gids)
+			return {
+				content: [
+					{
+						type: 'text',
+						text: JSON.stringify(
+							await resolveTagApi(api).createTag(workspace_gid, name, {
+								...(color !== undefined && { color }),
+								...(notes !== undefined && { notes }),
+								...(followers && { followers }),
+							}),
+						),
+					},
+				],
+			}
+		},
 	)
 
 	server.tool(
@@ -81,11 +96,20 @@ export function registerTagTools(server: McpServer, api?: TagApi | (() => TagApi
 			tag_gid: z.string().describe('Tag GID'),
 			name: z.string().optional().describe('New tag name'),
 			color: z.string().optional().describe('New tag color'),
+			clear_color: z.boolean().optional().describe('Remove the tag color'),
 			notes: z.string().optional().describe('New tag notes'),
 		},
-		async ({ tag_gid, name, color, notes }) => ({
+		async ({ tag_gid, name, color, clear_color, notes }) => ({
 			content: [
-				{ type: 'text', text: JSON.stringify(await resolveTagApi(api).updateTag(tag_gid, { name, color, notes })) },
+				{
+					type: 'text',
+					text: JSON.stringify(
+						await resolveTagApi(api).updateTag(
+							tag_gid,
+							buildTagUpdateFields({ name, color, clearColor: clear_color, notes }),
+						),
+					),
+				},
 			],
 		}),
 	)
@@ -95,8 +119,8 @@ export function registerTagTools(server: McpServer, api?: TagApi | (() => TagApi
 		'Delete an Asana tag',
 		{ tag_gid: z.string().describe('Tag GID') },
 		async ({ tag_gid }) => {
-			await resolveTagApi(api).deleteTag(tag_gid)
-			return { content: [{ type: 'text', text: JSON.stringify({ ok: true, deleted: tag_gid }) }] }
+			const result = await deleteIdempotently('tag', tag_gid, () => resolveTagApi(api).deleteTag(tag_gid))
+			return { content: [{ type: 'text', text: JSON.stringify(result) }] }
 		},
 	)
 

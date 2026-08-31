@@ -242,4 +242,60 @@ describe('stories/cli', () => {
 		expect(injectedCreateStory).toHaveBeenCalledWith('task1', { text: 'Hi' })
 		expect(injectedLoadTask).not.toHaveBeenCalled()
 	})
+	it('story create pins the new comment with --pin', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const createStory = vi.fn().mockResolvedValue({ gid: 'story1', text: 'Pin me' })
+
+		await new Command()
+			.addCommand(storyCommand('story', storyDeps({ createStory })))
+			.parseAsync(['node', 'test', 'story', 'create', 'Pin me', '--task-gid', 'task1', '--pin'], { from: 'node' })
+
+		expect(createStory).toHaveBeenCalledWith('task1', { text: 'Pin me', is_pinned: true })
+	})
+
+	it('story update unpins a comment without replacing its text', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const updateStory = vi.fn().mockResolvedValue({ gid: 'story1' })
+
+		await new Command()
+			.addCommand(storyCommand('story', storyDeps({ updateStory })))
+			.parseAsync(['node', 'test', 'story', 'update', 'story1', '--unpin'], { from: 'node' })
+
+		expect(updateStory).toHaveBeenCalledWith('story1', { is_pinned: false })
+	})
+
+	it('story update rejects --pin together with --unpin before calling Asana', async () => {
+		const updateStory = vi.fn()
+
+		await expect(
+			new Command()
+				.exitOverride()
+				.addCommand(storyCommand('story', storyDeps({ updateStory })))
+				.parseAsync(['node', 'test', 'story', 'update', 'story1', '--pin', '--unpin'], { from: 'node' }),
+		).rejects.toThrow('--pin and --unpin are mutually exclusive')
+		expect(updateStory).not.toHaveBeenCalled()
+	})
+	it('story create attaches a sticker with --sticker', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const createStory = vi.fn().mockResolvedValue({ gid: 'story1' })
+
+		await new Command()
+			.addCommand(storyCommand('story', storyDeps({ createStory })))
+			.parseAsync(['node', 'test', 'story', 'create', 'Nice', '--task-gid', 'task1', '--sticker', 'trophy'], {
+				from: 'node',
+			})
+
+		expect(createStory).toHaveBeenCalledWith('task1', { text: 'Nice', sticker_name: 'trophy' })
+	})
+
+	it('story update sets a sticker without replacing the comment text', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const updateStory = vi.fn().mockResolvedValue({ gid: 'story1' })
+
+		await new Command()
+			.addCommand(storyCommand('story', storyDeps({ updateStory })))
+			.parseAsync(['node', 'test', 'story', 'update', 'story1', '--sticker', 'heart'], { from: 'node' })
+
+		expect(updateStory).toHaveBeenCalledWith('story1', { sticker_name: 'heart' })
+	})
 })

@@ -32,6 +32,7 @@ export function createAttachmentApi(gateway: AttachmentGateway) {
 					url: input.url,
 					name: input.name,
 					resourceSubtype: 'external',
+					...(input.connectToApp !== undefined && { connectToApp: input.connectToApp }),
 				})
 			}
 			return gateway.createAttachment({

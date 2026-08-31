@@ -213,4 +213,40 @@ describe('tags/cli', () => {
 
 		expect(injectedCreateTag).toHaveBeenCalledWith('ws1', 'Urgent', {})
 	})
+	it('tag create adds followers from a comma-separated --follower list', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const api = tagApiStub()
+		api.createTag.mockResolvedValue({ gid: 'tag1', name: 'Urgent' })
+
+		await new Command()
+			.addCommand(tagCommand(api))
+			.parseAsync(['node', 'test', 'tag', 'create', 'Urgent', '--workspace-gid', 'ws1', '--follower', 'u1,u2'], {
+				from: 'node',
+			})
+
+		expect(api.createTag).toHaveBeenCalledWith('ws1', 'Urgent', { followers: ['u1', 'u2'] })
+	})
+	it('tag update clears the colour with --clear-color', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const api = tagApiStub()
+		api.updateTag.mockResolvedValue({ gid: 'tag1', name: 'Urgent' })
+
+		await new Command()
+			.addCommand(tagCommand(api))
+			.parseAsync(['node', 'test', 'tag', 'update', 'tag1', '--clear-color'], { from: 'node' })
+
+		expect(api.updateTag).toHaveBeenCalledWith('tag1', { color: null })
+	})
+
+	it('tag update rejects --color together with --clear-color before calling Asana', async () => {
+		const api = tagApiStub()
+
+		await expect(
+			new Command()
+				.exitOverride()
+				.addCommand(tagCommand(api))
+				.parseAsync(['node', 'test', 'tag', 'update', 'tag1', '--color', 'red', '--clear-color'], { from: 'node' }),
+		).rejects.toThrow('--color and --clear-color are mutually exclusive')
+		expect(api.updateTag).not.toHaveBeenCalled()
+	})
 })

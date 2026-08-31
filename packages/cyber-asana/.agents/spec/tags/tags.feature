@@ -77,6 +77,21 @@ Feature: tags
     And the request body has no colour key
     And the request body has no notes key
 
+  Scenario: create sends the followers it was given
+    Given a workspace with GID "88431"
+    When the tag create entry point runs with the name "Tide Chart" in workspace "88431" and the follower GIDs "5501" and "5502"
+    Then the request body carries the followers "5501" and "5502"
+
+  Scenario: create sends no followers key when no follower is named
+    Given a workspace with GID "88431"
+    When the tag create command runs with the name "Tide Chart" and the workspace GID "88431" and no other flag
+    Then the request body has no followers key
+
+  Scenario: update has no followers option, because Asana takes followers only at creation
+    Given a tag with GID "77001"
+    When the tag update entry point's options are read
+    Then those options do not include a follower option
+
   Scenario: create falls back to the workspace environment variable
     Given the ASANA_WORKSPACE environment variable is set to "88431"
     When the tag create command runs with the name "Tide Chart" and no workspace flag
@@ -94,6 +109,18 @@ Feature: tags
     When the tag create command runs with no name argument
     Then the process exits with a non-zero status
     And stderr names the missing required argument
+
+  Scenario: update sends a null colour when the colour is cleared
+    Given a tag with GID "77001"
+    When the tag update entry point runs with the tag GID "77001" and the clear-colour flag
+    Then the request body carries a colour of null
+
+  Scenario: update with both a colour and a cleared colour is a usage error
+    Given a tag with GID "77001"
+    When the tag update entry point runs with the tag GID "77001", the colour "dark-teal" and the clear-colour flag
+    Then the process exits with a non-zero status
+    And stderr states that colour and clear-colour are mutually exclusive
+    And no request reaches Asana
 
   Scenario: update sends only the field whose flag was given
     Given a tag named "Rope Ladder" with GID "990212" whose record carries the notes "spare line locker"
@@ -135,6 +162,13 @@ Feature: tags
     When the MCP tool "asana_tag_delete" is called with the tag GID "990213"
     Then the request reaching Asana deletes tag "990213"
     And the returned body names "990213" as the deleted tag
+
+  Scenario: asana_tag_delete succeeds when the tag is already gone
+    Given the registered MCP delete tool
+    And Asana answers the delete for tag GID "77001" with a not-found status
+    When that tool runs with the tag GID "77001"
+    Then it answers with a success body naming the tag GID "77001"
+    And that body reports the tag as already absent
 
   # ── tag task list, tag tasks, tag task add, tag task remove and their MCP tools ──
 

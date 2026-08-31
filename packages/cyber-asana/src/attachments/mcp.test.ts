@@ -137,4 +137,22 @@ describe('attachments/mcp', () => {
 
 		expect(injectedGetAttachment).toHaveBeenCalledWith('att1')
 	})
+	it('asana_attachment_create forwards connect_to_app', async () => {
+		createAttachmentMock.mockResolvedValue({ gid: 'att1', name: 'Design doc' })
+		const server = createServer()
+		registerAttachmentTools(server as any)
+
+		await server.handlers.get('asana_attachment_create')?.({
+			parent_gid: 'task1',
+			url: 'https://example.com/design',
+			connect_to_app: true,
+		})
+
+		expect(createAttachmentMock).toHaveBeenCalledWith('task1', {
+			file: undefined,
+			url: 'https://example.com/design',
+			name: undefined,
+			connectToApp: true,
+		})
+	})
 })

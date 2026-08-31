@@ -51,7 +51,12 @@ export function createStoryApi(gateway: StoryGateway) {
 		async createStory(taskGid: string, fields: StoryCreateFields) {
 			// Local shape checks run outside the try: their messages mention html_text, and the
 			// catch below would otherwise attribute a never-sent payload to Asana (#99).
-			const payload = buildStoryCreateFields({ text: fields.text, htmlText: fields.html_text })
+			const payload = buildStoryCreateFields({
+				text: fields.text,
+				htmlText: fields.html_text,
+				isPinned: fields.is_pinned,
+				stickerName: fields.sticker_name,
+			})
 			try {
 				return await gateway.createStory(taskGid, payload)
 			} catch (error) {
@@ -64,7 +69,12 @@ export function createStoryApi(gateway: StoryGateway) {
 		async updateStory(storyGid: string, fields: StoryUpdateFields) {
 			// Same reasoning as createStory: validate outside the try so a locally
 			// rejected payload is never attributed to Asana.
-			const payload = buildStoryUpdateFields({ text: fields.text, htmlText: fields.html_text })
+			const payload = buildStoryUpdateFields({
+				text: fields.text,
+				htmlText: fields.html_text,
+				isPinned: fields.is_pinned,
+				stickerName: fields.sticker_name,
+			})
 			try {
 				return await gateway.updateStory(storyGid, payload)
 			} catch (error) {

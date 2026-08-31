@@ -35,8 +35,12 @@ recolour, delete), and the link between a tag and a task.
   [workspaces](../workspaces/README.md).
 - **Association** — the link between one tag and one task. Adding or removing it changes neither
   record's own fields; it changes what connects them.
-- **Colour** — an optional presentation field on a tag. Asana leaves it unset on plenty of tags, so
-  this node treats a missing colour as ordinary rather than exceptional.
+- **Follower** — a user who gets notified about a tag. Asana takes `followers` when a tag is
+  created and not when one is updated, so the create surface carries the option and the update
+  surface does not.
+- **Colour** — an optional, *nullable* presentation field on a tag. Asana leaves it unset on plenty
+  of tags, so this node treats a missing colour as ordinary rather than exceptional — and because
+  the field is nullable, taking a colour off is a distinct request from leaving it alone.
 
 **Non-goals.** This node does not offer a **global tag listing**. Asana's API can return tags
 without a workspace, and that call is deliberately not wrapped: a workspace-less list of labels is
@@ -74,12 +78,12 @@ tasks in both directions, over the two surfaces (CLI and MCP) that share one `ap
 | `asana_tag_list` (MCP) | agent needs the same listing over MCP | `workspace_gid` (required) plus the shared pagination params | the same result, JSON-serialized |
 | `tag get <gid>` (CLI) | caller holds a tag GID and wants that tag's record | the tag GID, positionally | the unwrapped tag record, rendered as Name/ID/Color fields in text mode |
 | `asana_tag_get` (MCP) | same, over MCP | `tag_gid` | the same record, JSON-serialized |
-| `tag create <name>` (CLI) | caller wants a new label in a workspace | the tag name positionally, a workspace GID by flag or from `ASANA_WORKSPACE`, optional `--color` and `--notes` | the created tag record, rendered as Name/ID/Color fields |
-| `asana_tag_create` (MCP) | same, over MCP | `workspace_gid` and `name` required, `color` and `notes` optional | the created tag record, JSON-serialized |
-| `tag update <gid>` (CLI) | caller wants to rename, recolour or re-note an existing tag | the tag GID positionally, plus any of `--name`, `--color`, `--notes` | the updated tag record, rendered as Name/ID/Color fields |
-| `asana_tag_update` (MCP) | same, over MCP | `tag_gid` required, `name` / `color` / `notes` optional | the updated tag record, JSON-serialized |
+| `tag create <name>` (CLI) | caller wants a new label in a workspace | the tag name positionally, a workspace GID by flag or from `ASANA_WORKSPACE`, optional `--color`, `--notes` and `--follower <gid[,gid...]>` | the created tag record, rendered as Name/ID/Color fields |
+| `asana_tag_create` (MCP) | same, over MCP | `workspace_gid` and `name` required, `color`, `notes` and `follower_gids` optional | the created tag record, JSON-serialized |
+| `tag update <gid>` (CLI) | caller wants to rename, recolour or re-note an existing tag | the tag GID positionally, plus any of `--name`, `--color`, `--clear-color`, `--notes` | the updated tag record, rendered as Name/ID/Color fields |
+| `asana_tag_update` (MCP) | same, over MCP | `tag_gid` required, `name` / `color` / `clear_color` / `notes` optional | the updated tag record, JSON-serialized |
 | `tag delete <gid>` (CLI) | caller wants a tag gone from the workspace | the tag GID, positionally | a plain confirmation line naming the deleted GID |
-| `asana_tag_delete` (MCP) | same, over MCP | `tag_gid` | a confirmation body naming the deleted GID |
+| `asana_tag_delete` (MCP) | same, over MCP | `tag_gid` | the confirmation record naming the deleted GID and whether it was already absent, JSON-serialized |
 | `tag task list <task-gid>` (CLI) | caller holds a task and wants its labels | the task GID positionally, plus pagination options | the task's tags, rendered as a Name/ID/Color table |
 | `asana_tag_list_for_task` (MCP) | same, over MCP | `task_gid` plus the shared pagination params | the same result, JSON-serialized |
 | `tag tasks <tag-gid>` (CLI) | caller holds a tag and wants everything carrying it | the tag GID positionally, plus pagination options | the tag's tasks, rendered as a Name/ID/Done/Due table |
@@ -118,19 +122,25 @@ graph TD
     CE -->|no| CU[usage error — Workspace GID is required]
     CE -->|yes| CB
     CF -->|yes| CB[build the request body]
-    CB --> CO{colour or notes supplied?}
+    CB --> CO{colour, notes or followers supplied?}
     CO -->|supplied| CS[body carries name plus those fields]
     CO -->|absent| CN[body carries the name only —<br/>absent flags are not sent as empty values]
 
-    U[update invoked with a tag GID] --> UO[collect only the field flags actually given]
+    U[update invoked with a tag GID] --> UC{colour set and cleared together?}
+    UC -->|yes| UE[usage error — nothing is sent to Asana]
+    UC -->|no| UO[collect only the field flags actually given,<br/>a cleared colour becoming an explicit null]
     UO --> UN{any field given?}
     UN -->|yes| UP[send that change set]
     UN -->|no| UZ[send an empty change set —<br/>no at-least-one-field guard]
 
     D[delete invoked with a tag GID] --> DD[delete the tag]
-    DD --> DC{which surface?}
+    DD --> DA{Asana says it is already gone?}
+    DA -->|yes| DI[treat it as done, flagging already_absent]
+    DA -->|no| DK[deleted outright]
+    DI --> DC{which surface?}
+    DK --> DC
     DC -->|CLI| DL[print a confirmation line —<br/>written directly, not through the format layer]
-    DC -->|MCP| DJ[return a confirmation body naming the deleted GID]
+    DC -->|MCP| DJ[return the same confirmation record, JSON-serialized]
   end
 
   subgraph association["tag task list / tag tasks / tag task add / tag task remove"]
@@ -155,6 +165,15 @@ The load-bearing edges:
 - **Absent optional fields are absent from the request.** `create` and `update` build their bodies
   from the flags actually given. A flag the caller did not type is not sent as an empty value, so
   `tag update <gid> --color blue` recolours without blanking the notes.
+- **Followers are a create-only field, and the surfaces say so.** Asana's tag create request takes
+  `followers`; its update request does not. Rather than accept the option on both and let Asana
+  silently drop it, `create` carries it and `update` does not. The CLI takes the repeated-GID form
+  the rest of the package uses (`--follower <gid[,gid...]>`); the MCP tool takes `follower_gids` as
+  an array or the same comma-separated string.
+- **Clearing a colour is a distinct request from omitting it.** An absent `--color` sends no colour
+  key and leaves the tag's colour alone; `--clear-color` sends `color: null` and takes it off. That
+  is why the nullable field needs its own flag rather than an empty-string convention — and why
+  naming both is caught locally.
 - **`update` has no at-least-one-field guard.** Invoked with no field flags at all, it still calls
   Asana with an empty change set. That is recorded here as the contract, not as an accident to be
   worked around by callers.
@@ -164,6 +183,11 @@ The load-bearing edges:
   `data` block are written, everything else is left alone, and the complete record comes back. A
   guard here would reject a request Asana answers correctly.
 
+- **`delete` is idempotent on both surfaces.** Deleting a tag that is already gone is the state the
+  caller asked for, so a 404 from Asana is reported as a success carrying `already_absent: true`
+  rather than as a failure — the shared contract in [axi](../axi/README.md), reached through the
+  same `deleteIdempotently` helper every other delete in the package uses. Both surfaces answer
+  from the one record, so what the CLI prints and what the MCP tool returns cannot drift apart.
 - **`delete` is the one entry point that bypasses the shared output layer.** Asana returns nothing
   useful from a delete, so the CLI writes its own confirmation line naming the GID. The consequence
   is real and is frozen deliberately: the structured-format flags do not change what `delete` prints.
@@ -195,16 +219,22 @@ The load-bearing edges:
 | Edge | Path (Given) | Scenario |
 |---|---|---|
 | name plus optional fields → create with all of them | a workspace, with a colour and notes supplied alongside the name | `create sends the name, colour and notes it was given` |
+| followers given → carried in the body | a workspace, with two follower GIDs supplied alongside the name | `create sends the followers it was given` |
+| followers absent → no followers key | a workspace and a name, with no follower flag typed | `create sends no followers key when no follower is named` |
+| followers are create-only (barred) | the update entry point's option set | `update has no followers option, because Asana takes followers only at creation` |
 | optional fields absent → body carries the name only | a workspace and a name, with neither optional flag typed | `create sends only the name when no colour or notes flag is typed` |
 | no flag → environment fallback | `ASANA_WORKSPACE` set, no workspace flag passed | `create falls back to the workspace environment variable` |
 | no flag, no environment → the write never leaves | a shell whose only Asana variable is the token, with a tag name already typed | `create without a workspace GID anywhere is a usage error` |
 | create with no name argument → usage error | the create command invoked with no positional name | `create without a tag name is a usage error` |
+| colour cleared → explicit null in the body | a tag GID and the clear-colour flag | `update sends a null colour when the colour is cleared` |
+| colour set and cleared → usage error | a tag GID with both the colour flag and the clear-colour flag | `update with both a colour and a cleared colour is a usage error` |
 | some field flags given → send exactly those | a tag GID and a single field flag | `update sends only the field whose flag was given` |
 | no field flags given → empty change set, no guard | a tag GID and no field flags | `update with no field flags still calls Asana with an empty change set` |
 | tag GID absent → usage error | no positional argument on the update command | `update without a tag GID is a usage error` |
 | CLI delete confirms outside the format layer | a tag GID and the structured JSON flag | `delete prints the same confirmation line whatever output format is asked for` |
 | tag GID absent → usage error | no positional argument on the delete command | `delete without a tag GID is a usage error` |
 | MCP delete answers with a confirmation body | the registered MCP delete tool and a tag GID | `asana_tag_delete answers with a body naming the deleted tag GID` |
+| delete of a tag already gone → success | the registered MCP delete tool and a tag Asana no longer has | `asana_tag_delete succeeds when the tag is already gone` |
 
 ### `tag task list`, `tag tasks`, `tag task add`, `tag task remove` and their MCP tools
 
@@ -230,4 +260,6 @@ The load-bearing edges:
 
 - Asana API — [Tags](https://developers.asana.com/reference/tags) backs two claims: that a tag
   belongs to a workspace and attaches only to tasks, and that a workspace-less tag listing plus a
-  workspace-in-the-body create are the remaining tag operations this node leaves unwrapped.
+  workspace-in-the-body create are the remaining tag operations this node leaves unwrapped. It also
+  backs the create/update asymmetry: `followers` appears on the tag create request body and not on
+  the update one, and the tag `color` field is declared nullable.

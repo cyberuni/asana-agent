@@ -77,13 +77,42 @@ describe('stories/write-options', () => {
 		)
 	})
 
-	it('buildStoryUpdateFields requires either text or html_text', () => {
-		expect(() => buildStoryUpdateFields({})).toThrow('Provide either text or --html-text')
-	})
-
 	it('buildStoryUpdateFields rejects malformed html_text', () => {
 		expect(() => buildStoryUpdateFields({ htmlText: '<body><strong>Rich</body>' })).toThrow(
 			'html_text has unbalanced closing tags',
+		)
+	})
+
+	it('buildStoryCreateFields carries is_pinned alongside the comment body', () => {
+		expect(buildStoryCreateFields({ text: 'Pin me', isPinned: true })).toEqual({ text: 'Pin me', is_pinned: true })
+	})
+
+	it('buildStoryUpdateFields pins without replacing the comment body', () => {
+		expect(buildStoryUpdateFields({ isPinned: true })).toEqual({ is_pinned: true })
+	})
+
+	it('buildStoryUpdateFields unpins without replacing the comment body', () => {
+		expect(buildStoryUpdateFields({ isPinned: false })).toEqual({ is_pinned: false })
+	})
+
+	it('buildStoryUpdateFields names every option when nothing was provided', () => {
+		expect(() => buildStoryUpdateFields({})).toThrow('Provide text, --html-text, --pin, --unpin, or --sticker')
+	})
+
+	it('buildStoryCreateFields carries sticker_name alongside the comment body', () => {
+		expect(buildStoryCreateFields({ text: 'Nice', stickerName: 'trophy' })).toEqual({
+			text: 'Nice',
+			sticker_name: 'trophy',
+		})
+	})
+
+	it('buildStoryUpdateFields sets a sticker without replacing the comment body', () => {
+		expect(buildStoryUpdateFields({ stickerName: 'heart' })).toEqual({ sticker_name: 'heart' })
+	})
+
+	it('buildStoryCreateFields rejects a sticker Asana does not define, listing the ones it does', () => {
+		expect(() => buildStoryCreateFields({ text: 'Nice', stickerName: 'rocket' })).toThrow(
+			'sticker_name must be one of green_checkmark, people_dancing',
 		)
 	})
 })

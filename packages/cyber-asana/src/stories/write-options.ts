@@ -1,7 +1,25 @@
 export type StoryCreateFields = {
 	text?: string
 	html_text?: string
+	is_pinned?: boolean
+	sticker_name?: string
 }
+
+/** Asana's fixed sticker vocabulary; anything else is rejected before a request is sent. */
+export const STICKER_NAMES = [
+	'green_checkmark',
+	'people_dancing',
+	'dancing_unicorn',
+	'heart',
+	'party_popper',
+	'people_waving_flags',
+	'splashing_narwhal',
+	'trophy',
+	'yeti_riding_unicorn',
+	'celebrating_people',
+	'determined_climbers',
+	'phoenix_spreading_love',
+] as const
 
 /** An edit replaces the comment body, so it carries the same fields a create does. */
 export type StoryUpdateFields = StoryCreateFields
@@ -9,6 +27,8 @@ export type StoryUpdateFields = StoryCreateFields
 type BuildStoryCreateInput = {
 	text?: string
 	htmlText?: string
+	isPinned?: boolean
+	stickerName?: string
 }
 
 function validateHtmlText(htmlText: string) {
@@ -40,20 +60,47 @@ function validateHtmlText(htmlText: string) {
 	}
 }
 
-export function buildStoryCreateFields(input: BuildStoryCreateInput): StoryCreateFields {
+/** The comment body, or undefined when the caller left both text forms out. */
+function buildStoryBody(input: BuildStoryCreateInput): StoryCreateFields | undefined {
 	if (input.text !== undefined && input.htmlText !== undefined) {
 		throw new Error('--text and --html-text are mutually exclusive')
-	}
-	if (input.text === undefined && input.htmlText === undefined) {
-		throw new Error('Provide either text or --html-text')
 	}
 	if (input.htmlText !== undefined) {
 		validateHtmlText(input.htmlText)
 		return { html_text: input.htmlText }
 	}
-	return { text: input.text }
+	if (input.text !== undefined) return { text: input.text }
+	return undefined
+}
+
+function validateStickerName(stickerName: string) {
+	if (!(STICKER_NAMES as readonly string[]).includes(stickerName)) {
+		throw new Error(`sticker_name must be one of ${STICKER_NAMES.join(', ')}`)
+	}
+}
+
+function withDecorations(body: StoryCreateFields | undefined, input: BuildStoryCreateInput): StoryCreateFields {
+	if (input.stickerName !== undefined) validateStickerName(input.stickerName)
+	return {
+		...body,
+		...(input.isPinned !== undefined && { is_pinned: input.isPinned }),
+		...(input.stickerName !== undefined && { sticker_name: input.stickerName }),
+	}
+}
+
+export function buildStoryCreateFields(input: BuildStoryCreateInput): StoryCreateFields {
+	const body = buildStoryBody(input)
+	// Asana only creates comment stories, and a comment without a body is not one.
+	if (!body) throw new Error('Provide either text or --html-text')
+	return withDecorations(body, input)
 }
 
 export function buildStoryUpdateFields(input: BuildStoryCreateInput): StoryUpdateFields {
-	return buildStoryCreateFields(input)
+	const body = buildStoryBody(input)
+	// Pinning and stickering are edits in their own right, so an update needs a
+	// body only when nothing else was asked for.
+	if (!body && input.isPinned === undefined && input.stickerName === undefined) {
+		throw new Error('Provide text, --html-text, --pin, --unpin, or --sticker')
+	}
+	return withDecorations(body, input)
 }
