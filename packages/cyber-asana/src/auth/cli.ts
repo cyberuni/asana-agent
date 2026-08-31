@@ -51,7 +51,10 @@ export type AuthCommandDeps = {
 	configDir: () => string
 	readSettings: (dir: string) => Promise<AppSettings>
 	/** The app registration `auth login` would authorize with — undefined when none is configured. */
-	readAppCredentials: (input: { settings: AppSettings }) => AppCredentials | undefined
+	readAppCredentials: (input: {
+		settings: AppSettings
+		overrides?: { clientId?: string; clientSecret?: string }
+	}) => AppCredentials | undefined
 	login: (params: LoginParams) => Promise<Tokens>
 	readCredentials: (dir: string) => Promise<Tokens | undefined>
 	writeCredentials: (dir: string, tokens: Tokens) => Promise<void>
@@ -67,7 +70,7 @@ function defaultDeps(): AuthCommandDeps {
 		readStoredCredential: async () => (await ensureStoredCredential(defaultAmbientDeps())).tokens,
 		configDir: () => configDir(),
 		readSettings,
-		readAppCredentials: ({ settings }) => resolveAppCredentials({ settings }),
+		readAppCredentials: ({ settings, overrides }) => resolveAppCredentials({ settings, overrides }),
 		login: (params) => performLogin(params, defaultLoginDeps()),
 		readCredentials,
 		writeCredentials,
@@ -128,60 +131,60 @@ export function authCommand(overrides: Partial<AuthCommandDeps> = {}) {
 		].join('\n'),
 	)
 
-	cmd
-		.command('status')
-		.description('Show which credential this CLI will use, without calling the Asana API')
-		.action(async () => {
-			const stored = await deps.readStoredCredential()
-			const credential = deps.readCredential({
-				stored: stored
-					? { accessToken: stored.accessToken, expiresAt: stored.expiresAt, user: stored.user }
-					: undefined,
-			})
-			const expires = credential.expiresAt ? new Date(credential.expiresAt).toISOString() : null
-			// The registration resolves from its own chain, so a working token says
-			// nothing about which app `auth login` would authorize with next.
-			const app = deps.readAppCredentials({ settings: await deps.readSettings(deps.configDir()) })
-			const unexpanded = credential.unexpanded ?? []
-			const appFields = {
-				App: app ? `${maskToken(app.clientId)} (${app.source})` : null,
-				'App ignored': app && app.shadowed.length > 0 ? app.shadowed.join(', ') : null,
-				// Set-but-unexpanded is the one state the user cannot diagnose from
-				// the outside: the variable looks configured everywhere they check.
-				Unexpanded: unexpanded.length > 0 ? `${unexpanded.join(', ')} (${UNEXPANDED_HINT})` : null,
-			}
-			output(
-				{
-					authenticated: credential.authenticated,
-					source: credential.source ?? null,
-					masked_token: credential.token ? maskToken(credential.token) : null,
-					shadowed: credential.shadowed,
-					unexpanded,
-					expires_at: expires,
-					user: credential.user ?? null,
-					app: app ? { client_id_masked: maskToken(app.clientId), source: app.source, shadowed: app.shadowed } : null,
-				},
-				() => {
-					if (!credential.authenticated) {
-						printFields({ Status: 'not authenticated', ...appFields })
-						printNextSteps([
-							'export ASANA_ACCESS_TOKEN=<pat> — https://app.asana.com/0/my-apps',
-							'cyber-asana auth login — authorize through OAuth',
-						])
-						return
-					}
-					printFields({
-						Status: 'authenticated',
-						Source: credential.source,
-						Account: describeUser(credential.user),
-						Token: credential.token ? maskToken(credential.token) : null,
-						Expires: expires,
-						Ignored: credential.shadowed.length > 0 ? credential.shadowed.join(', ') : null,
-						...appFields,
-					})
-				},
-			)
+	addAppOptions(
+		cmd.command('status').description('Show which credential this CLI will use, without calling the Asana API'),
+	).action(async (opts: AppOptions) => {
+		const stored = await deps.readStoredCredential()
+		const credential = deps.readCredential({
+			stored: stored ? { accessToken: stored.accessToken, expiresAt: stored.expiresAt, user: stored.user } : undefined,
 		})
+		const expires = credential.expiresAt ? new Date(credential.expiresAt).toISOString() : null
+		// The registration resolves from its own chain, so a working token says
+		// nothing about which app `auth login` would authorize with next.
+		const app = deps.readAppCredentials({
+			settings: await deps.readSettings(deps.configDir()),
+			overrides: opts,
+		})
+		const unexpanded = credential.unexpanded ?? []
+		const appFields = {
+			App: app ? `${maskToken(app.clientId)} (${app.source})` : null,
+			'App ignored': app && app.shadowed.length > 0 ? app.shadowed.join(', ') : null,
+			// Set-but-unexpanded is the one state the user cannot diagnose from
+			// the outside: the variable looks configured everywhere they check.
+			Unexpanded: unexpanded.length > 0 ? `${unexpanded.join(', ')} (${UNEXPANDED_HINT})` : null,
+		}
+		output(
+			{
+				authenticated: credential.authenticated,
+				source: credential.source ?? null,
+				masked_token: credential.token ? maskToken(credential.token) : null,
+				shadowed: credential.shadowed,
+				unexpanded,
+				expires_at: expires,
+				user: credential.user ?? null,
+				app: app ? { client_id_masked: maskToken(app.clientId), source: app.source, shadowed: app.shadowed } : null,
+			},
+			() => {
+				if (!credential.authenticated) {
+					printFields({ Status: 'not authenticated', ...appFields })
+					printNextSteps([
+						'export ASANA_ACCESS_TOKEN=<pat> — https://app.asana.com/0/my-apps',
+						'cyber-asana auth login — authorize through OAuth',
+					])
+					return
+				}
+				printFields({
+					Status: 'authenticated',
+					Source: credential.source,
+					Account: describeUser(credential.user),
+					Token: credential.token ? maskToken(credential.token) : null,
+					Expires: expires,
+					Ignored: credential.shadowed.length > 0 ? credential.shadowed.join(', ') : null,
+					...appFields,
+				})
+			},
+		)
+	})
 
 	addAppOptions(cmd.command('login').description('Authorize through OAuth in the browser and store the credentials'))
 		.option('--no-store', 'Print the token instead of saving it')
