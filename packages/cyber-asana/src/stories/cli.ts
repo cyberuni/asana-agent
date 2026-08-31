@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+import { Command, InvalidArgumentError } from 'commander'
 import {
 	addGidOption,
 	addPaginationOptions,
@@ -35,6 +35,15 @@ function fmtStory(s: Story) {
 	})
 }
 
+// --pin and --unpin collapse to one boolean, so naming both is a usage error
+// worth catching here — before any request is sent.
+function pinnedFromCli(opts: { pin?: boolean; unpin?: boolean }) {
+	if (opts.pin && opts.unpin) throw new InvalidArgumentError('--pin and --unpin are mutually exclusive')
+	if (opts.pin) return true
+	if (opts.unpin) return false
+	return undefined
+}
+
 function resolveStoryApi(api?: StoryApi | (() => StoryApi)): StoryApi {
 	if (typeof api === 'function') return api()
 	return api ?? { listStories, createStory, getStory, updateStory, deleteStory, getTaskTemplateData }
@@ -58,6 +67,7 @@ export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) 
 			'  cyber-asana story create "<p>Rich</p>" --task-gid <gid> --html-text "<body><p>Rich</p></body>"',
 			'  cyber-asana story get <gid>',
 			'  cyber-asana story update <gid> "Corrected text"',
+			'  cyber-asana story update <gid> --pin',
 			'  cyber-asana story delete <gid>',
 			'',
 			'Only comment stories you authored can be edited or deleted; system stories are immutable.',
@@ -100,6 +110,7 @@ export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) 
 			.command('create [text]')
 			.description('Add a comment to a task')
 			.option('--html-text <html>', 'Comment rich text as Asana HTML')
+			.option('--pin', 'Pin the new comment on the task')
 			.option(
 				'--template',
 				'Treat text as a template; interpolates {task.name}, {task.assignee}, {task.due_on}, {task.notes}',
@@ -109,15 +120,17 @@ export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) 
 	).action(
 		async (
 			text: string | undefined,
-			opts: { task?: string; taskGid?: string; template?: boolean; htmlText?: string },
+			opts: { task?: string; taskGid?: string; template?: boolean; htmlText?: string; pin?: boolean },
 		) => {
 			const taskGid = requiredGid(opts, 'task', 'Task GID')
 			const task = opts.template ? await resolveStoryApi(api).getTaskTemplateData(taskGid) : undefined
+			const isPinned = pinnedFromCli(opts)
 			const data = await resolveStoryApi(api).createStory(taskGid, {
 				...(text !== undefined && { text: task ? interpolateTemplate(text, task) : text }),
 				...(opts.htmlText !== undefined && {
 					html_text: task ? interpolateTemplate(opts.htmlText, task) : opts.htmlText,
 				}),
+				...(isPinned !== undefined && { is_pinned: isPinned }),
 			})
 			output(data, () => fmtStory(data))
 		},
@@ -135,13 +148,19 @@ export function storyCommand(name = 'story', api?: StoryApi | (() => StoryApi)) 
 		.command('update <gid> [text]')
 		.description('Edit a comment you authored')
 		.option('--html-text <html>', 'Replacement rich text as Asana HTML')
-		.action(async (gid: string, text: string | undefined, opts: { htmlText?: string }) => {
-			const data = await resolveStoryApi(api).updateStory(gid, {
-				...(text !== undefined && { text }),
-				...(opts.htmlText !== undefined && { html_text: opts.htmlText }),
-			})
-			output(data, () => fmtStory(data))
-		})
+		.option('--pin', 'Pin the comment on its task')
+		.option('--unpin', 'Unpin the comment from its task')
+		.action(
+			async (gid: string, text: string | undefined, opts: { htmlText?: string; pin?: boolean; unpin?: boolean }) => {
+				const isPinned = pinnedFromCli(opts)
+				const data = await resolveStoryApi(api).updateStory(gid, {
+					...(text !== undefined && { text }),
+					...(opts.htmlText !== undefined && { html_text: opts.htmlText }),
+					...(isPinned !== undefined && { is_pinned: isPinned }),
+				})
+				output(data, () => fmtStory(data))
+			},
+		)
 
 	cmd
 		.command('delete <gid>')

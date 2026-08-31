@@ -491,6 +491,7 @@ Notable parameters:
 - `asana_project_counts` — `opt_fields` defaults to `num_tasks,num_incomplete_tasks,num_completed_tasks`
 - `asana_project_template_instantiate` — `name`, `team_gid`, `public`, `requested_dates` (`[{gid, value}]` from the template's `requested_dates`), `wait` (default `true`), `timeout_seconds` (default 60). Returns `{ job, project_gid }`; a failed job or an expired wait is an error, never a success with a null `project_gid`
 - `asana_story_create` / `asana_comment_create` — `template: true` interpolates `{task.name}`, `{task.assignee}`, `{task.due_on}`, `{task.notes}`
+- `asana_story_create` / `asana_story_update` (and the `comment` aliases) — `is_pinned` pins the comment to the top of its task
 - `asana_story_update` / `asana_story_delete` (and the `comment` aliases) — `story_gid`; only comment stories you authored can be changed, and a refusal comes back as a `403` with a hint saying so
 - `asana_portfolio_list` — `owner_gid` filters the listing to the portfolios one user owns. Asana honors it for service-account tokens only; a regular PAT can list just its own portfolios either way
 - `asana_membership_list` — `parent_gid` (project, portfolio, goal, custom type, or custom field), `member_gid` (user or team), `resource_subtype`; pass `resource_subtype` when `parent_gid` is omitted
@@ -786,8 +787,13 @@ Read, correct, or withdraw one comment by its story GID:
 cyber-asana comment get <story-gid>
 cyber-asana comment update <story-gid> "Corrected text"
 cyber-asana comment update <story-gid> --html-text "<body><strong>Corrected</strong></body>"
+cyber-asana comment update <story-gid> --pin
 cyber-asana comment delete <story-gid>
 ```
+
+`comment create --pin` posts a comment already pinned to the top of its task, and
+`comment update --pin` / `--unpin` toggle Asana's `is_pinned` on an existing one without
+replacing its text. Naming both is a usage error, caught before any request is sent.
 
 Asana only permits editing and deleting comment stories you authored; system stories
 (assignee changed, due date set) are immutable, and the refusal comes back as a `403` whose

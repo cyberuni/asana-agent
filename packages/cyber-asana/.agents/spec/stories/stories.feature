@@ -152,6 +152,41 @@ Feature: stories
     And stdout contains "2026-09-01T09:30:00.000Z"
     And stdout contains "Gravel arrives Tuesday"
 
+  Scenario: create carries is_pinned when the pin flag is given
+    Given a task with GID "8801"
+    When the story create entry point runs with the task GID "8801", the text "Gravel arrives Tuesday" and the pin flag
+    Then the request reaching the Asana stories endpoint carries the text field "Gravel arrives Tuesday"
+    And that request carries the is_pinned field true
+
+  # ── story update / asana_story_update ──
+
+  Scenario: update pins a comment without replacing its text
+    Given a comment with GID "5501"
+    When the story update entry point runs with the story GID "5501" and the pin flag as its only input
+    Then the request reaching the Asana story endpoint carries the is_pinned field true
+    And that request carries no text field
+    And that request carries no html_text field
+
+  Scenario: update unpins a comment without replacing its text
+    Given a comment with GID "5501"
+    When the story update entry point runs with the story GID "5501" and the unpin flag as its only input
+    Then the request reaching the Asana story endpoint carries the is_pinned field false
+    And that request carries no text field
+
+  Scenario: update with both pin and unpin is a usage error
+    Given a comment with GID "5501"
+    When the story update entry point runs with the story GID "5501", the pin flag and the unpin flag
+    Then the process exits with a non-zero status
+    And stderr states that pin and unpin are mutually exclusive
+    And no request reaches the Asana story endpoint
+
+  Scenario: update with nothing to change is a usage error
+    Given a comment with GID "5501"
+    When the story update entry point runs with the story GID "5501" as its only input
+    Then the process exits with a non-zero status
+    And stderr states that text, html-text, pin or unpin must be provided
+    And no request reaches the Asana story endpoint
+
   # ── comment aliases ──
 
   Scenario: the comment command group exposes the same list and create subcommands as story

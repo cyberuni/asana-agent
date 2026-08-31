@@ -20,9 +20,9 @@ cyber-asana story create "Great work!" --task <gid>
 | Command | Arguments | Options |
 | --- | --- | --- |
 | `list` | — | `--task-gid <gid>` / `--task <gid>`, [pagination](/cyber-asana/cli/#pagination) |
-| `create` | `[text]` | `--task-gid <gid>` / `--task <gid>`, `--html-text <html>`, `--template` |
+| `create` | `[text]` | `--task-gid <gid>` / `--task <gid>`, `--html-text <html>`, `--pin`, `--template` |
 | `get` | `<gid>` | — |
-| `update` | `<gid> [text]` | `--html-text <html>` |
+| `update` | `<gid> [text]` | `--html-text <html>`, `--pin`, `--unpin` |
 | `delete` | `<gid>` | — |
 
 Comment bodies are truncated in list output with a size hint; pass `--full` for the
@@ -36,8 +36,15 @@ complete text.
 cyber-asana comment get <story-gid>
 cyber-asana comment update <story-gid> "Corrected text"
 cyber-asana comment update <story-gid> --html-text '<body><strong>Corrected</strong></body>'
+cyber-asana comment update <story-gid> --pin
+cyber-asana comment update <story-gid> --unpin
 cyber-asana comment delete <story-gid>
 ```
+
+`--pin` and `--unpin` set Asana's `is_pinned`, which keeps a comment at the top of its
+task. They are mutually exclusive, and `update` accepts either on its own — pinning is an
+edit in its own right, so no replacement text is needed. `create --pin` posts a comment
+already pinned.
 
 Asana only permits editing and deleting comment stories you authored — system stories
 (assignee changed, due date set) are immutable, and the refusal comes back as a `403` whose

@@ -77,13 +77,25 @@ describe('stories/write-options', () => {
 		)
 	})
 
-	it('buildStoryUpdateFields requires either text or html_text', () => {
-		expect(() => buildStoryUpdateFields({})).toThrow('Provide either text or --html-text')
-	})
-
 	it('buildStoryUpdateFields rejects malformed html_text', () => {
 		expect(() => buildStoryUpdateFields({ htmlText: '<body><strong>Rich</body>' })).toThrow(
 			'html_text has unbalanced closing tags',
 		)
+	})
+
+	it('buildStoryCreateFields carries is_pinned alongside the comment body', () => {
+		expect(buildStoryCreateFields({ text: 'Pin me', isPinned: true })).toEqual({ text: 'Pin me', is_pinned: true })
+	})
+
+	it('buildStoryUpdateFields pins without replacing the comment body', () => {
+		expect(buildStoryUpdateFields({ isPinned: true })).toEqual({ is_pinned: true })
+	})
+
+	it('buildStoryUpdateFields unpins without replacing the comment body', () => {
+		expect(buildStoryUpdateFields({ isPinned: false })).toEqual({ is_pinned: false })
+	})
+
+	it('buildStoryUpdateFields names the pin options when nothing was provided', () => {
+		expect(() => buildStoryUpdateFields({})).toThrow('Provide text, --html-text, --pin, or --unpin')
 	})
 })

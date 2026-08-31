@@ -57,12 +57,13 @@ function registerStoryToolsWithPrefix(
 				.describe(
 					'Comment rich text as Asana HTML. When template=true, supports {task.name}, {task.assignee}, {task.due_on}, {task.notes}',
 				),
+			is_pinned: z.boolean().optional().describe('Pin the new comment on the task'),
 			template: z
 				.boolean()
 				.optional()
 				.describe('Treat text as a template and interpolate task variables before posting'),
 		},
-		async ({ task_gid, text, html_text, template }) => {
+		async ({ task_gid, text, html_text, is_pinned, template }) => {
 			const task = template ? await resolveStoryApi(api).getTaskTemplateData(task_gid) : undefined
 			return {
 				content: [
@@ -74,6 +75,7 @@ function registerStoryToolsWithPrefix(
 								...(html_text !== undefined && {
 									html_text: task ? interpolateTemplate(html_text, task) : html_text,
 								}),
+								...(is_pinned !== undefined && { is_pinned }),
 							}),
 						),
 					},
@@ -98,8 +100,9 @@ function registerStoryToolsWithPrefix(
 			story_gid: z.string().describe('Story GID'),
 			text: z.string().optional().describe('Replacement comment text'),
 			html_text: z.string().optional().describe('Replacement comment rich text as Asana HTML'),
+			is_pinned: z.boolean().optional().describe('Pin (true) or unpin (false) the comment on its task'),
 		},
-		async ({ story_gid, text, html_text }) => ({
+		async ({ story_gid, text, html_text, is_pinned }) => ({
 			content: [
 				{
 					type: 'text',
@@ -107,6 +110,7 @@ function registerStoryToolsWithPrefix(
 						await resolveStoryApi(api).updateStory(story_gid, {
 							...(text !== undefined && { text }),
 							...(html_text !== undefined && { html_text }),
+							...(is_pinned !== undefined && { is_pinned }),
 						}),
 					),
 				},
