@@ -39,6 +39,11 @@ answer to "what does a skill file look like".
   agent loads only when it needs it.
 - **Catalog** — all nine skills taken together, plus the two published tables that list them.
 - **Publish allowlist** — `package.json`'s `files`. A path not on it never reaches the tarball.
+- **`SETUP.md`** — the plugin root's setup instructions: what an agent reads once a plugin install
+  has already wired the MCP server, covering only the credentials the install cannot supply. It is
+  not a skill and does not live under `skills/`, but it is an instruction file an agent follows, so
+  the contract holds it to the same bar — it must exist, ship, pin the commands it prescribes, and
+  resolve every skill it hands off to.
 
 **Non-goals.** This node does **not** specify what any individual skill tells an agent to do, nor
 whether an agent given a real task actually engages the right skill, follows its steps, or produces
@@ -65,8 +70,8 @@ that names its subject and its trigger — and no suite of its own.
 ## Use Cases
 
 **Subject** — the shipped skill catalog: the nine directories under
-`packages/cyber-asana/skills/`, the two published tables that list them, and the packaging that
-carries them to a consumer. The contract is enforced in-repo by `src/skills/catalog.ts`, run from
+`packages/cyber-asana/skills/`, the plugin root's `SETUP.md` that hands off to them, the two
+published tables that list them, and the packaging that carries them to a consumer. The contract is enforced in-repo by `src/skills/catalog.ts`, run from
 `src/skills/catalog.test.ts`. There is **no CLI verb and no MCP tool**: the catalog is checked when
 the repository is verified, not at runtime, because by the time a consumer has the package the files
 are already fixed and a failing check would only report a defect they cannot fix.
