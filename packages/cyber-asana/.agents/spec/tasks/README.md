@@ -36,7 +36,7 @@ its own status code. One bad GID in a list of nine does not lose the other eight
 
 **A write sends what you supplied and nothing else.** Every write body is built **by omission**: a
 field the caller did not name is absent from the request, not present-and-empty. Clearing a value is
-therefore its own explicit input (`--clear-due-on`, `--clear-parent`) rather than "pass an empty
+therefore its own explicit input (`--clear-due-on`, `--clear-start-on`, `--clear-parent`) rather than "pass an empty
 string", and naming both a value and its clear flag is a usage error caught locally, before anything
 leaves the process.
 
@@ -102,7 +102,7 @@ MCP) that share one `api.ts`. Neither `cli.ts` nor `mcp.ts` calls the Asana SDK 
 |---|---|---|---|
 | `task create <name>` (CLI) | caller wants a new task | `--workspace-gid` (defaults from env), `--project-gid`, `--parent-gid`, `--assignee-gid`, `--notes` or `--html-notes`, `--due-on`, `--resource-subtype`, `--follower`, `--custom-fields-json`, repeated `--custom-field <gid=value>` | the created task, rendered as fields |
 | `asana_task_create` (MCP) | agent wants the same | `workspace_gid`, `name`, `project_gid` or `project_gids`, `follower_gids`, `assignee_gid`, `notes` or `html_notes`, `due_on`, `parent_gid`, `resource_subtype`, `custom_fields` object | the created task, JSON-serialized |
-| `task update <gid>` (CLI) | caller wants to change a task | the GID plus `--name`, `--notes` / `--html-notes`, `--completed`, `--due-on` / `--clear-due-on`, `--parent-gid` / `--clear-parent`, `--resource-subtype`, custom-field options | the updated task, rendered as fields |
+| `task update <gid>` (CLI) | caller wants to change a task | the GID plus `--name`, `--notes` / `--html-notes`, `--completed`, `--due-on` / `--clear-due-on`, `--start-on` / `--clear-start-on`, `--parent-gid` / `--clear-parent`, `--resource-subtype`, custom-field options | the updated task, rendered as fields |
 | `asana_task_update` (MCP) | agent wants the same | `task_gid` plus the same fields under snake_case names | the updated task, JSON-serialized |
 | `task subtask create <task-gid> <name>` (CLI) | caller wants a child task | the parent GID, the name, `--notes`, `--due-on`, `--assignee-gid` | the created subtask, rendered as fields |
 | `asana_task_subtask_create` (MCP) | agent wants the same | `task_gid`, `name`, `notes`, `due_on`, `assignee_gid` | the created subtask, JSON-serialized |
@@ -264,6 +264,7 @@ graph TD
   WX -->|notes with html-notes| WXE[usage error — nothing is sent]
   WX -->|parent with clear-parent| WXE
   WX -->|due-on with clear-due-on| WXE
+  WX -->|start-on with clear-start-on| WXE
   WX -->|no conflict| WC{custom fields given?}
   WC -->|JSON that is not an object| WCE[usage error — nothing is sent]
   WC -->|an entry with no gid=value shape| WCE
@@ -285,12 +286,13 @@ graph TD
 
 The load-bearing edges:
 
-- **`WX` is checked locally, so a contradictory invocation costs no request.** All three conflicts
+- **`WX` is checked locally, so a contradictory invocation costs no request.** All four conflicts
   reconverge on the same outcome — a non-zero exit and nothing on the wire — which is why the suite
   covers them as one scenario spanning the three pairs rather than three near-identical ones.
 - **`WB` builds by omission rather than by blanking.** An empty string is a *value* in Asana and
   sending one wipes a field. So the only way to clear something is to say so, which is what
-  `--clear-due-on` and `--clear-parent` are for, and why they conflict with the value form at `WX`.
+  `--clear-due-on`, `--clear-start-on`, and `--clear-parent` are for, and why they conflict with the
+  value form at `WX`.
 - **`WCM` gives the repeated `--custom-field gid=value` entries precedence over the JSON blob.** The
   blob is the bulk form and the entries are the surgical form; a caller who supplies both is
   overriding, and the override direction is the only one that is useful.
@@ -419,11 +421,12 @@ The load-bearing edges:
 |---|---|---|
 | create → name and workspace in the body | a workspace GID and a task name | `create posts the task name under the workspace GID it was given` |
 | unsupplied field → absent from the body | a create and an update each naming exactly one optional field | `create and update send only the optional fields that were supplied` |
-| conflicting pair → usage error, nothing sent | invocations pairing notes with rich notes, parent with clear-parent, and due-on with clear-due-on | `conflicting write options are rejected before any request reaches Asana` |
+| conflicting pair → usage error, nothing sent | invocations pairing notes with rich notes, parent with clear-parent, due-on with clear-due-on, and start-on with clear-start-on | `conflicting write options are rejected before any request reaches Asana` |
 | followers supplied → sent twice | a create naming two follower GIDs | `create sends followers twice, on the create body and again in a follower-addition request` |
 | custom-field JSON and entries → entries win | a JSON object and a repeated entry naming the same custom field GID | `a repeated custom-field entry overrides the same field from the custom-fields JSON` |
 | custom-field input rejected → nothing sent | a custom-fields JSON holding an array, and an entry with no equals sign | `malformed custom-field input is rejected before any request reaches Asana` |
 | clear flag → an explicit null | an update naming clear-due-on and nothing else | `clear-due-on sets the due date to null` |
+| clear flag → an explicit null | an update naming clear-start-on and nothing else | `clear-start-on sets the start date to null` |
 | parent change → its own request | an update naming both a new name and a new parent GID | `update routes a parent change through a separate request from the other fields` |
 | parent change → its own request | an update naming clear-parent and nothing else | `clear-parent alone issues only the parent request` |
 | delete → confirmation naming the GID | text mode, a task that deletes cleanly | `delete confirms by naming the task it removed` |

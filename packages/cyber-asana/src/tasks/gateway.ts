@@ -26,6 +26,7 @@ export type UpdateTaskFields = {
 	html_notes?: string
 	completed?: boolean
 	due_on?: string | null
+	start_on?: string | null
 	assignee?: string
 	parent?: string
 	clear_parent?: boolean

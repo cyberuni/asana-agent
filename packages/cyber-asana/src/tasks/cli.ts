@@ -334,6 +334,8 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 				.option('--completed', 'Mark as completed')
 				.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
 				.option('--clear-due-on', 'Clear the due date')
+				.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
+				.option('--clear-start-on', 'Clear the start date')
 				.option('--clear-parent', 'Remove the parent task relationship')
 				.option('--resource-subtype <subtype>', 'Task resource subtype (e.g. default_task, milestone)')
 				.option('--custom-fields-json <json>', 'Custom field values as a JSON object')
@@ -353,6 +355,8 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 				completed?: boolean
 				dueOn?: string
 				clearDueOn?: boolean
+				startOn?: string
+				clearStartOn?: boolean
 				parent?: string
 				parentGid?: string
 				clearParent?: boolean
@@ -372,6 +376,8 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 					completed: opts.completed,
 					dueOn: opts.dueOn,
 					clearDueOn: opts.clearDueOn,
+					startOn: opts.startOn,
+					clearStartOn: opts.clearStartOn,
 					assignee: normalizedGid(opts, 'assignee'),
 					parent: normalizedGid(opts, 'parent'),
 					clearParent: opts.clearParent,

@@ -41,6 +41,23 @@ describe('tasks/write-options', () => {
 		)
 	})
 
+	it('buildTaskUpdateFields maps start_on', () => {
+		expect(buildTaskUpdateFields({ startOn: '2026-09-01', dueOn: '2026-10-31' })).toEqual({
+			start_on: '2026-09-01',
+			due_on: '2026-10-31',
+		})
+	})
+
+	it('buildTaskUpdateFields maps clear_start_on to null', () => {
+		expect(buildTaskUpdateFields({ clearStartOn: true })).toEqual({ start_on: null })
+	})
+
+	it('buildTaskUpdateFields rejects start_on and clear_start_on together', () => {
+		expect(() => buildTaskUpdateFields({ startOn: '2026-09-01', clearStartOn: true })).toThrow(
+			'--start-on and --clear-start-on are mutually exclusive',
+		)
+	})
+
 	it('buildTaskUpdateFields keeps html_notes and custom field values', () => {
 		expect(
 			buildTaskUpdateFields({

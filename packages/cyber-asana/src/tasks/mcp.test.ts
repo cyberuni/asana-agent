@@ -99,6 +99,36 @@ describe('tasks/mcp', () => {
 		})
 	})
 
+	it('asana_task_update passes start_on through', async () => {
+		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const server = createServer()
+		registerTaskTools(server as any)
+
+		await server.handlers.get('asana_task_update')?.({
+			task_gid: '123',
+			start_on: '2026-09-01',
+		})
+
+		expect(updateTaskMock).toHaveBeenCalledWith('123', {
+			start_on: '2026-09-01',
+		})
+	})
+
+	it('asana_task_update maps clear start flag to start_on null', async () => {
+		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const server = createServer()
+		registerTaskTools(server as any)
+
+		await server.handlers.get('asana_task_update')?.({
+			task_gid: '123',
+			clear_start_on: true,
+		})
+
+		expect(updateTaskMock).toHaveBeenCalledWith('123', {
+			start_on: null,
+		})
+	})
+
 	it('asana_task_follower_remove calls follower removal helper', async () => {
 		removeFollowersFromTaskMock.mockResolvedValue({ gid: '1' })
 		const server = createServer()
