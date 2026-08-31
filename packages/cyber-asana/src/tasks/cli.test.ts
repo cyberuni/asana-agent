@@ -257,6 +257,17 @@ describe('tasks/cli', () => {
 		})
 	})
 
+	it('task update maps clear assignee flag to assignee null', async () => {
+		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'update', '123', '--clear-assignee'], { from: 'node' })
+
+		expect(updateTaskMock).toHaveBeenCalledWith('123', {
+			assignee: null,
+		})
+	})
+
 	it('task update sets start_on alongside due_on', async () => {
 		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
 		const program = new Command().addCommand(taskCommand())

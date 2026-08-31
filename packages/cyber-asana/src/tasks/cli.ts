@@ -349,6 +349,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 				.option('--clear-start-on', 'Clear the start date')
 				.option('--start-at <datetime>', 'Start date and time (ISO 8601 UTC); Asana requires a due time alongside it')
 				.option('--clear-start-at', 'Clear the start date and time')
+				.option('--clear-assignee', 'Unassign the task')
 				.option('--clear-parent', 'Remove the parent task relationship')
 				.option('--resource-subtype <subtype>', 'Task resource subtype (e.g. default_task, milestone)')
 				.option('--custom-fields-json <json>', 'Custom field values as a JSON object')
@@ -382,6 +383,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 				customField: string[]
 				assignee?: string
 				assigneeGid?: string
+				clearAssignee?: boolean
 			},
 		) => {
 			const data = await resolveTaskApi(api).updateTask(
@@ -400,6 +402,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 					startAt: opts.startAt,
 					clearStartAt: opts.clearStartAt,
 					assignee: normalizedGid(opts, 'assignee'),
+					clearAssignee: opts.clearAssignee,
 					parent: normalizedGid(opts, 'parent'),
 					clearParent: opts.clearParent,
 					resourceSubtype: opts.resourceSubtype,

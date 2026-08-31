@@ -104,6 +104,16 @@ describe('tasks/write-options', () => {
 		)
 	})
 
+	it('buildTaskUpdateFields maps clear_assignee to null', () => {
+		expect(buildTaskUpdateFields({ clearAssignee: true })).toEqual({ assignee: null })
+	})
+
+	it('buildTaskUpdateFields rejects assignee and clear_assignee together', () => {
+		expect(() => buildTaskUpdateFields({ assignee: 'u1', clearAssignee: true })).toThrow(
+			'--assignee-gid and --clear-assignee are mutually exclusive',
+		)
+	})
+
 	it('buildTaskUpdateFields keeps html_notes and custom field values', () => {
 		expect(
 			buildTaskUpdateFields({

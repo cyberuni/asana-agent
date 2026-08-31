@@ -32,7 +32,7 @@ export type UpdateTaskFields = {
 	due_at?: string | null
 	start_on?: string | null
 	start_at?: string | null
-	assignee?: string
+	assignee?: string | null
 	parent?: string
 	clear_parent?: boolean
 	resource_subtype?: string

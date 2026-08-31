@@ -26,6 +26,7 @@ type BuildTaskUpdateInput = BuildTaskWriteInput & {
 	name?: string
 	completed?: boolean
 	clearParent?: boolean
+	clearAssignee?: boolean
 	clearDueOn?: boolean
 	clearDueAt?: boolean
 	clearStartOn?: boolean
@@ -114,6 +115,9 @@ export function buildTaskUpdateFields(input: BuildTaskUpdateInput): UpdateTaskFi
 	if (input.parent !== undefined && input.clearParent) {
 		throw new Error('--parent and --clear-parent are mutually exclusive')
 	}
+	if (input.assignee !== undefined && input.clearAssignee) {
+		throw new Error('--assignee-gid and --clear-assignee are mutually exclusive')
+	}
 	if (input.dueOn !== undefined && input.clearDueOn) {
 		throw new Error('--due-on and --clear-due-on are mutually exclusive')
 	}
@@ -133,6 +137,7 @@ export function buildTaskUpdateFields(input: BuildTaskUpdateInput): UpdateTaskFi
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
 		...(input.completed !== undefined && { completed: input.completed }),
 		...(input.assignee !== undefined && { assignee: input.assignee }),
+		...(input.clearAssignee && { assignee: null }),
 		...(input.dueOn !== undefined && { due_on: input.dueOn }),
 		...(input.clearDueOn !== undefined && { due_on: input.clearDueOn ? null : input.dueOn }),
 		...(input.startOn !== undefined && { start_on: input.startOn }),
