@@ -87,7 +87,7 @@ Asana requires redirect URLs to be `https`, with `urn:ietf:wg:oauth:2.0:oob` as 
 
 `--manual` needs no local port and works over SSH. If you registered a different URL or port, pass `--redirect-uri <url>`; the callback listener binds the port from that URL.
 
-`auth login`, `auth token`, and `auth logout` also accept `--client-id` and `--client-secret` directly, which is handy for a one-off or a first try without editing anything:
+`auth status`, `auth login`, `auth token`, and `auth logout` all accept `--client-id` and `--client-secret` directly, which is handy for a one-off or a first try without editing anything — pass them to `auth status` to see which registration a given pair would win against before you commit to it:
 
 ```sh
 cyber-asana auth login --client-id <client-id> --client-secret <client-secret>

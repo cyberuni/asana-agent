@@ -80,8 +80,8 @@ export ASANA_API_CLIENT_SECRET="<client-secret>"
 
 | Option | Command | Description |
 | --- | --- | --- |
-| `--client-id <id>` | `login`, `logout` | OAuth client ID — overrides `ASANA_API_CLIENT_ID`, `ASANA_CLIENT_ID`, and `settings.json` |
-| `--client-secret <secret>` | `login`, `logout` | OAuth client secret (visible in shell history — prefer the env var) |
+| `--client-id <id>` | `status`, `login`, `token`, `logout` | OAuth client ID — overrides `ASANA_API_CLIENT_ID`, `ASANA_CLIENT_ID`, and `settings.json` |
+| `--client-secret <secret>` | `status`, `login`, `token`, `logout` | OAuth client secret (visible in shell history — prefer the env var) |
 | `--no-store` | `login` | Print the token instead of saving it |
 | `--include-refresh-token` | `login` | Also print the long-lived refresh token (implies `--no-store`) |
 | `--raw` | `login` | Print only the token, for shell substitution |

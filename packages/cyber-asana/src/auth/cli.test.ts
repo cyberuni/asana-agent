@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { authCommand } from './cli.js'
 import { resolveCredential } from './credential.js'
+import { resolveAppCredentials } from './settings.js'
 
 describe('auth/cli', () => {
 	const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -125,7 +126,11 @@ describe('auth/cli', () => {
 			shadowed: [] as string[],
 		}
 
-		async function runAppStatus(overrides: Record<string, unknown> = {}, argv = ['node', 'test', '--json']) {
+		async function runAppStatus(
+			overrides: Record<string, unknown> = {},
+			argv = ['node', 'test', '--json'],
+			args: string[] = [],
+		) {
 			const program = new Command().addCommand(
 				authCommand({
 					readCredential: () => ({ authenticated: false, shadowed: [] }),
@@ -137,7 +142,7 @@ describe('auth/cli', () => {
 				} as never),
 			)
 			process.argv = argv
-			await program.parseAsync(['node', 'test', 'auth', 'status'], { from: 'node' })
+			await program.parseAsync(['node', 'test', 'auth', 'status', ...args], { from: 'node' })
 			return logSpy.mock.calls.map((call) => String(call[0])).join('\n')
 		}
 
@@ -198,7 +203,40 @@ describe('auth/cli', () => {
 			await runAppStatus({ readSettings, readAppCredentials })
 
 			expect(readSettings).toHaveBeenCalledWith('/tmp/cyber-asana-test')
-			expect(readAppCredentials).toHaveBeenCalledWith({ settings: { client_id: 'file-id' } })
+			expect(readAppCredentials).toHaveBeenCalledWith({ settings: { client_id: 'file-id' }, overrides: {} })
+		})
+
+		// `login`, `token`, and `logout` all take the registration on the command
+		// line. Without the same pair here, the one command that explains which
+		// registration wins cannot see the one that would.
+		it('forwards a registration named on the command line to the resolver', async () => {
+			const readAppCredentials = vi.fn().mockReturnValue(app)
+
+			await runAppStatus(
+				{ readAppCredentials },
+				['node', 'test', '--json'],
+				['--client-id', 'flag-id', '--client-secret', 'flag-secret'],
+			)
+
+			expect(readAppCredentials).toHaveBeenCalledWith({
+				settings: {},
+				overrides: { clientId: 'flag-id', clientSecret: 'flag-secret' },
+			})
+		})
+
+		it('names flags as the winning source when the registration comes from the command line', async () => {
+			const out = await runAppStatus(
+				{
+					readSettings: async () => ({ client_id: 'file-id' }),
+					readAppCredentials: ({ settings, overrides }: never) =>
+						resolveAppCredentials({ settings, env: {}, overrides }),
+				},
+				['node', 'test', '--json'],
+				['--client-id', 'flag-id-9876'],
+			)
+
+			expect(out).toContain('"source": "flags"')
+			expect(out).toContain('"client_id_masked": "\u20269876"')
 		})
 	})
 })
