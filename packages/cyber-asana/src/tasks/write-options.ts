@@ -80,6 +80,7 @@ export function buildTaskCreateFields(input: BuildTaskCreateInput): CreateTaskFi
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
 		...(input.assignee !== undefined && { assignee: input.assignee }),
 		...(input.dueOn !== undefined && { due_on: input.dueOn }),
+		...(input.startOn !== undefined && { start_on: input.startOn }),
 		...(input.parent !== undefined && { parent: input.parent }),
 		...(input.resourceSubtype !== undefined && { resource_subtype: input.resourceSubtype }),
 		...(projects && { projects }),

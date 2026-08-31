@@ -63,6 +63,24 @@ describe('tasks/mcp', () => {
 		})
 	})
 
+	it('asana_task_create passes start_on through', async () => {
+		createTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const server = createServer()
+		registerTaskTools(server as any)
+
+		await server.handlers.get('asana_task_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Task',
+			start_on: '2026-09-01',
+			due_on: '2026-10-31',
+		})
+
+		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', {
+			start_on: '2026-09-01',
+			due_on: '2026-10-31',
+		})
+	})
+
 	it('asana_task_update forwards html notes, clear parent, and custom fields', async () => {
 		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
 		const server = createServer()

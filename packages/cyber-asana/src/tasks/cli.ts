@@ -272,6 +272,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 		.option('--notes <text>', 'Task notes')
 		.option('--html-notes <html>', 'Task notes as HTML')
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
+		.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
 		.option('--resource-subtype <subtype>', 'Task resource subtype (e.g. default_task, milestone)')
 		.option('--follower <gid[,gid...]>', 'Follower user GIDs')
 		.option('--custom-fields-json <json>', 'Custom field values as a JSON object')
@@ -291,6 +292,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 					notes?: string
 					htmlNotes?: string
 					dueOn?: string
+					startOn?: string
 					resourceSubtype?: string
 					follower?: string
 					customFieldsJson?: string
@@ -307,6 +309,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 						projectInput: opts.projectGid ?? opts.project,
 						followerInput: opts.follower,
 						dueOn: opts.dueOn,
+						startOn: opts.startOn,
 						parent: normalizedGid(opts, 'parent'),
 						resourceSubtype: opts.resourceSubtype,
 						customFieldsJson: opts.customFieldsJson,

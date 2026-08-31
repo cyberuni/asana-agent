@@ -14,6 +14,7 @@ export type CreateTaskFields = {
 	assignee?: string
 	projects?: string[]
 	due_on?: string
+	start_on?: string
 	parent?: string
 	resource_subtype?: string
 	custom_fields?: TaskCustomFields

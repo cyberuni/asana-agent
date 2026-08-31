@@ -189,6 +189,33 @@ describe('tasks/cli', () => {
 		})
 	})
 
+	it('task create sets start_on alongside due_on', async () => {
+		createTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			[
+				'node',
+				'test',
+				'task',
+				'create',
+				'Task',
+				'--workspace-gid',
+				'ws1',
+				'--start-on',
+				'2026-09-01',
+				'--due-on',
+				'2026-10-31',
+			],
+			{ from: 'node' },
+		)
+
+		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', {
+			start_on: '2026-09-01',
+			due_on: '2026-10-31',
+		})
+	})
+
 	it('task update sets start_on alongside due_on', async () => {
 		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
 		const program = new Command().addCommand(taskCommand())

@@ -23,6 +23,13 @@ describe('tasks/write-options', () => {
 		})
 	})
 
+	it('buildTaskCreateFields maps start_on', () => {
+		expect(buildTaskCreateFields({ startOn: '2026-09-01', dueOn: '2026-10-31' })).toEqual({
+			start_on: '2026-09-01',
+			due_on: '2026-10-31',
+		})
+	})
+
 	it('buildTaskCreateFields rejects notes and html_notes together', () => {
 		expect(() => buildTaskCreateFields({ notes: 'plain', htmlNotes: '<body>html</body>' })).toThrow(
 			'--notes and --html-notes are mutually exclusive',
