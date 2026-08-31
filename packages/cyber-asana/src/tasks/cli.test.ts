@@ -216,6 +216,47 @@ describe('tasks/cli', () => {
 		})
 	})
 
+	it('task create sets due_at and start_at', async () => {
+		createTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			[
+				'node',
+				'test',
+				'task',
+				'create',
+				'Task',
+				'--workspace-gid',
+				'ws1',
+				'--start-at',
+				'2026-09-01T09:00:00.000Z',
+				'--due-at',
+				'2026-10-31T17:00:00.000Z',
+			],
+			{ from: 'node' },
+		)
+
+		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', {
+			start_at: '2026-09-01T09:00:00.000Z',
+			due_at: '2026-10-31T17:00:00.000Z',
+		})
+	})
+
+	it('task update maps the clear date-time flags to null', async () => {
+		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'update', '123', '--clear-due-at', '--clear-start-at'], {
+			from: 'node',
+		})
+
+		expect(updateTaskMock).toHaveBeenCalledWith('123', {
+			due_at: null,
+			start_at: null,
+		})
+	})
+
 	it('task update sets start_on alongside due_on', async () => {
 		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
 		const program = new Command().addCommand(taskCommand())
