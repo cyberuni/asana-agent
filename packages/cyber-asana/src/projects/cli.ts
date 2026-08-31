@@ -277,6 +277,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		},
 	)
 	createCmd
+		.option('--archived', 'Create the project already archived')
 		.option('--notes <text>', 'Project notes')
 		.option('--html-notes <html>', 'Project notes as HTML')
 		.option('--color <color>', 'Project color')
@@ -290,6 +291,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 				opts: {
 					workspace?: string
 					workspaceGid?: string
+					archived?: boolean
 					notes?: string
 					htmlNotes?: string
 					color?: string
@@ -303,6 +305,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 					requiredGid(opts, 'workspace', 'Workspace GID'),
 					name,
 					buildProjectCreateFields({
+						archived: opts.archived,
 						notes: opts.notes,
 						htmlNotes: opts.htmlNotes,
 						color: opts.color,
@@ -320,6 +323,8 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		.command('update <gid>')
 		.description('Update a project')
 		.option('--name <name>', 'New name')
+		.option('--archived', 'Archive the project')
+		.option('--no-archived', 'Unarchive the project')
 		.option('--notes <text>', 'New notes')
 		.option('--html-notes <html>', 'New notes as HTML')
 		.option('--color <color>', 'New color')
@@ -334,6 +339,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 				gid: string,
 				opts: {
 					name?: string
+					archived?: boolean
 					notes?: string
 					htmlNotes?: string
 					color?: string
@@ -348,6 +354,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 				const data = await resolveProjectApi(api).updateProject(gid, {
 					name: opts.name,
 					...buildProjectUpdateFields({
+						archived: opts.archived,
 						notes: opts.notes,
 						htmlNotes: opts.htmlNotes,
 						color: opts.color,

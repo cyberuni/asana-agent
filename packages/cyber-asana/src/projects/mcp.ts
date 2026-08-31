@@ -194,6 +194,7 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 		{
 			workspace_gid: z.string().describe('Workspace GID'),
 			name: z.string().describe('Project name'),
+			archived: z.boolean().optional().describe('Create the project already archived'),
 			notes: z.string().optional().describe('Project notes'),
 			html_notes: z.string().optional().describe('Project notes as HTML'),
 			color: z.string().optional().describe('Project color'),
@@ -205,7 +206,18 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
 			start_on: z.string().optional().describe('Start date (YYYY-MM-DD)'),
 		},
-		async ({ workspace_gid, name, notes, html_notes, color, privacy_setting, default_view, due_on, start_on }) => ({
+		async ({
+			workspace_gid,
+			name,
+			archived,
+			notes,
+			html_notes,
+			color,
+			privacy_setting,
+			default_view,
+			due_on,
+			start_on,
+		}) => ({
 			content: [
 				{
 					type: 'text',
@@ -214,6 +226,7 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 							workspace_gid,
 							name,
 							buildProjectCreateFields({
+								archived,
 								notes,
 								htmlNotes: html_notes,
 								color,
@@ -235,6 +248,7 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 		{
 			project_gid: z.string().describe('Project GID'),
 			name: z.string().optional().describe('New name'),
+			archived: z.boolean().optional().describe('Archive (true) or unarchive (false) the project'),
 			notes: z.string().optional().describe('New notes'),
 			html_notes: z.string().optional().describe('New notes as HTML'),
 			color: z.string().optional().describe('New color'),
@@ -251,6 +265,7 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 		async ({
 			project_gid,
 			name,
+			archived,
 			notes,
 			html_notes,
 			color,
@@ -268,6 +283,7 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 						await resolveProjectApi(api).updateProject(project_gid, {
 							...(name !== undefined && { name }),
 							...buildProjectUpdateFields({
+								archived,
 								notes,
 								htmlNotes: html_notes,
 								color,

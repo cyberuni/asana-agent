@@ -387,4 +387,32 @@ describe('projects/cli', () => {
 
 		expect(listProjects.mock.calls[0]?.[1]).not.toHaveProperty('archived')
 	})
+
+	it('project update archives and unarchives a project', async () => {
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--archived'], { from: 'node' })
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { archived: true })
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--no-archived'], { from: 'node' })
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { archived: false })
+	})
+
+	it('project create carries the archived flag', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'create', 'Launch', '--workspace-gid', 'ws1', '--archived'], {
+				from: 'node',
+			})
+
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { archived: true })
+	})
 })

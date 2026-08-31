@@ -189,4 +189,24 @@ describe('projects/mcp', () => {
 
 		expect(listProjects.mock.calls[0]?.[1]).not.toHaveProperty('archived')
 	})
+
+	it('asana_project_update forwards the archived flag', async () => {
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const server = createServer()
+		registerProjectTools(server as any)
+
+		await server.handlers.get('asana_project_update')?.({ project_gid: '123', archived: true })
+
+		expect(updateProjectMock).toHaveBeenCalledWith('123', { archived: true })
+	})
+
+	it('asana_project_create forwards the archived flag', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const server = createServer()
+		registerProjectTools(server as any)
+
+		await server.handlers.get('asana_project_create')?.({ workspace_gid: 'ws1', name: 'Launch', archived: true })
+
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { archived: true })
+	})
 })

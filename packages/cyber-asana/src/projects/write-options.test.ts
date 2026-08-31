@@ -53,4 +53,15 @@ describe('projects/write-options', () => {
 			start_on: null,
 		})
 	})
+
+	it('buildProjectCreateFields carries the archived flag when it is given', () => {
+		expect(buildProjectCreateFields({ archived: true })).toEqual({ archived: true })
+		expect(buildProjectCreateFields({})).toEqual({})
+	})
+
+	it('buildProjectUpdateFields carries the archived flag in both directions', () => {
+		expect(buildProjectUpdateFields({ archived: true })).toEqual({ archived: true })
+		expect(buildProjectUpdateFields({ archived: false })).toEqual({ archived: false })
+		expect(buildProjectUpdateFields({})).toEqual({})
+	})
 })

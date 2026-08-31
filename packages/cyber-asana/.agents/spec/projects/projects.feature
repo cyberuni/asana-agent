@@ -64,6 +64,12 @@ Feature: projects
 
   # ── project create / project update / project delete ──
 
+  Scenario: update archives and unarchives a project
+    Given a project with GID "44017"
+    When the project update entry point runs for "44017" asking to archive it
+    Then the request body reaching Asana carries the archived flag set to true
+    And a run asking to unarchive it carries the archived flag set to false
+
   Scenario: create sends the project name and workspace without the fields that were not supplied
     Given a workspace with GID "6120"
     When the project create entry point runs with the name "Tidewater Atlas" and the workspace GID "6120"

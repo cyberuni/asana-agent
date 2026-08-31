@@ -10,6 +10,7 @@ export type ProjectPrivacySetting = 'public_to_workspace' | 'private' | 'private
 export type ProjectDefaultView = 'list' | 'board' | 'calendar' | 'timeline'
 
 export type CreateProjectFields = {
+	archived?: boolean
 	notes?: string
 	html_notes?: string
 	color?: string
@@ -21,6 +22,7 @@ export type CreateProjectFields = {
 
 export type UpdateProjectFields = {
 	name?: string
+	archived?: boolean
 	notes?: string
 	html_notes?: string
 	color?: string

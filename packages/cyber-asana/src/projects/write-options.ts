@@ -1,4 +1,5 @@
 type BuildProjectWriteInput = {
+	archived?: boolean
 	notes?: string
 	htmlNotes?: string
 	color?: string
@@ -14,6 +15,7 @@ type BuildProjectUpdateInput = BuildProjectWriteInput & {
 }
 
 type ProjectCreateFields = {
+	archived?: boolean
 	notes?: string
 	html_notes?: string
 	color?: string
@@ -24,6 +26,7 @@ type ProjectCreateFields = {
 }
 
 type ProjectUpdateFields = {
+	archived?: boolean
 	notes?: string
 	html_notes?: string
 	color?: string
@@ -63,6 +66,7 @@ export function buildProjectCreateFields(input: BuildProjectWriteInput): Project
 	assertNotesMode(input.notes, input.htmlNotes)
 	assertProjectDateMode(input)
 	return {
+		...(input.archived !== undefined && { archived: input.archived }),
 		...(input.notes !== undefined && { notes: input.notes }),
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
 		...(input.color !== undefined && { color: input.color }),
@@ -77,6 +81,7 @@ export function buildProjectUpdateFields(input: BuildProjectUpdateInput): Projec
 	assertNotesMode(input.notes, input.htmlNotes)
 	assertProjectDateMode(input)
 	return {
+		...(input.archived !== undefined && { archived: input.archived }),
 		...(input.notes !== undefined && { notes: input.notes }),
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
 		...(input.color !== undefined && { color: input.color }),

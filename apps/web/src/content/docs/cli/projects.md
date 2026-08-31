@@ -37,6 +37,8 @@ cyber-asana project create "Q3 Launch" \
   --due-on 2026-09-30
 
 cyber-asana project update <gid> --name "Q3 Launch (revised)" --clear-due-on
+cyber-asana project update <gid> --archived
+cyber-asana project update <gid> --no-archived
 cyber-asana project delete <gid>
 ```
 
@@ -44,6 +46,8 @@ cyber-asana project delete <gid>
 | --- | --- | --- |
 | `--workspace-gid <gid>` / `--workspace <gid>` | `create` | Workspace (defaults to `ASANA_WORKSPACE`) |
 | `--name <name>` | `update` | New name |
+| `--archived` | `create`, `update` | Archive the project (on `create`, create it archived) |
+| `--no-archived` | `update` | Unarchive the project |
 | `--notes <text>` | `create`, `update` | Project notes |
 | `--html-notes <html>` | `create`, `update` | Notes as Asana rich-text HTML |
 | `--color <color>` | `create`, `update` | Project color |

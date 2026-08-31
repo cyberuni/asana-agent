@@ -846,6 +846,9 @@ cyber-asana project list --workspace-gid <gid> --no-archived
 
 Omitting both flags leaves the filter unset and takes Asana's own default.
 
+Archiving is a write, not a filter: `project update <gid> --archived` archives a
+project and `--no-archived` restores it. `project create` accepts `--archived` too.
+
 ### Project search filters
 
 `project search` accepts an optional text query plus filters.
