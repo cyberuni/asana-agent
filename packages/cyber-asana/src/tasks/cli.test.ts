@@ -189,6 +189,32 @@ describe('tasks/cli', () => {
 		})
 	})
 
+	it('task update sets start_on alongside due_on', async () => {
+		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'task', 'update', '123', '--start-on', '2026-09-01', '--due-on', '2026-10-31'],
+			{ from: 'node' },
+		)
+
+		expect(updateTaskMock).toHaveBeenCalledWith('123', {
+			start_on: '2026-09-01',
+			due_on: '2026-10-31',
+		})
+	})
+
+	it('task update maps clear start flag to start_on null', async () => {
+		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'update', '123', '--clear-start-on'], { from: 'node' })
+
+		expect(updateTaskMock).toHaveBeenCalledWith('123', {
+			start_on: null,
+		})
+	})
+
 	it('task follower add calls follower API helper', async () => {
 		addFollowersToTaskMock.mockResolvedValue({ gid: '1' })
 		const program = new Command().addCommand(taskCommand())
