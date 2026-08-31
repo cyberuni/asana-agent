@@ -11,8 +11,9 @@ when `--workspace-gid` is omitted.
 ```sh
 cyber-asana goal list
 cyber-asana goal get <gid>
-cyber-asana goal create "Reach 1000 users" --due-on 2026-12-31
+cyber-asana goal create "Reach 1000 users" --start-on 2026-01-01 --due-on 2026-12-31
 cyber-asana goal update <gid> --name "Reach 2000 users"
+cyber-asana goal update <gid> --clear-start-on
 cyber-asana goal delete <gid>
 ```
 
@@ -20,11 +21,15 @@ cyber-asana goal delete <gid>
 | --- | --- | --- |
 | `list` | — | `--workspace-gid <gid>` / `--workspace <gid>`, [pagination](/cyber-asana/cli/#pagination) |
 | `get` | `<gid>` | — |
-| `create` | `<name>` | `--workspace-gid <gid>`, `--notes <text>`, `--due-on <date>` |
-| `update` | `<gid>` | `--name <name>`, `--notes <text>`, `--due-on <date>` |
+| `create` | `<name>` | `--workspace-gid <gid>`, `--notes <text>`, `--due-on <date>`, `--start-on <date>` |
+| `update` | `<gid>` | `--name <name>`, `--notes <text>`, `--due-on <date>`, `--clear-due-on`, `--start-on <date>`, `--clear-start-on` |
 | `delete` | `<gid>` | — |
 
-Dates use `YYYY-MM-DD`.
+Dates use `YYYY-MM-DD`. Asana will not accept a start date without an accompanying due date.
+
+Both dates are nullable, so clearing one needs its own flag rather than an empty string:
+`--clear-due-on` and `--clear-start-on` send an explicit null. Naming a date and its clear flag
+in the same invocation is a usage error, caught before any request is sent.
 
 Goal metrics, followers, and parent-goal relationships are not wrapped — see
 [API coverage](/cyber-asana/reference/api-coverage/).

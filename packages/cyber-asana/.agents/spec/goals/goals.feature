@@ -126,6 +126,12 @@ Feature: goals
     Then the create request body carries the notes "Measured at the Kiln Row meters"
     And the create request body carries the due date "2027-03-31"
 
+  Scenario: create carries the start date it was given
+    Given a workspace with GID "6104"
+    When the goal create entry point runs with the name "Halve Kiln Downtime", the start date "2027-01-01" and the due date "2027-03-31"
+    Then the create request body carries the start date "2027-01-01"
+    And the create request body carries the due date "2027-03-31"
+
   Scenario: create sends no notes or due date when neither is given
     Given a workspace with GID "6104"
     When the goal create entry point runs with only the name "Retire the Ash Ledger" and the workspace GID "6104"
@@ -145,7 +151,7 @@ Feature: goals
     When its declared input schema is read
     Then the schema marks "workspace_gid" as a required parameter
     And the schema marks "name" as a required parameter
-    And the schema marks "notes" and "due_on" as optional parameters
+    And the schema marks "notes", "due_on" and "start_on" as optional parameters
 
   # ── goal update / asana_goal_update ──
 
@@ -163,6 +169,30 @@ Feature: goals
     Then the update request body carries the name "Triple Reef Yield"
     And the update request body carries the notes "Rebaselined after the survey"
     And the update request body carries the due date "2028-01-31"
+
+  Scenario: update changes only the start date it was given
+    Given a goal named "Halve Kiln Downtime" with GID "88410"
+    When the goal update entry point runs with the goal GID "88410" and the start date "2027-01-01"
+    Then the update request body carries the start date "2027-01-01"
+    And the update request body carries no name value
+    And the update request body carries no due date value
+
+  Scenario: clear-due-on sets the due date to null
+    Given a goal named "Halve Kiln Downtime" with GID "88410" due on "2027-03-31"
+    When the goal update entry point runs for the GID "88410" with the clear-due-on flag as its only input
+    Then the update request body carries a due_on value of null
+
+  Scenario: clear-start-on sets the start date to null
+    Given a goal named "Halve Kiln Downtime" with GID "88410" starting on "2027-01-01"
+    When the goal update entry point runs for the GID "88410" with the clear-start-on flag as its only input
+    Then the update request body carries a start_on value of null
+
+  Scenario: a date and its clear flag together are rejected before any request reaches Asana
+    Given a goal named "Halve Kiln Downtime" with GID "88410"
+    When the goal update entry point runs for the GID "88410" with the due date "2027-03-31" and the clear-due-on flag
+    And the goal update entry point runs for the GID "88410" with the start date "2027-01-01" and the clear-start-on flag
+    Then each of those two runs fails
+    And no request reaches Asana
 
   Scenario: update with no field flags still reaches Asana
     Given a goal named "Retire the Ash Ledger" with GID "88412"

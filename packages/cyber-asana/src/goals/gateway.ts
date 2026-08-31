@@ -6,11 +6,30 @@ import {
 	toAsanaPaginationOptions,
 } from '../pagination.js'
 
+/** Fields Asana accepts on goal creation. */
+export type CreateGoalFields = {
+	notes?: string
+	due_on?: string
+	start_on?: string
+}
+
+/**
+ * Fields Asana accepts on a goal update. The dates are nullable: sending `null`
+ * is how Asana clears one, which is what `--clear-due-on` / `--clear-start-on`
+ * and their MCP counterparts send.
+ */
+export type UpdateGoalFields = {
+	name?: string
+	notes?: string
+	due_on?: string | null
+	start_on?: string | null
+}
+
 export type GoalGateway = {
 	listGoals(workspaceGid: string, opts?: PaginationOptions): Promise<ListResult<any>>
 	getGoal(goalGid: string): Promise<any>
-	createGoal(workspaceGid: string, name: string, opts?: { notes?: string; due_on?: string }): Promise<any>
-	updateGoal(goalGid: string, fields: { name?: string; notes?: string; due_on?: string }): Promise<any>
+	createGoal(workspaceGid: string, name: string, opts?: CreateGoalFields): Promise<any>
+	updateGoal(goalGid: string, fields: UpdateGoalFields): Promise<any>
 	deleteGoal(goalGid: string): Promise<void>
 }
 

@@ -1,6 +1,8 @@
 import { createClient } from '../client.js'
 import type { PaginationOptions } from '../pagination.js'
-import { createAsanaGoalGateway, type GoalGateway } from './gateway.js'
+import { type CreateGoalFields, createAsanaGoalGateway, type GoalGateway, type UpdateGoalFields } from './gateway.js'
+
+export type { CreateGoalFields, UpdateGoalFields } from './gateway.js'
 
 export type GoalApi = ReturnType<typeof createGoalApi>
 
@@ -12,10 +14,10 @@ export function createGoalApi(gateway: GoalGateway) {
 		getGoal(goalGid: string) {
 			return gateway.getGoal(goalGid)
 		},
-		createGoal(workspaceGid: string, name: string, opts?: { notes?: string; due_on?: string }) {
+		createGoal(workspaceGid: string, name: string, opts?: CreateGoalFields) {
 			return gateway.createGoal(workspaceGid, name, opts)
 		},
-		updateGoal(goalGid: string, fields: { name?: string; notes?: string; due_on?: string }) {
+		updateGoal(goalGid: string, fields: UpdateGoalFields) {
 			return gateway.updateGoal(goalGid, fields)
 		},
 		deleteGoal(goalGid: string) {
@@ -36,11 +38,11 @@ export async function getGoal(goalGid: string) {
 	return defaultGoalApi().getGoal(goalGid)
 }
 
-export async function createGoal(workspaceGid: string, name: string, opts?: { notes?: string; due_on?: string }) {
+export async function createGoal(workspaceGid: string, name: string, opts?: CreateGoalFields) {
 	return defaultGoalApi().createGoal(workspaceGid, name, opts)
 }
 
-export async function updateGoal(goalGid: string, fields: { name?: string; notes?: string; due_on?: string }) {
+export async function updateGoal(goalGid: string, fields: UpdateGoalFields) {
 	return defaultGoalApi().updateGoal(goalGid, fields)
 }
 

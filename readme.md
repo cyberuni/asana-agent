@@ -487,6 +487,8 @@ Notable parameters:
 - `asana_task_update` — `html_notes`, `due_on` / `clear_due_on`, `due_at` / `clear_due_at`, `start_on` / `clear_start_on`, `start_at` / `clear_start_at`, `assignee_gid` / `clear_assignee`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
 - `asana_task_subtask_create` — takes the same write fields as `asana_task_create`; the parent and its workspace come from `task_gid`
 - `asana_task_follower_add` / `asana_task_follower_remove` — manage followers on existing tasks
+- `asana_goal_create` — `notes`, `due_on`, `start_on` (Asana requires an accompanying due date)
+- `asana_goal_update` — `name`, `notes`, `due_on`, `clear_due_on`, `start_on`, `clear_start_on`; the clear flags send an explicit null, and naming a date together with its clear flag is rejected before any request is sent
 - `asana_project_search` — `text`, `completed`, team/owner/member/portfolio filters, date filters, `sort_by`, `sort_ascending`, `opt_fields`
 - `asana_project_counts` — `opt_fields` defaults to `num_tasks,num_incomplete_tasks,num_completed_tasks`
 - `asana_project_template_instantiate` — `name`, `team_gid`, `public`, `requested_dates` (`[{gid, value}]` from the template's `requested_dates`), `wait` (default `true`), `timeout_seconds` (default 60). Returns `{ job, project_gid }`; a failed job or an expired wait is an error, never a success with a null `project_gid`

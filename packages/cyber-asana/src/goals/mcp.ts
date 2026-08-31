@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { paginationOptions, paginationParams } from '../mcp-options.js'
 import type { GoalApi } from './api.js'
 import { createGoal, deleteGoal, getGoal, listGoals, updateGoal } from './api.js'
+import { buildGoalCreateFields, buildGoalUpdateFields } from './write-options.js'
 
 function resolveGoalApi(api?: GoalApi | (() => GoalApi)): GoalApi {
 	if (typeof api === 'function') return api()
@@ -49,12 +50,19 @@ export function registerGoalTools(server: McpServer, api?: GoalApi | (() => Goal
 			name: z.string().describe('Goal name'),
 			notes: z.string().optional().describe('Goal notes'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
+			start_on: z.string().optional().describe('Start date (YYYY-MM-DD); Asana requires an accompanying due date'),
 		},
-		async ({ workspace_gid, name, notes, due_on }) => ({
+		async ({ workspace_gid, name, notes, due_on, start_on }) => ({
 			content: [
 				{
 					type: 'text',
-					text: JSON.stringify(await resolveGoalApi(api).createGoal(workspace_gid, name, { notes, due_on })),
+					text: JSON.stringify(
+						await resolveGoalApi(api).createGoal(
+							workspace_gid,
+							name,
+							buildGoalCreateFields({ notes, dueOn: due_on, startOn: start_on }),
+						),
+					),
 				},
 			],
 		}),
@@ -68,9 +76,29 @@ export function registerGoalTools(server: McpServer, api?: GoalApi | (() => Goal
 			name: z.string().optional().describe('New name'),
 			notes: z.string().optional().describe('New notes'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
+			clear_due_on: z.boolean().optional().describe('Clear the due date'),
+			start_on: z.string().optional().describe('Start date (YYYY-MM-DD); Asana requires an accompanying due date'),
+			clear_start_on: z.boolean().optional().describe('Clear the start date'),
 		},
-		async ({ goal_gid, ...fields }) => ({
-			content: [{ type: 'text', text: JSON.stringify(await resolveGoalApi(api).updateGoal(goal_gid, fields)) }],
+		async ({ goal_gid, name, notes, due_on, clear_due_on, start_on, clear_start_on }) => ({
+			content: [
+				{
+					type: 'text',
+					text: JSON.stringify(
+						await resolveGoalApi(api).updateGoal(
+							goal_gid,
+							buildGoalUpdateFields({
+								name,
+								notes,
+								dueOn: due_on,
+								clearDueOn: clear_due_on,
+								startOn: start_on,
+								clearStartOn: clear_start_on,
+							}),
+						),
+					),
+				},
+			],
 		}),
 	)
 

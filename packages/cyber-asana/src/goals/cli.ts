@@ -11,6 +11,7 @@ import { deleteIdempotently, deleteMessage } from '../idempotent-delete.js'
 import { output, printCountSummary, printFields, printNextSteps, printTable } from '../output.js'
 import type { GoalApi } from './api.js'
 import { createGoal, deleteGoal, getGoal, listGoals, updateGoal } from './api.js'
+import { buildGoalCreateFields, buildGoalUpdateFields } from './write-options.js'
 
 type Goal = { gid: string; name: string; permalink_url?: string; due_on?: string | null; status?: string | null }
 
@@ -115,12 +116,17 @@ export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 	createCmd
 		.option('--notes <text>', 'Goal notes')
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
+		.option('--start-on <date>', 'Start date (YYYY-MM-DD); Asana requires an accompanying due date')
 		.action(
-			async (name: string, opts: { workspace?: string; workspaceGid?: string; notes?: string; dueOn?: string }) => {
-				const data = await resolveGoalApi(api).createGoal(requiredGid(opts, 'workspace', 'Workspace GID'), name, {
-					notes: opts.notes,
-					due_on: opts.dueOn,
-				})
+			async (
+				name: string,
+				opts: { workspace?: string; workspaceGid?: string; notes?: string; dueOn?: string; startOn?: string },
+			) => {
+				const data = await resolveGoalApi(api).createGoal(
+					requiredGid(opts, 'workspace', 'Workspace GID'),
+					name,
+					buildGoalCreateFields(opts),
+				)
 				output(data, () => fmtGoal(data))
 			},
 		)
@@ -131,10 +137,25 @@ export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 		.option('--name <name>', 'New name')
 		.option('--notes <text>', 'New notes')
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
-		.action(async (gid: string, opts: { name?: string; notes?: string; dueOn?: string }) => {
-			const data = await resolveGoalApi(api).updateGoal(gid, { name: opts.name, notes: opts.notes, due_on: opts.dueOn })
-			output(data, () => fmtGoal(data))
-		})
+		.option('--clear-due-on', 'Clear the due date')
+		.option('--start-on <date>', 'Start date (YYYY-MM-DD); Asana requires an accompanying due date')
+		.option('--clear-start-on', 'Clear the start date')
+		.action(
+			async (
+				gid: string,
+				opts: {
+					name?: string
+					notes?: string
+					dueOn?: string
+					clearDueOn?: boolean
+					startOn?: string
+					clearStartOn?: boolean
+				},
+			) => {
+				const data = await resolveGoalApi(api).updateGoal(gid, buildGoalUpdateFields(opts))
+				output(data, () => fmtGoal(data))
+			},
+		)
 
 	cmd
 		.command('delete <gid>')

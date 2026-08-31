@@ -8,8 +8,8 @@ concept: [cyber-asana, goals, objectives, workspace-scoped-crud]
 ## What
 
 An Asana **goal** is a named objective a workspace is working toward — "halve kiln downtime by
-March". It has a name, optional notes, an optional due date, and a status Asana colours in as the
-goal progresses. Goals are what a quarterly plan looks like inside Asana, so an agent asked "what
+March". It has a name, optional notes, an optional date range — a due date and a start date — and a
+status Asana colours in as the goal progresses. Goals are what a quarterly plan looks like inside Asana, so an agent asked "what
 are we actually trying to do this quarter, and are we on track?" is asking for goals.
 
 This node is the full small loop over them: **list** the goals of a workspace, **get** one by its
@@ -25,12 +25,17 @@ no workspace, because Asana's goal lookup is not workspace-scoped and advertisin
 never sent would be a lie.
 
 `update` is deliberately **partial**. Only the fields named on the invocation are sent, so changing
-a due date does not blank the notes.
+a due date does not blank the notes. That partiality is also why **clearing a date needs its own
+input**: an absent `--due-on` means "leave it alone", so there is no value the caller could pass to
+mean "unset it". `--clear-due-on` and `--clear-start-on` send an explicit null, and naming a date
+together with its clear flag is a contradiction rejected locally, before any request is sent.
 
 **Key terms**
 
 - **GID** — Asana's global id for any object; an opaque string, never parsed and never arithmetic.
-- **Goal** — a named objective inside one workspace, with notes, a due date, and a status.
+- **Goal** — a named objective inside one workspace, with notes, a date range, and a status.
+- **Clear flag** — the explicit input that sends `null` for a nullable field, as opposed to omitting
+  the field, which leaves it unchanged.
 - **Workspace** — the top-level Asana container a goal lives in. See
   [workspaces](../workspaces/README.md).
 - **Scope** — the workspace GID a `list` or `create` is taken against, as opposed to the GID of the
@@ -38,8 +43,8 @@ a due date does not blank the notes.
 - **Partial update** — an edit that sends only the fields the caller named, leaving the rest as they
   were.
 
-**Non-goals.** This node wraps a goal's **identity fields only** — name, notes, due date — plus the
-five lifecycle operations above. Asana's goals API also carries metrics (a goal's numeric target and
+**Non-goals.** This node wraps a goal's **identity fields only** — name, notes, due date, start
+date — plus the five lifecycle operations above. Asana's goals API also carries metrics (a goal's numeric target and
 current value), goal **relationships** (which projects and sub-goals roll up into a goal), status
 updates written against a goal, time periods, and team-scoped rather than workspace-scoped goal
 listing. None is wrapped. Metrics and relationships are the parts of a goal that decide what its
@@ -71,10 +76,10 @@ come from, what its request body carries, and what its text rendering shows.
 | `asana_goal_list` (MCP) | agent wants the same listing over MCP | `workspace_gid` (required) plus the shared pagination params | the same result, JSON-serialized |
 | `goal get <gid>` (CLI) | caller holds a goal GID and wants that goal | the goal GID, positionally | the unwrapped goal record, rendered as Name/ID/URL/Due/Status fields in text mode |
 | `asana_goal_get` (MCP) | same, over MCP | `goal_gid` | the same record, JSON-serialized |
-| `goal create <name>` (CLI) | operator or agent is setting an objective | the name positionally, a workspace GID by flag or environment, optional `--notes` and `--due-on` | the created goal, rendered as Name/ID/URL/Due/Status fields |
-| `asana_goal_create` (MCP) | same, over MCP | `workspace_gid`, `name`, optional `notes` and `due_on` | the created goal, JSON-serialized |
-| `goal update <gid>` (CLI) | an objective's wording or date changed | the goal GID positionally, any of `--name`, `--notes`, `--due-on` | the updated goal, rendered as Name/ID/URL/Due/Status fields |
-| `asana_goal_update` (MCP) | same, over MCP | `goal_gid`, any of `name`, `notes`, `due_on` | the updated goal, JSON-serialized |
+| `goal create <name>` (CLI) | operator or agent is setting an objective | the name positionally, a workspace GID by flag or environment, optional `--notes`, `--due-on` and `--start-on` | the created goal, rendered as Name/ID/URL/Due/Status fields |
+| `asana_goal_create` (MCP) | same, over MCP | `workspace_gid`, `name`, optional `notes`, `due_on` and `start_on` | the created goal, JSON-serialized |
+| `goal update <gid>` (CLI) | an objective's wording or dates changed | the goal GID positionally, any of `--name`, `--notes`, `--due-on` / `--clear-due-on`, `--start-on` / `--clear-start-on` | the updated goal, rendered as Name/ID/URL/Due/Status fields |
+| `asana_goal_update` (MCP) | same, over MCP | `goal_gid`, any of `name`, `notes`, `due_on` / `clear_due_on`, `start_on` / `clear_start_on` | the updated goal, JSON-serialized |
 | `goal delete <gid>` (CLI) | an objective was abandoned or filed by mistake | the goal GID, positionally | a confirmation line naming the deleted GID |
 | `asana_goal_delete` (MCP) | same, over MCP | `goal_gid` | the same confirmation text |
 
@@ -117,7 +122,9 @@ graph TD
   subgraph update["goal update / asana_goal_update"]
     U[invoked] --> UG{goal GID given?}
     UG -->|no| UE[usage error — the argument is required]
-    UG -->|yes| UQ[send only the fields the caller named]
+    UG -->|yes| UX{a date named together<br/>with its own clear flag?}
+    UX -->|yes| UXE[usage error, nothing sent]
+    UX -->|no| UQ[send only the fields the caller named;<br/>a clear flag sends an explicit null]
     UQ --> UR[render Name / ID / URL / Due / Status fields]
   end
 
@@ -146,7 +153,10 @@ without notes is created with no notes rather than with an empty string.
 In the second family the load-bearing edge is again what is **not** branched on: no workspace input
 exists at all, because the goal GID alone identifies the goal. `update`'s own edge is partiality —
 the request body carries the fields the caller named and no others, which is what makes it safe to
-move a due date without touching the notes. `delete` ends differently from its siblings because
+move a due date without touching the notes. `UX` is the price of that partiality: because omission
+already means "leave it alone", unsetting a date needs a separate input, and naming both forms of
+the same date is a contradiction with no defensible reading. It is checked locally, so a
+contradictory invocation costs no request. `delete` ends differently from its siblings because
 Asana returns no record to render: the only thing worth showing is which GID went away.
 
 ## Scenario map
@@ -182,6 +192,7 @@ Asana returns no record to render: the only thing worth showing is which GID wen
 | create: no flag, no environment → usage error | neither flag nor environment supplies a workspace | `create without a workspace GID anywhere is a usage error` |
 | create: name absent → usage error | a workspace GID given, no positional name argument | `create without a name is a usage error` |
 | optional fields given → carried in the body | notes and a due date supplied alongside the name | `create carries the notes and due date it was given` |
+| start date given → carried in the body | a start date supplied alongside a due date | `create carries the start date it was given` |
 | optional fields absent → body carries name and workspace only | only a name and a workspace supplied | `create sends no notes or due date when neither is given` |
 | render Name / ID / URL / Due / Status fields | text mode, a goal Asana accepted | `create renders the new goal's fields in text mode` |
 | name and workspace both required over MCP (barred) | the registered MCP tool set | `asana_goal_create requires both a workspace GID and a name` |
@@ -192,6 +203,10 @@ Asana returns no record to render: the only thing worth showing is which GID wen
 |---|---|---|
 | send only the named fields | one field flag given out of three | `update changes only the field it was given` |
 | send only the named fields | all three field flags given at once | `update carries the name, notes and due date together` |
+| send only the named fields | a start date given and nothing else | `update changes only the start date it was given` |
+| clear flag → an explicit null | an update naming clear-due-on and nothing else | `clear-due-on sets the due date to null` |
+| clear flag → an explicit null | an update naming clear-start-on and nothing else | `clear-start-on sets the start date to null` |
+| a date named with its clear flag → usage error, nothing sent | invocations pairing due-on with clear-due-on, and start-on with clear-start-on | `a date and its clear flag together are rejected before any request reaches Asana` |
 | no field named → empty change set | a goal GID and no field flag at all | `update with no field flags still reaches Asana` |
 | update: goal GID absent → usage error | no positional argument | `update without a GID is a usage error` |
 | render Name / ID / URL / Due / Status fields | text mode, a goal Asana returned after the edit | `update renders the edited goal's fields in text mode` |
@@ -206,9 +221,10 @@ Asana returns no record to render: the only thing worth showing is which GID wen
 
 ## References
 
-- Asana API — [Goals](https://developers.asana.com/reference/goals) backs two claims: that goals are
-  listed per workspace, and that metrics, goal relationships, status updates on a goal, and time
-  periods are the remaining goal operations this node leaves unwrapped.
+- Asana API — [Goals](https://developers.asana.com/reference/goals) backs three claims: that goals
+  are listed per workspace; that a goal's `due_on` and `start_on` are both nullable and `start_on`
+  cannot be set without an accompanying due date; and that metrics, goal relationships, status
+  updates on a goal, and time periods are the remaining goal operations this node leaves unwrapped.
 
 ## Known gaps
 
