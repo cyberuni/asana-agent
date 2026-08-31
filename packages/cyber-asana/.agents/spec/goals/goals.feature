@@ -132,6 +132,12 @@ Feature: goals
     Then the create request body carries the start date "2027-01-01"
     And the create request body carries the due date "2027-03-31"
 
+  Scenario: create carries the rich notes it was given
+    Given a workspace with GID "6104"
+    When the goal create entry point runs with the name "Halve Kiln Downtime" and the rich notes "<body>Measured at the <strong>Kiln Row</strong> meters</body>"
+    Then the create request body carries the html_notes "<body>Measured at the <strong>Kiln Row</strong> meters</body>"
+    And the create request body carries no notes value
+
   Scenario: create sends no notes or due date when neither is given
     Given a workspace with GID "6104"
     When the goal create entry point runs with only the name "Retire the Ash Ledger" and the workspace GID "6104"
@@ -151,7 +157,7 @@ Feature: goals
     When its declared input schema is read
     Then the schema marks "workspace_gid" as a required parameter
     And the schema marks "name" as a required parameter
-    And the schema marks "notes", "due_on" and "start_on" as optional parameters
+    And the schema marks "notes", "html_notes", "due_on" and "start_on" as optional parameters
 
   # ── goal update / asana_goal_update ──
 
@@ -192,6 +198,18 @@ Feature: goals
     When the goal update entry point runs for the GID "88410" with the due date "2027-03-31" and the clear-due-on flag
     And the goal update entry point runs for the GID "88410" with the start date "2027-01-01" and the clear-start-on flag
     Then each of those two runs fails
+    And no request reaches Asana
+
+  Scenario: update carries the rich notes it was given
+    Given a goal named "Halve Kiln Downtime" with GID "88410"
+    When the goal update entry point runs for the GID "88410" with the rich notes "<body>Rebaselined after the survey</body>" as its only input
+    Then the update request body carries the html_notes "<body>Rebaselined after the survey</body>"
+    And the update request body carries no notes value
+
+  Scenario: plain notes and rich notes together are rejected before any request reaches Asana
+    Given a goal named "Halve Kiln Downtime" with GID "88410"
+    When the goal update entry point runs for the GID "88410" with both the notes "plain" and the rich notes "<body>rich</body>"
+    Then the run fails
     And no request reaches Asana
 
   Scenario: update with no field flags still reaches Asana

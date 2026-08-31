@@ -21,8 +21,8 @@ cyber-asana goal delete <gid>
 | --- | --- | --- |
 | `list` | — | `--workspace-gid <gid>` / `--workspace <gid>`, [pagination](/cyber-asana/cli/#pagination) |
 | `get` | `<gid>` | — |
-| `create` | `<name>` | `--workspace-gid <gid>`, `--notes <text>`, `--due-on <date>`, `--start-on <date>` |
-| `update` | `<gid>` | `--name <name>`, `--notes <text>`, `--due-on <date>`, `--clear-due-on`, `--start-on <date>`, `--clear-start-on` |
+| `create` | `<name>` | `--workspace-gid <gid>`, `--notes <text>`, `--html-notes <html>`, `--due-on <date>`, `--start-on <date>` |
+| `update` | `<gid>` | `--name <name>`, `--notes <text>`, `--html-notes <html>`, `--due-on <date>`, `--clear-due-on`, `--start-on <date>`, `--clear-start-on` |
 | `delete` | `<gid>` | — |
 
 Dates use `YYYY-MM-DD`. Asana will not accept a start date without an accompanying due date.
@@ -30,6 +30,9 @@ Dates use `YYYY-MM-DD`. Asana will not accept a start date without an accompanyi
 Both dates are nullable, so clearing one needs its own flag rather than an empty string:
 `--clear-due-on` and `--clear-start-on` send an explicit null. Naming a date and its clear flag
 in the same invocation is a usage error, caught before any request is sent.
+
+`--notes` and `--html-notes` are alternative ways to write a goal's description — plain text
+or Asana rich-text HTML. Naming both is a usage error, also caught locally.
 
 Goal metrics, followers, and parent-goal relationships are not wrapped — see
 [API coverage](/cyber-asana/reference/api-coverage/).

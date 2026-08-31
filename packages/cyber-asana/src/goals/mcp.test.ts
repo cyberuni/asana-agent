@@ -138,4 +138,38 @@ describe('goals/mcp', () => {
 		).rejects.toThrow('--due-on and --clear-due-on are mutually exclusive')
 		expect(updateGoalMock).not.toHaveBeenCalled()
 	})
+
+	it('asana_goal_create forwards rich-text notes', async () => {
+		createGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v1' })
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await server.handlers.get('asana_goal_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Ship v1',
+			html_notes: '<body>Q2</body>',
+		})
+
+		expect(createGoalMock).toHaveBeenCalledWith('ws1', 'Ship v1', { html_notes: '<body>Q2</body>' })
+	})
+
+	it('asana_goal_update forwards rich-text notes', async () => {
+		updateGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v2' })
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await server.handlers.get('asana_goal_update')?.({ goal_gid: 'goal1', html_notes: '<body>Q3</body>' })
+
+		expect(updateGoalMock).toHaveBeenCalledWith('goal1', { html_notes: '<body>Q3</body>' })
+	})
+
+	it('asana_goal_update rejects notes and html_notes at once', async () => {
+		const server = createServer()
+		registerGoalTools(server as any)
+
+		await expect(
+			server.handlers.get('asana_goal_update')?.({ goal_gid: 'goal1', notes: 'plain', html_notes: '<body>r</body>' }),
+		).rejects.toThrow('--notes and --html-notes are mutually exclusive')
+		expect(updateGoalMock).not.toHaveBeenCalled()
+	})
 })

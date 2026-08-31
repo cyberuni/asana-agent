@@ -9,6 +9,7 @@ import {
 /** Fields Asana accepts on goal creation. */
 export type CreateGoalFields = {
 	notes?: string
+	html_notes?: string
 	due_on?: string
 	start_on?: string
 }
@@ -21,6 +22,7 @@ export type CreateGoalFields = {
 export type UpdateGoalFields = {
 	name?: string
 	notes?: string
+	html_notes?: string
 	due_on?: string | null
 	start_on?: string | null
 }

@@ -115,12 +115,20 @@ export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 	)
 	createCmd
 		.option('--notes <text>', 'Goal notes')
+		.option('--html-notes <html>', 'Goal notes as Asana rich text HTML')
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
 		.option('--start-on <date>', 'Start date (YYYY-MM-DD); Asana requires an accompanying due date')
 		.action(
 			async (
 				name: string,
-				opts: { workspace?: string; workspaceGid?: string; notes?: string; dueOn?: string; startOn?: string },
+				opts: {
+					workspace?: string
+					workspaceGid?: string
+					notes?: string
+					htmlNotes?: string
+					dueOn?: string
+					startOn?: string
+				},
 			) => {
 				const data = await resolveGoalApi(api).createGoal(
 					requiredGid(opts, 'workspace', 'Workspace GID'),
@@ -136,6 +144,7 @@ export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 		.description('Update a goal')
 		.option('--name <name>', 'New name')
 		.option('--notes <text>', 'New notes')
+		.option('--html-notes <html>', 'New notes as Asana rich text HTML')
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
 		.option('--clear-due-on', 'Clear the due date')
 		.option('--start-on <date>', 'Start date (YYYY-MM-DD); Asana requires an accompanying due date')
@@ -146,6 +155,7 @@ export function goalCommand(api?: GoalApi | (() => GoalApi)) {
 				opts: {
 					name?: string
 					notes?: string
+					htmlNotes?: string
 					dueOn?: string
 					clearDueOn?: boolean
 					startOn?: string

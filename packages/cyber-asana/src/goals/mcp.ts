@@ -49,10 +49,11 @@ export function registerGoalTools(server: McpServer, api?: GoalApi | (() => Goal
 			workspace_gid: z.string().describe('Workspace GID'),
 			name: z.string().describe('Goal name'),
 			notes: z.string().optional().describe('Goal notes'),
+			html_notes: z.string().optional().describe('Goal notes as Asana rich text HTML'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
 			start_on: z.string().optional().describe('Start date (YYYY-MM-DD); Asana requires an accompanying due date'),
 		},
-		async ({ workspace_gid, name, notes, due_on, start_on }) => ({
+		async ({ workspace_gid, name, notes, html_notes, due_on, start_on }) => ({
 			content: [
 				{
 					type: 'text',
@@ -60,7 +61,7 @@ export function registerGoalTools(server: McpServer, api?: GoalApi | (() => Goal
 						await resolveGoalApi(api).createGoal(
 							workspace_gid,
 							name,
-							buildGoalCreateFields({ notes, dueOn: due_on, startOn: start_on }),
+							buildGoalCreateFields({ notes, htmlNotes: html_notes, dueOn: due_on, startOn: start_on }),
 						),
 					),
 				},
@@ -75,12 +76,13 @@ export function registerGoalTools(server: McpServer, api?: GoalApi | (() => Goal
 			goal_gid: z.string().describe('Goal GID'),
 			name: z.string().optional().describe('New name'),
 			notes: z.string().optional().describe('New notes'),
+			html_notes: z.string().optional().describe('New notes as Asana rich text HTML'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
 			clear_due_on: z.boolean().optional().describe('Clear the due date'),
 			start_on: z.string().optional().describe('Start date (YYYY-MM-DD); Asana requires an accompanying due date'),
 			clear_start_on: z.boolean().optional().describe('Clear the start date'),
 		},
-		async ({ goal_gid, name, notes, due_on, clear_due_on, start_on, clear_start_on }) => ({
+		async ({ goal_gid, name, notes, html_notes, due_on, clear_due_on, start_on, clear_start_on }) => ({
 			content: [
 				{
 					type: 'text',
@@ -90,6 +92,7 @@ export function registerGoalTools(server: McpServer, api?: GoalApi | (() => Goal
 							buildGoalUpdateFields({
 								name,
 								notes,
+								htmlNotes: html_notes,
 								dueOn: due_on,
 								clearDueOn: clear_due_on,
 								startOn: start_on,

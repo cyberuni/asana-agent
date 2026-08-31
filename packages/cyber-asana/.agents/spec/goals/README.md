@@ -8,8 +8,9 @@ concept: [cyber-asana, goals, objectives, workspace-scoped-crud]
 ## What
 
 An Asana **goal** is a named objective a workspace is working toward — "halve kiln downtime by
-March". It has a name, optional notes, an optional date range — a due date and a start date — and a
-status Asana colours in as the goal progresses. Goals are what a quarterly plan looks like inside Asana, so an agent asked "what
+March". It has a name, optional notes written either as plain text or as Asana rich-text HTML, an
+optional date range — a due date and a start date — and a status Asana colours in as the goal
+progresses. Goals are what a quarterly plan looks like inside Asana, so an agent asked "what
 are we actually trying to do this quarter, and are we on track?" is asking for goals.
 
 This node is the full small loop over them: **list** the goals of a workspace, **get** one by its
@@ -34,6 +35,8 @@ together with its clear flag is a contradiction rejected locally, before any req
 
 - **GID** — Asana's global id for any object; an opaque string, never parsed and never arithmetic.
 - **Goal** — a named objective inside one workspace, with notes, a date range, and a status.
+- **Rich notes** — the same description written as Asana's HTML subset, which is a *different way
+  of writing one field*, not a second field; naming both forms at once has no defensible reading.
 - **Clear flag** — the explicit input that sends `null` for a nullable field, as opposed to omitting
   the field, which leaves it unchanged.
 - **Workspace** — the top-level Asana container a goal lives in. See
@@ -76,10 +79,10 @@ come from, what its request body carries, and what its text rendering shows.
 | `asana_goal_list` (MCP) | agent wants the same listing over MCP | `workspace_gid` (required) plus the shared pagination params | the same result, JSON-serialized |
 | `goal get <gid>` (CLI) | caller holds a goal GID and wants that goal | the goal GID, positionally | the unwrapped goal record, rendered as Name/ID/URL/Due/Status fields in text mode |
 | `asana_goal_get` (MCP) | same, over MCP | `goal_gid` | the same record, JSON-serialized |
-| `goal create <name>` (CLI) | operator or agent is setting an objective | the name positionally, a workspace GID by flag or environment, optional `--notes`, `--due-on` and `--start-on` | the created goal, rendered as Name/ID/URL/Due/Status fields |
-| `asana_goal_create` (MCP) | same, over MCP | `workspace_gid`, `name`, optional `notes`, `due_on` and `start_on` | the created goal, JSON-serialized |
-| `goal update <gid>` (CLI) | an objective's wording or dates changed | the goal GID positionally, any of `--name`, `--notes`, `--due-on` / `--clear-due-on`, `--start-on` / `--clear-start-on` | the updated goal, rendered as Name/ID/URL/Due/Status fields |
-| `asana_goal_update` (MCP) | same, over MCP | `goal_gid`, any of `name`, `notes`, `due_on` / `clear_due_on`, `start_on` / `clear_start_on` | the updated goal, JSON-serialized |
+| `goal create <name>` (CLI) | operator or agent is setting an objective | the name positionally, a workspace GID by flag or environment, optional `--notes` / `--html-notes`, `--due-on` and `--start-on` | the created goal, rendered as Name/ID/URL/Due/Status fields |
+| `asana_goal_create` (MCP) | same, over MCP | `workspace_gid`, `name`, optional `notes` / `html_notes`, `due_on` and `start_on` | the created goal, JSON-serialized |
+| `goal update <gid>` (CLI) | an objective's wording or dates changed | the goal GID positionally, any of `--name`, `--notes` / `--html-notes`, `--due-on` / `--clear-due-on`, `--start-on` / `--clear-start-on` | the updated goal, rendered as Name/ID/URL/Due/Status fields |
+| `asana_goal_update` (MCP) | same, over MCP | `goal_gid`, any of `name`, `notes` / `html_notes`, `due_on` / `clear_due_on`, `start_on` / `clear_start_on` | the updated goal, JSON-serialized |
 | `goal delete <gid>` (CLI) | an objective was abandoned or filed by mistake | the goal GID, positionally | a confirmation line naming the deleted GID |
 | `asana_goal_delete` (MCP) | same, over MCP | `goal_gid` | the same confirmation text |
 
@@ -122,7 +125,7 @@ graph TD
   subgraph update["goal update / asana_goal_update"]
     U[invoked] --> UG{goal GID given?}
     UG -->|no| UE[usage error — the argument is required]
-    UG -->|yes| UX{a date named together<br/>with its own clear flag?}
+    UG -->|yes| UX{conflicting inputs —<br/>a date with its own clear flag,<br/>or notes with rich notes?}
     UX -->|yes| UXE[usage error, nothing sent]
     UX -->|no| UQ[send only the fields the caller named;<br/>a clear flag sends an explicit null]
     UQ --> UR[render Name / ID / URL / Due / Status fields]
@@ -155,8 +158,9 @@ exists at all, because the goal GID alone identifies the goal. `update`'s own ed
 the request body carries the fields the caller named and no others, which is what makes it safe to
 move a due date without touching the notes. `UX` is the price of that partiality: because omission
 already means "leave it alone", unsetting a date needs a separate input, and naming both forms of
-the same date is a contradiction with no defensible reading. It is checked locally, so a
-contradictory invocation costs no request. `delete` ends differently from its siblings because
+the same date is a contradiction with no defensible reading. Plain notes named alongside rich notes
+is the same shape of contradiction — two spellings of one field. All three conflicts are checked
+locally, so a contradictory invocation costs no request. `delete` ends differently from its siblings because
 Asana returns no record to render: the only thing worth showing is which GID went away.
 
 ## Scenario map
@@ -193,6 +197,7 @@ Asana returns no record to render: the only thing worth showing is which GID wen
 | create: name absent → usage error | a workspace GID given, no positional name argument | `create without a name is a usage error` |
 | optional fields given → carried in the body | notes and a due date supplied alongside the name | `create carries the notes and due date it was given` |
 | start date given → carried in the body | a start date supplied alongside a due date | `create carries the start date it was given` |
+| rich notes given → carried in the body | rich notes supplied instead of plain notes | `create carries the rich notes it was given` |
 | optional fields absent → body carries name and workspace only | only a name and a workspace supplied | `create sends no notes or due date when neither is given` |
 | render Name / ID / URL / Due / Status fields | text mode, a goal Asana accepted | `create renders the new goal's fields in text mode` |
 | name and workspace both required over MCP (barred) | the registered MCP tool set | `asana_goal_create requires both a workspace GID and a name` |
@@ -207,6 +212,8 @@ Asana returns no record to render: the only thing worth showing is which GID wen
 | clear flag → an explicit null | an update naming clear-due-on and nothing else | `clear-due-on sets the due date to null` |
 | clear flag → an explicit null | an update naming clear-start-on and nothing else | `clear-start-on sets the start date to null` |
 | a date named with its clear flag → usage error, nothing sent | invocations pairing due-on with clear-due-on, and start-on with clear-start-on | `a date and its clear flag together are rejected before any request reaches Asana` |
+| notes named with rich notes → usage error, nothing sent | an update naming both notes and rich notes | `plain notes and rich notes together are rejected before any request reaches Asana` |
+| rich notes given → carried in the body | an update naming rich notes and nothing else | `update carries the rich notes it was given` |
 | no field named → empty change set | a goal GID and no field flag at all | `update with no field flags still reaches Asana` |
 | update: goal GID absent → usage error | no positional argument | `update without a GID is a usage error` |
 | render Name / ID / URL / Due / Status fields | text mode, a goal Asana returned after the edit | `update renders the edited goal's fields in text mode` |

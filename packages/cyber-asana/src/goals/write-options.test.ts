@@ -40,4 +40,28 @@ describe('goals/write-options', () => {
 	it('buildGoalUpdateFields omits every field it was not given', () => {
 		expect(buildGoalUpdateFields({})).toEqual({})
 	})
+
+	it('buildGoalCreateFields carries rich-text notes', () => {
+		expect(buildGoalCreateFields({ htmlNotes: '<body>Q2 target</body>' })).toEqual({
+			html_notes: '<body>Q2 target</body>',
+		})
+	})
+
+	it('buildGoalUpdateFields carries rich-text notes', () => {
+		expect(buildGoalUpdateFields({ htmlNotes: '<body>Rebaselined</body>' })).toEqual({
+			html_notes: '<body>Rebaselined</body>',
+		})
+	})
+
+	it('buildGoalCreateFields rejects plain and rich notes at once', () => {
+		expect(() => buildGoalCreateFields({ notes: 'plain', htmlNotes: '<body>rich</body>' })).toThrow(
+			'--notes and --html-notes are mutually exclusive',
+		)
+	})
+
+	it('buildGoalUpdateFields rejects plain and rich notes at once', () => {
+		expect(() => buildGoalUpdateFields({ notes: 'plain', htmlNotes: '<body>rich</body>' })).toThrow(
+			'--notes and --html-notes are mutually exclusive',
+		)
+	})
 })

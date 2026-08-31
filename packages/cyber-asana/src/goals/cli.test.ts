@@ -221,4 +221,39 @@ describe('goals/cli', () => {
 		).rejects.toThrow('--due-on and --clear-due-on are mutually exclusive')
 		expect(updateGoalMock).not.toHaveBeenCalled()
 	})
+
+	it('goal create forwards rich-text notes', async () => {
+		createGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v1' })
+		const program = new Command().addCommand(goalCommand())
+
+		await program.parseAsync(
+			['node', 'test', 'goal', 'create', 'Ship v1', '--workspace-gid', 'ws1', '--html-notes', '<body>Q2</body>'],
+			{ from: 'node' },
+		)
+
+		expect(createGoalMock).toHaveBeenCalledWith('ws1', 'Ship v1', { html_notes: '<body>Q2</body>' })
+	})
+
+	it('goal update forwards rich-text notes', async () => {
+		updateGoalMock.mockResolvedValue({ gid: 'goal1', name: 'Ship v2' })
+		const program = new Command().addCommand(goalCommand())
+
+		await program.parseAsync(['node', 'test', 'goal', 'update', 'goal1', '--html-notes', '<body>Q3</body>'], {
+			from: 'node',
+		})
+
+		expect(updateGoalMock).toHaveBeenCalledWith('goal1', { html_notes: '<body>Q3</body>' })
+	})
+
+	it('goal update rejects --notes together with --html-notes', async () => {
+		const program = new Command().addCommand(goalCommand())
+
+		await expect(
+			program.parseAsync(
+				['node', 'test', 'goal', 'update', 'goal1', '--notes', 'plain', '--html-notes', '<body>rich</body>'],
+				{ from: 'node' },
+			),
+		).rejects.toThrow('--notes and --html-notes are mutually exclusive')
+		expect(updateGoalMock).not.toHaveBeenCalled()
+	})
 })
