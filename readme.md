@@ -483,8 +483,9 @@ Notable parameters:
 - `asana_event_list` — `resource_gid` is a task, project, or goal GID; omit `sync` on the first call and the response carries a fresh token with `sync_reset: true` and no events; pass that token back next time; poll again immediately while `has_more` is true (Asana caps one token at 100 events)
 - `asana_task_list`, `asana_task_my_tasks`, `asana_task_subtask_list` — `incomplete: true` filters to incomplete tasks
 - `asana_task_subtask_list` — `assignee_email`, `follower_emails`, `num_subtasks`, `custom_fields` expand returned fields
-- `asana_task_create` — `project_gid`, `project_gids`, `follower_gids`, `html_notes`, `parent_gid`, `resource_subtype`, `custom_fields`
-- `asana_task_update` — `html_notes`, `start_on`, `clear_start_on`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
+- `asana_task_create` — `project_gid`, `project_gids`, `follower_gids`, `html_notes`, `completed`, `due_on`, `due_at`, `start_on`, `start_at`, `parent_gid`, `resource_subtype`, `custom_fields`
+- `asana_task_update` — `html_notes`, `due_on` / `clear_due_on`, `due_at` / `clear_due_at`, `start_on` / `clear_start_on`, `start_at` / `clear_start_at`, `assignee_gid` / `clear_assignee`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
+- `asana_task_subtask_create` — takes the same write fields as `asana_task_create`; the parent and its workspace come from `task_gid`
 - `asana_task_follower_add` / `asana_task_follower_remove` — manage followers on existing tasks
 - `asana_project_search` — `text`, `completed`, team/owner/member/portfolio filters, date filters, `sort_by`, `sort_ascending`, `opt_fields`
 - `asana_project_counts` — `opt_fields` defaults to `num_tasks,num_incomplete_tasks,num_completed_tasks`
@@ -689,14 +690,24 @@ cyber-asana task update <task-gid> \
 | Flag | Command(s) | Notes |
 |---|---|---|
 | `--html-notes <html>` | `task create`, `task update` | Send task notes as HTML |
+| `--completed` | `task create`, `task update` | Mark the task complete — on `create`, it is created already closed |
 | `--due-on <date>` / `--clear-due-on` | `task create`, `task update` (clear: `task update`) | Due date (`YYYY-MM-DD`), or clear it |
-| `--start-on <date>` / `--clear-start-on` | `task update` | Start date (`YYYY-MM-DD`), or clear it |
+| `--due-at <datetime>` / `--clear-due-at` | `task create`, `task update` (clear: `task update`) | Due date and time (ISO 8601 UTC), or clear it |
+| `--start-on <date>` / `--clear-start-on` | `task create`, `task update` (clear: `task update`) | Start date (`YYYY-MM-DD`), or clear it |
+| `--start-at <datetime>` / `--clear-start-at` | `task create`, `task update` (clear: `task update`) | Start date and time (ISO 8601 UTC), or clear it |
+| `--clear-assignee` | `task update` | Unassign the task |
 | `--parent-gid <gid>` / `--parent <gid>` | `task create`, `task update` | Set the task parent |
 | `--clear-parent` | `task update` | Remove the task parent |
 | `--resource-subtype <subtype>` | `task create`, `task update` | Example: `default_task`, `milestone` |
 | `--custom-fields-json <json>` | `task create`, `task update` | JSON object keyed by custom field GID |
 | `--custom-field <gid=value>` | `task create`, `task update` | Repeatable convenience override for simple values |
 | `--follower <gid[,gid...]>` | `task create` | Add followers immediately after task creation |
+
+Every flag in this table also works on `task subtask create`, except the ones that only
+make sense on a top-level task (`--project-gid`, `--parent-gid`, `--workspace-gid`) and
+the `--clear-*` flags, which belong to `task update`. A date and its date-time twin —
+`--due-on` with `--due-at`, `--start-on` with `--start-at` — are mutually exclusive, and
+Asana requires a due time in the same request when you set or clear `--start-at`.
 
 When both custom-field forms are provided, repeated `--custom-field` entries override duplicate keys from `--custom-fields-json`.
 

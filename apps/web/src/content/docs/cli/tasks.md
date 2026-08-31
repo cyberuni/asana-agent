@@ -68,17 +68,25 @@ cyber-asana task delete <task-gid>
 | `--html-notes <html>` | `create`, `update` | Notes as Asana rich-text HTML |
 | `--due-on <date>` | `create`, `update` | Due date (`YYYY-MM-DD`) |
 | `--clear-due-on` | `update` | Clear the due date |
-| `--start-on <date>` | `update` | Start date (`YYYY-MM-DD`) |
+| `--due-at <datetime>` | `create`, `update` | Due date and time (ISO 8601 UTC) |
+| `--clear-due-at` | `update` | Clear the due date and time |
+| `--start-on <date>` | `create`, `update` | Start date (`YYYY-MM-DD`) |
 | `--clear-start-on` | `update` | Clear the start date |
-| `--completed` | `update` | Mark as completed |
+| `--start-at <datetime>` | `create`, `update` | Start date and time (ISO 8601 UTC) |
+| `--clear-start-at` | `update` | Clear the start date and time |
+| `--clear-assignee` | `update` | Unassign the task |
+| `--completed` | `create`, `update` | Mark as completed — on `create`, the task is created already closed |
 | `--resource-subtype <subtype>` | `create`, `update` | e.g. `default_task`, `milestone` |
 | `--follower <gid[,gid...]>` | `create` | Add followers right after creation |
 | `--custom-fields-json <json>` | `create`, `update` | JSON object keyed by custom field GID |
 | `--custom-field <gid=value>` | `create`, `update` | Repeatable override for simple values |
 
-`--notes` and `--html-notes` are mutually exclusive. When both custom-field forms are
-given, repeated `--custom-field` entries override duplicate keys from
-`--custom-fields-json`.
+`--notes` and `--html-notes` are mutually exclusive, as is a date with its date-time twin
+(`--due-on` with `--due-at`, `--start-on` with `--start-at`); so is any value paired with
+its own `--clear-*` flag. All of these are caught locally, before a request is sent. Asana
+additionally requires a due time in the same request when you set or clear `--start-at`.
+When both custom-field forms are given, repeated `--custom-field` entries override
+duplicate keys from `--custom-fields-json`.
 
 ## Subtasks
 
@@ -87,8 +95,11 @@ cyber-asana task subtask list <task-gid>
 cyber-asana task subtask create <task-gid> "Write the migration" --due-on 2026-09-01
 ```
 
-`subtask create` accepts `--notes` and `--due-on`. `subtask list` adds named flags for
-commonly needed extra fields, which compose with `--opt-fields`:
+`subtask create` accepts the same write options as `task create` — `--notes`,
+`--html-notes`, `--completed`, `--due-on`, `--due-at`, `--start-on`, `--start-at`,
+`--assignee-gid`, `--follower`, `--resource-subtype`, and both custom-field forms. The
+parent task and its workspace come from the `<task-gid>` argument. `subtask list` adds
+named flags for commonly needed extra fields, which compose with `--opt-fields`:
 
 | Flag | Adds to `opt_fields` |
 | --- | --- |

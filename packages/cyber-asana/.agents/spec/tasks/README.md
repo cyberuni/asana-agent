@@ -36,7 +36,7 @@ its own status code. One bad GID in a list of nine does not lose the other eight
 
 **A write sends what you supplied and nothing else.** Every write body is built **by omission**: a
 field the caller did not name is absent from the request, not present-and-empty. Clearing a value is
-therefore its own explicit input (`--clear-due-on`, `--clear-start-on`, `--clear-parent`) rather than "pass an empty
+therefore its own explicit input — one `--clear-*` flag per nullable field it writes — rather than "pass an empty
 string", and naming both a value and its clear flag is a usage error caught locally, before anything
 leaves the process.
 
@@ -100,12 +100,12 @@ MCP) that share one `api.ts`. Neither `cli.ts` nor `mcp.ts` calls the Asana SDK 
 
 | Entry point | Trigger | Inputs | Outcome |
 |---|---|---|---|
-| `task create <name>` (CLI) | caller wants a new task | `--workspace-gid` (defaults from env), `--project-gid`, `--parent-gid`, `--assignee-gid`, `--notes` or `--html-notes`, `--due-on`, `--resource-subtype`, `--follower`, `--custom-fields-json`, repeated `--custom-field <gid=value>` | the created task, rendered as fields |
-| `asana_task_create` (MCP) | agent wants the same | `workspace_gid`, `name`, `project_gid` or `project_gids`, `follower_gids`, `assignee_gid`, `notes` or `html_notes`, `due_on`, `parent_gid`, `resource_subtype`, `custom_fields` object | the created task, JSON-serialized |
-| `task update <gid>` (CLI) | caller wants to change a task | the GID plus `--name`, `--notes` / `--html-notes`, `--completed`, `--due-on` / `--clear-due-on`, `--start-on` / `--clear-start-on`, `--parent-gid` / `--clear-parent`, `--resource-subtype`, custom-field options | the updated task, rendered as fields |
+| `task create <name>` (CLI) | caller wants a new task | `--workspace-gid` (defaults from env), `--project-gid`, `--parent-gid`, `--assignee-gid`, `--notes` or `--html-notes`, `--completed`, `--due-on` or `--due-at`, `--start-on` or `--start-at`, `--resource-subtype`, `--follower`, `--custom-fields-json`, repeated `--custom-field <gid=value>` | the created task, rendered as fields |
+| `asana_task_create` (MCP) | agent wants the same | `workspace_gid`, `name`, `project_gid` or `project_gids`, `follower_gids`, `assignee_gid`, `notes` or `html_notes`, `completed`, `due_on` or `due_at`, `start_on` or `start_at`, `parent_gid`, `resource_subtype`, `custom_fields` object | the created task, JSON-serialized |
+| `task update <gid>` (CLI) | caller wants to change a task | the GID plus `--name`, `--notes` / `--html-notes`, `--completed`, `--due-on` / `--clear-due-on`, `--due-at` / `--clear-due-at`, `--start-on` / `--clear-start-on`, `--start-at` / `--clear-start-at`, `--assignee-gid` / `--clear-assignee`, `--parent-gid` / `--clear-parent`, `--resource-subtype`, custom-field options | the updated task, rendered as fields |
 | `asana_task_update` (MCP) | agent wants the same | `task_gid` plus the same fields under snake_case names | the updated task, JSON-serialized |
-| `task subtask create <task-gid> <name>` (CLI) | caller wants a child task | the parent GID, the name, `--notes`, `--due-on`, `--assignee-gid` | the created subtask, rendered as fields |
-| `asana_task_subtask_create` (MCP) | agent wants the same | `task_gid`, `name`, `notes`, `due_on`, `assignee_gid` | the created subtask, JSON-serialized |
+| `task subtask create <task-gid> <name>` (CLI) | caller wants a child task | the parent GID, the name, and every write option `task create` takes except the ones the parent GID already settles (`--workspace-gid`, `--project-gid`, `--parent-gid`) | the created subtask, rendered as fields |
+| `asana_task_subtask_create` (MCP) | agent wants the same | `task_gid`, `name`, and the same write fields as `asana_task_create` minus `workspace_gid`, the project inputs, and `parent_gid` | the created subtask, JSON-serialized |
 | `task delete <gid>` (CLI) | caller wants a task gone | the GID, positionally | a confirmation naming the deleted GID |
 | `asana_task_delete` (MCP) | agent wants the same | `task_gid` | the same confirmation as text |
 
@@ -263,8 +263,9 @@ graph TD
   W[write entry point invoked] --> WX{conflicting pair supplied?}
   WX -->|notes with html-notes| WXE[usage error — nothing is sent]
   WX -->|parent with clear-parent| WXE
-  WX -->|due-on with clear-due-on| WXE
-  WX -->|start-on with clear-start-on| WXE
+  WX -->|a date-or-time value with its own clear flag| WXE
+  WX -->|a date with its date-time twin<br/>due-on with due-at, start-on with start-at| WXE
+  WX -->|assignee with clear-assignee| WXE
   WX -->|no conflict| WC{custom fields given?}
   WC -->|JSON that is not an object| WCE[usage error — nothing is sent]
   WC -->|an entry with no gid=value shape| WCE
@@ -281,17 +282,21 @@ graph TD
   WU -->|parent or clear-parent only| WU2[one set-parent request<br/>clear-parent sends parent = null]
   WU -->|both| WU3[task-update request, then set-parent request]
   WV -->|delete| WD[delete, then confirm naming the GID]
-  WV -->|subtask create| WS[POST the name under the parent task GID]
+  WV -->|subtask create| WS[POST the create body under the parent task GID<br/>same build step, minus workspace, projects, and parent]
 ```
 
 The load-bearing edges:
 
-- **`WX` is checked locally, so a contradictory invocation costs no request.** All four conflicts
-  reconverge on the same outcome — a non-zero exit and nothing on the wire — which is why the suite
-  covers them as one scenario spanning the three pairs rather than three near-identical ones.
+- **`WX` is checked locally, so a contradictory invocation costs no request.** Every conflict
+  reconverges on the same outcome — a non-zero exit and nothing on the wire — which is why the suite
+  covers them all as one scenario spanning the pairs rather than one near-identical scenario each.
+  Two shapes of conflict live here: a value paired with its own clear flag, and a date paired with
+  its date-time twin. The second is Asana's rule, not this package's — the API documents `due_on`
+  and `due_at` as not to be used together, and would otherwise silently keep whichever it saw last.
 - **`WB` builds by omission rather than by blanking.** An empty string is a *value* in Asana and
   sending one wipes a field. So the only way to clear something is to say so, which is what
-  `--clear-due-on`, `--clear-start-on`, and `--clear-parent` are for, and why they conflict with the
+  the `--clear-*` flags are for — one for every nullable field the command writes, `due_on`,
+  `due_at`, `start_on`, `start_at`, `assignee`, and `parent` — and why each conflicts with its own
   value form at `WX`.
 - **`WCM` gives the repeated `--custom-field gid=value` entries precedence over the JSON blob.** The
   blob is the bulk form and the entries are the surgical form; a caller who supplies both is
@@ -421,16 +426,20 @@ The load-bearing edges:
 |---|---|---|
 | create → name and workspace in the body | a workspace GID and a task name | `create posts the task name under the workspace GID it was given` |
 | unsupplied field → absent from the body | a create and an update each naming exactly one optional field | `create and update send only the optional fields that were supplied` |
-| conflicting pair → usage error, nothing sent | invocations pairing notes with rich notes, parent with clear-parent, due-on with clear-due-on, and start-on with clear-start-on | `conflicting write options are rejected before any request reaches Asana` |
+| conflicting pair → usage error, nothing sent | invocations pairing notes with rich notes, each nullable value with its own clear flag, and each date with its date-time twin | `conflicting write options are rejected before any request reaches Asana` |
 | followers supplied → sent twice | a create naming two follower GIDs | `create sends followers twice, on the create body and again in a follower-addition request` |
 | custom-field JSON and entries → entries win | a JSON object and a repeated entry naming the same custom field GID | `a repeated custom-field entry overrides the same field from the custom-fields JSON` |
 | custom-field input rejected → nothing sent | a custom-fields JSON holding an array, and an entry with no equals sign | `malformed custom-field input is rejected before any request reaches Asana` |
 | clear flag → an explicit null | an update naming clear-due-on and nothing else | `clear-due-on sets the due date to null` |
 | clear flag → an explicit null | an update naming clear-start-on and nothing else | `clear-start-on sets the start date to null` |
+| clear flag → an explicit null | an update naming clear-due-at and clear-start-at and nothing else | `the clear date-time flags set the due and start times to null` |
+| clear flag → an explicit null | an update naming clear-assignee and nothing else | `clear-assignee unassigns the task` |
+| create takes what update takes | a create naming a start date, a due date, and the completed flag | `create accepts every scheduling and completion field update accepts` |
 | parent change → its own request | an update naming both a new name and a new parent GID | `update routes a parent change through a separate request from the other fields` |
 | parent change → its own request | an update naming clear-parent and nothing else | `clear-parent alone issues only the parent request` |
 | delete → confirmation naming the GID | text mode, a task that deletes cleanly | `delete confirms by naming the task it removed` |
 | subtask create → posted under the parent | a parent task GID and a subtask name | `subtask create posts the name under the parent task` |
+| subtask create → the same build step as create | a subtask create naming rich notes, a start date, a subtype, a custom field, and a follower | `subtask create carries the same write fields as task create` |
 | name required → usage error | a create with no name argument | `create without a task name is a usage error` |
 | workspace GID required → usage error | a create with ASANA_WORKSPACE unset and no workspace flag | `create with no workspace GID anywhere is a usage error` |
 | GID required → usage error | an update with no GID argument | `update without a task GID is a usage error` |
