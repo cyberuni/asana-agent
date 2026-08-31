@@ -490,6 +490,7 @@ Notable parameters:
 - `asana_project_search` — `text`, `completed`, team/owner/member/portfolio filters, date filters, `sort_by`, `sort_ascending`, `opt_fields`
 - `asana_project_counts` — `opt_fields` defaults to `num_tasks,num_incomplete_tasks,num_completed_tasks`
 - `asana_project_template_instantiate` — `name`, `team_gid`, `public`, `requested_dates` (`[{gid, value}]` from the template's `requested_dates`), `wait` (default `true`), `timeout_seconds` (default 60). Returns `{ job, project_gid }`; a failed job or an expired wait is an error, never a success with a null `project_gid`
+- `asana_attachment_create` — `connect_to_app` links the authenticated app to an external `url` attachment; Asana honours it only under an OAuth token, and a file upload rejects it locally
 - `asana_tag_create` — `color`, `notes`, `follower_gids` (array or comma-separated); Asana takes followers only at creation, so `asana_tag_update` has no counterpart
 - `asana_tag_update` — `name`, `color`, `clear_color` (Asana's tag colour is nullable), `notes`
 - `asana_tag_delete` — idempotent, like every other delete: deleting a tag that is already gone answers `{ deleted: true, already_absent: true }` rather than a 404

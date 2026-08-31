@@ -13,6 +13,8 @@ export type CreateAttachmentRequest = {
 	file?: NodeJS.ReadableStream
 	url?: string
 	resourceSubtype?: string
+	/** Only honoured for external attachments, and only under an OAuth token. */
+	connectToApp?: boolean
 }
 
 export type AttachmentGateway = {
@@ -44,6 +46,7 @@ export function createAsanaAttachmentGateway(client: Asana.ApiClient): Attachmen
 				...(request.file ? { file: request.file as unknown as string } : {}),
 				...(request.url ? { url: request.url } : {}),
 				...(request.resourceSubtype ? { resource_subtype: request.resourceSubtype } : {}),
+				...(request.connectToApp !== undefined ? { connect_to_app: request.connectToApp } : {}),
 			})
 			return res.data
 		},

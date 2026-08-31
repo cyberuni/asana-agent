@@ -83,14 +83,22 @@ Feature: attachments
     When its accepted inputs are listed
     Then those inputs contain no page size, offset, or fetch-all option
 
-  # ── surface boundary ──
+  # ── attachment create / asana_attachment_create ──
 
-  Scenario: the attachment command group offers only list and get
-    Given the attachment CLI command group
-    When the help text for the group is rendered
-    Then the subcommands it lists are exactly "list" and "get"
+  Scenario: create carries the app connection on a url attachment
+    Given a task with GID "8801"
+    When the attachment create entry point runs with the parent GID "8801", the url "https://example.com/design" and the app-connection flag
+    Then the request reaching the Asana attachments endpoint carries the url "https://example.com/design"
+    And that request carries the connect_to_app field true
 
-  Scenario: the MCP surface registers only the two attachment read tools
-    Given an MCP server with the attachment tools registered
-    When the registered tool names beginning with "asana_attachment_" are listed
-    Then those names are exactly "asana_attachment_list" and "asana_attachment_get"
+  Scenario: create refuses the app connection on a file upload
+    Given a task with GID "8801"
+    When the attachment create entry point runs with the parent GID "8801", the file path "./sprint.md" and the app-connection flag
+    Then the process exits with a non-zero status
+    And stderr states that the app-connection option applies to an external url attachment
+    And no request reaches the Asana attachments endpoint
+
+  Scenario: create sends no app-connection key when the flag is absent
+    Given a task with GID "8801"
+    When the attachment create entry point runs with the parent GID "8801" and the url "https://example.com/design"
+    Then the request reaching the Asana attachments endpoint has no connect_to_app key

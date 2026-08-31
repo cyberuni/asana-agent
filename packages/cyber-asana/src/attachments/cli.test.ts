@@ -133,4 +133,31 @@ describe('attachments/cli', () => {
 
 		expect(injectedGetAttachment).toHaveBeenCalledWith('att1')
 	})
+	it('attachment create forwards --connect-to-app for a url attachment', async () => {
+		createAttachmentMock.mockResolvedValue({ gid: 'att1', name: 'Design doc' })
+
+		await new Command()
+			.addCommand(attachmentCommand())
+			.parseAsync(
+				[
+					'node',
+					'test',
+					'attachment',
+					'create',
+					'--url',
+					'https://example.com/design',
+					'--parent-gid',
+					'task1',
+					'--connect-to-app',
+				],
+				{ from: 'node' },
+			)
+
+		expect(createAttachmentMock).toHaveBeenCalledWith('task1', {
+			file: undefined,
+			url: 'https://example.com/design',
+			name: undefined,
+			connectToApp: true,
+		})
+	})
 })

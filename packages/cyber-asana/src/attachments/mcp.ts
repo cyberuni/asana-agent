@@ -57,12 +57,23 @@ export function registerAttachmentTools(server: McpServer, api?: AttachmentApi |
 			file: z.string().optional().describe('Path to a local file, resolved on the machine running the MCP server'),
 			url: z.string().optional().describe('External URL to attach instead of a file'),
 			name: z.string().optional().describe('Attachment name (default: the file basename, or the URL)'),
+			connect_to_app: z
+				.boolean()
+				.optional()
+				.describe('Connect this app to the external attachment (url only; requires an OAuth token)'),
 		},
-		async ({ parent_gid, file, url, name }) => ({
+		async ({ parent_gid, file, url, name, connect_to_app }) => ({
 			content: [
 				{
 					type: 'text',
-					text: JSON.stringify(await resolveAttachmentApi(api).createAttachment(parent_gid, { file, url, name })),
+					text: JSON.stringify(
+						await resolveAttachmentApi(api).createAttachment(parent_gid, {
+							file,
+							url,
+							name,
+							...(connect_to_app !== undefined && { connectToApp: connect_to_app }),
+						}),
+					),
 				},
 			],
 		}),

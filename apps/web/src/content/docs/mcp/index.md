@@ -153,6 +153,7 @@ List tools accept `limit`, `offset`, `opt_fields`, `fetch_all`, and `max_pages` 
 - `asana_task_create` — `project_gid`, `project_gids`, `follower_gids`, `html_notes`, `completed`, `due_on`, `due_at`, `start_on`, `start_at`, `parent_gid`, `resource_subtype`, `custom_fields`
 - `asana_task_update` — `html_notes`, `due_on` / `clear_due_on`, `due_at` / `clear_due_at`, `start_on` / `clear_start_on`, `start_at` / `clear_start_at`, `assignee_gid` / `clear_assignee`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
 - `asana_task_subtask_create` — takes the same write fields as `asana_task_create`; the parent and its workspace come from `task_gid`
+- `asana_attachment_create` — `connect_to_app` links the authenticated app to an external `url` attachment; Asana honours it only under an OAuth token, and a file upload rejects it locally
 - `asana_tag_create` — `color`, `notes`, `follower_gids` (array or comma-separated); Asana takes followers only at creation, so `asana_tag_update` has no counterpart
 - `asana_tag_update` — `name`, `color`, `clear_color` (Asana's tag colour is nullable), `notes`
 - `asana_tag_delete` — idempotent, like every other delete: deleting a tag that is already gone answers `{ deleted: true, already_absent: true }` rather than a 404

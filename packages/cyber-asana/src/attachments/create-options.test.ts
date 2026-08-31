@@ -35,4 +35,18 @@ describe('buildAttachmentCreateInput', () => {
 	it('rejects a request that carries neither a file nor a url', () => {
 		expect(() => buildAttachmentCreateInput({})).toThrow(/Provide either a file path or a url/)
 	})
+	it('carries connectToApp on a url attachment', () => {
+		expect(buildAttachmentCreateInput({ url: 'https://example.com/design', connectToApp: true })).toEqual({
+			kind: 'url',
+			url: 'https://example.com/design',
+			name: 'https://example.com/design',
+			connectToApp: true,
+		})
+	})
+
+	it('rejects connectToApp on a file upload, which Asana does not honour', () => {
+		expect(() => buildAttachmentCreateInput({ file: './a.txt', connectToApp: true })).toThrow(
+			'--connect-to-app applies to an external --url attachment',
+		)
+	})
 })

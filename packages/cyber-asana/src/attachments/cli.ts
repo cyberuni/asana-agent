@@ -106,17 +106,21 @@ export function attachmentCommand(api?: AttachmentApi | (() => AttachmentApi)) {
 			.command('create [file]')
 			.description('Attach a local file or an external URL to a task, project, or project brief')
 			.option('--url <url>', 'Attach an external URL instead of a local file')
-			.option('--name <name>', 'Attachment name (default: the file basename, or the URL)'),
+			.option('--name <name>', 'Attachment name (default: the file basename, or the URL)')
+			.option('--connect-to-app', 'Connect this app to the external attachment (--url only; requires an OAuth token)'),
 		'parent',
 		'Parent GID — a task, project, or project brief',
-	).action(async (file: string | undefined, opts: CliGidOptions & { url?: string; name?: string }) => {
-		const data = await resolveAttachmentApi(api).createAttachment(requiredParentGid(opts), {
-			file,
-			url: opts.url,
-			name: opts.name,
-		})
-		output(data, () => printFields({ Name: (data as Attachment).name, ID: (data as Attachment).gid }))
-	})
+	).action(
+		async (file: string | undefined, opts: CliGidOptions & { url?: string; name?: string; connectToApp?: boolean }) => {
+			const data = await resolveAttachmentApi(api).createAttachment(requiredParentGid(opts), {
+				file,
+				url: opts.url,
+				name: opts.name,
+				...(opts.connectToApp !== undefined && { connectToApp: opts.connectToApp }),
+			})
+			output(data, () => printFields({ Name: (data as Attachment).name, ID: (data as Attachment).gid }))
+		},
+	)
 
 	cmd
 		.command('delete <gid>')
