@@ -110,6 +110,18 @@ Feature: tags
     Then the process exits with a non-zero status
     And stderr names the missing required argument
 
+  Scenario: update sends a null colour when the colour is cleared
+    Given a tag with GID "77001"
+    When the tag update entry point runs with the tag GID "77001" and the clear-colour flag
+    Then the request body carries a colour of null
+
+  Scenario: update with both a colour and a cleared colour is a usage error
+    Given a tag with GID "77001"
+    When the tag update entry point runs with the tag GID "77001", the colour "dark-teal" and the clear-colour flag
+    Then the process exits with a non-zero status
+    And stderr states that colour and clear-colour are mutually exclusive
+    And no request reaches Asana
+
   Scenario: update sends only the field whose flag was given
     Given a tag named "Rope Ladder" with GID "990212" whose record carries the notes "spare line locker"
     When the tag update command runs with the tag GID "990212" and the colour flag set to "dark-teal"

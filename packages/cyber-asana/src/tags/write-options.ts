@@ -13,3 +13,21 @@ export function parseFollowerGids(value?: string | string[]): string[] | undefin
 	const gids = (Array.isArray(value) ? value : (value?.split(',') ?? [])).map((gid) => gid.trim()).filter(Boolean)
 	return gids.length > 0 ? gids : undefined
 }
+
+type BuildTagUpdateInput = {
+	name?: string
+	color?: string
+	clearColor?: boolean
+	notes?: string
+}
+
+export function buildTagUpdateFields(input: BuildTagUpdateInput): TagWriteFields {
+	if (input.color !== undefined && input.clearColor) {
+		throw new Error('--color and --clear-color are mutually exclusive')
+	}
+	return {
+		...(input.name !== undefined && { name: input.name }),
+		...(input.clearColor ? { color: null } : input.color !== undefined && { color: input.color }),
+		...(input.notes !== undefined && { notes: input.notes }),
+	}
+}

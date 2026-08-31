@@ -15,6 +15,7 @@ cyber-asana tag list
 cyber-asana tag get <gid>
 cyber-asana tag create "Urgent" --color red --notes "Drop everything"
 cyber-asana tag update <gid> --name "P0" --color red
+cyber-asana tag update <gid> --clear-color
 cyber-asana tag delete <gid>
 ```
 
@@ -23,10 +24,13 @@ cyber-asana tag delete <gid>
 | `list` | — | `--workspace-gid <gid>` / `--workspace <gid>`, [pagination](/cyber-asana/cli/#pagination) |
 | `get` | `<gid>` | — |
 | `create` | `<name>` | `--workspace-gid <gid>`, `--color <color>`, `--notes <text>`, `--follower <gid[,gid...]>` |
-| `update` | `<gid>` | `--name <name>`, `--color <color>`, `--notes <text>` |
+| `update` | `<gid>` | `--name <name>`, `--color <color>`, `--clear-color`, `--notes <text>` |
 | `delete` | `<gid>` | — |
 
 `list` and `create` fall back to `ASANA_WORKSPACE` when `--workspace-gid` is omitted.
+
+Asana's tag colour is nullable, so `--clear-color` sends `color: null` and takes the colour off.
+Naming it together with `--color` is a usage error, caught before any request is sent.
 
 `--follower` is create-only: Asana takes `followers` when a tag is created and not when one is
 updated, so `update` has no counterpart.

@@ -21,7 +21,7 @@ import {
 	removeTagFromTask,
 	updateTag,
 } from './api.js'
-import { parseFollowerGids } from './write-options.js'
+import { buildTagUpdateFields, parseFollowerGids } from './write-options.js'
 
 type Tag = { gid: string; name: string; color?: string | null }
 type Task = { gid: string; name: string; completed?: boolean; due_on?: string | null }
@@ -81,6 +81,7 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 			'  cyber-asana tag get <gid> --toon',
 			'  cyber-asana tag create "Urgent" --workspace-gid <gid> --color red --follower <gid,gid>',
 			'  cyber-asana tag update <gid> --name "Critical"',
+			'  cyber-asana tag update <gid> --clear-color',
 			'  cyber-asana tag tasks <tag-gid>',
 			'  cyber-asana tag task list <task-gid>',
 			'  cyber-asana tag task add <task-gid> <tag-gid>',
@@ -163,13 +164,10 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 		.description('Update a tag')
 		.option('--name <name>', 'New tag name')
 		.option('--color <color>', 'New tag color')
+		.option('--clear-color', 'Remove the tag color')
 		.option('--notes <text>', 'New tag notes')
-		.action(async (gid: string, opts: { name?: string; color?: string; notes?: string }) => {
-			const data = await resolveTagApi(api).updateTag(gid, {
-				...(opts.name !== undefined && { name: opts.name }),
-				...(opts.color !== undefined && { color: opts.color }),
-				...(opts.notes !== undefined && { notes: opts.notes }),
-			})
+		.action(async (gid: string, opts: { name?: string; color?: string; clearColor?: boolean; notes?: string }) => {
+			const data = await resolveTagApi(api).updateTag(gid, buildTagUpdateFields(opts))
 			output(data, () => fmtTag(data))
 		})
 

@@ -9,7 +9,7 @@ import type { TagCreateFields } from './write-options.js'
 
 export type TagWriteFields = {
 	name?: string
-	color?: string
+	color?: string | null
 	notes?: string
 }
 

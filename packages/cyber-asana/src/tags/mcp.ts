@@ -13,7 +13,7 @@ import {
 	removeTagFromTask,
 	updateTag,
 } from './api.js'
-import { parseFollowerGids } from './write-options.js'
+import { buildTagUpdateFields, parseFollowerGids } from './write-options.js'
 
 function resolveTagApi(api?: TagApi | (() => TagApi)): TagApi {
 	if (typeof api === 'function') return api()
@@ -95,11 +95,20 @@ export function registerTagTools(server: McpServer, api?: TagApi | (() => TagApi
 			tag_gid: z.string().describe('Tag GID'),
 			name: z.string().optional().describe('New tag name'),
 			color: z.string().optional().describe('New tag color'),
+			clear_color: z.boolean().optional().describe('Remove the tag color'),
 			notes: z.string().optional().describe('New tag notes'),
 		},
-		async ({ tag_gid, name, color, notes }) => ({
+		async ({ tag_gid, name, color, clear_color, notes }) => ({
 			content: [
-				{ type: 'text', text: JSON.stringify(await resolveTagApi(api).updateTag(tag_gid, { name, color, notes })) },
+				{
+					type: 'text',
+					text: JSON.stringify(
+						await resolveTagApi(api).updateTag(
+							tag_gid,
+							buildTagUpdateFields({ name, color, clearColor: clear_color, notes }),
+						),
+					),
+				},
 			],
 		}),
 	)

@@ -202,4 +202,13 @@ describe('tags/mcp', () => {
 
 		expect(createTagMock).toHaveBeenCalledWith('ws1', 'Urgent', { followers: ['u1', 'u2'] })
 	})
+	it('asana_tag_update clears the colour with clear_color', async () => {
+		updateTagMock.mockResolvedValue({ gid: 'tag1', name: 'Urgent' })
+		const server = createServer()
+		registerTagTools(server as any)
+
+		await server.handlers.get('asana_tag_update')?.({ tag_gid: 'tag1', clear_color: true })
+
+		expect(updateTagMock).toHaveBeenCalledWith('tag1', { color: null })
+	})
 })
