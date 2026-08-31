@@ -55,7 +55,27 @@ describe('sections/mcp', () => {
 			name: 'In Progress',
 		})
 
-		expect(createSectionMock).toHaveBeenCalledWith('proj1', 'In Progress')
+		expect(createSectionMock).toHaveBeenCalledWith('proj1', 'In Progress', {
+			insertBefore: undefined,
+			insertAfter: undefined,
+		})
+	})
+
+	it('asana_section_create forwards the placement it was given', async () => {
+		const createSection = vi.fn().mockResolvedValue({ gid: 'sec1', name: 'In Progress' })
+		const server = createServer()
+		registerSectionTools(server as any, apiDouble({ createSection }))
+
+		await server.handlers.get('asana_section_create')?.({
+			project_gid: 'proj1',
+			name: 'In Progress',
+			insert_after: 'sec2',
+		})
+
+		expect(createSection).toHaveBeenCalledWith('proj1', 'In Progress', {
+			insertBefore: undefined,
+			insertAfter: 'sec2',
+		})
 	})
 
 	it('asana_section_update forwards gid and new name', async () => {
@@ -81,7 +101,10 @@ describe('sections/mcp', () => {
 			name: 'In Progress',
 		})
 
-		expect(injectedCreateSection).toHaveBeenCalledWith('proj1', 'In Progress')
+		expect(injectedCreateSection).toHaveBeenCalledWith('proj1', 'In Progress', {
+			insertBefore: undefined,
+			insertAfter: undefined,
+		})
 	})
 
 	it('asana_section_move forwards the project, section, and placement', async () => {

@@ -3,6 +3,8 @@ Feature: sections
 
   Listing, reading, creating, renaming and deleting the named buckets that divide
   an Asana project's task list, over the CLI and MCP surfaces that share one api.ts.
+  A section can be placed relative to a sibling section at create time as well as
+  by a later move.
 
   # ── section list / asana_section_list ──
 
@@ -103,6 +105,31 @@ Feature: sections
     When the section create CLI verb runs
     Then the process exits with a non-zero status
     And no request reaches the Asana sections endpoint
+
+  Scenario: create places the new section before the sibling it was given
+    Given a project with GID "4402" containing a section named "Dry Dock" with GID "6610"
+    When the section create entry point runs with the project GID "4402" and the name "Sea Trials" placed before section "6610"
+    Then the request reaching Asana creates a section in project "4402"
+    And that request carries the placement naming section "6610" as the one to insert before
+
+  Scenario: create places the new section after the sibling it was given
+    Given a project with GID "4402" containing a section named "Dry Dock" with GID "6610"
+    When the section create entry point runs with the project GID "4402" and the name "Sea Trials" placed after section "6610"
+    Then the request reaching Asana creates a section in project "4402"
+    And that request carries the placement naming section "6610" as the one to insert after
+
+  Scenario: create naming both placements is a usage error
+    Given the section create CLI verb receives the project GID "4402" and the name "Sea Trials"
+    And that same invocation names a section to insert before and a section to insert after
+    When the section create CLI verb runs
+    Then the process exits with a non-zero status
+    And no request reaches the Asana sections endpoint
+
+  Scenario: create without a placement sends neither placement field
+    Given a project with GID "4402" that accepts a new section
+    When the section create entry point runs with the project GID "4402" and the name "Sea Trials"
+    Then the request reaching Asana creates a section in project "4402"
+    And that request carries neither placement field
 
   # ── section update / asana_section_update ──
 

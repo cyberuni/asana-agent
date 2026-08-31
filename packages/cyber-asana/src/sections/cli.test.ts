@@ -122,7 +122,65 @@ describe('sections/cli', () => {
 			from: 'node',
 		})
 
-		expect(createSectionMock).toHaveBeenCalledWith('proj1', 'In Progress')
+		expect(createSectionMock).toHaveBeenCalledWith('proj1', 'In Progress', {
+			insertBefore: undefined,
+			insertAfter: undefined,
+		})
+	})
+
+	it('section create places the new section before an existing one', async () => {
+		const createSection = vi.fn().mockResolvedValue({ gid: 'sec1', name: 'In Progress' })
+		const program = new Command().addCommand(sectionCommand(apiDouble({ createSection })))
+
+		await program.parseAsync(
+			['node', 'test', 'section', 'create', 'In Progress', '--project-gid', 'proj1', '--insert-before', 'sec2'],
+			{ from: 'node' },
+		)
+
+		expect(createSection).toHaveBeenCalledWith('proj1', 'In Progress', {
+			insertBefore: 'sec2',
+			insertAfter: undefined,
+		})
+	})
+
+	it('section create places the new section after an existing one', async () => {
+		const createSection = vi.fn().mockResolvedValue({ gid: 'sec1', name: 'In Progress' })
+		const program = new Command().addCommand(sectionCommand(apiDouble({ createSection })))
+
+		await program.parseAsync(
+			['node', 'test', 'section', 'create', 'In Progress', '--project-gid', 'proj1', '--insert-after', 'sec2'],
+			{ from: 'node' },
+		)
+
+		expect(createSection).toHaveBeenCalledWith('proj1', 'In Progress', {
+			insertBefore: undefined,
+			insertAfter: 'sec2',
+		})
+	})
+
+	it('section create rejects passing both --insert-before and --insert-after', async () => {
+		const createSection = vi.fn()
+		const program = new Command().addCommand(sectionCommand(apiDouble({ createSection })))
+
+		await expect(
+			program.parseAsync(
+				[
+					'node',
+					'test',
+					'section',
+					'create',
+					'In Progress',
+					'--project-gid',
+					'proj1',
+					'--insert-before',
+					'sec2',
+					'--insert-after',
+					'sec3',
+				],
+				{ from: 'node' },
+			),
+		).rejects.toThrow('--insert-after and --insert-before are mutually exclusive')
+		expect(createSection).not.toHaveBeenCalled()
 	})
 
 	it('section update forwards gid and new name', async () => {
@@ -142,7 +200,10 @@ describe('sections/cli', () => {
 			from: 'node',
 		})
 
-		expect(injectedCreateSection).toHaveBeenCalledWith('proj1', 'In Progress')
+		expect(injectedCreateSection).toHaveBeenCalledWith('proj1', 'In Progress', {
+			insertBefore: undefined,
+			insertAfter: undefined,
+		})
 	})
 
 	it('section move places a section before another one', async () => {

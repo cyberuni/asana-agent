@@ -28,6 +28,15 @@ describe('createSectionApi', () => {
 		expect(mockListSections).toHaveBeenCalledWith('proj1', undefined)
 	})
 
+	it('uses the provided gateway for createSection, placement included', async () => {
+		const createSection = vi.fn().mockResolvedValue(mockSection)
+		const api = createSectionApi(gatewayDouble({ createSection }))
+
+		await api.createSection('proj1', 'In Progress', { insertAfter: 'sec2' })
+
+		expect(createSection).toHaveBeenCalledWith('proj1', 'In Progress', { insertAfter: 'sec2' })
+	})
+
 	it('uses the provided gateway for moveSection', async () => {
 		const moveSection = vi.fn().mockResolvedValue(undefined)
 		const api = createSectionApi(gatewayDouble({ moveSection }))

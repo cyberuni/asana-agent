@@ -65,8 +65,8 @@ exist, where each one's GIDs come from, what the text rendering shows, and what 
 | `asana_section_list` (MCP) | agent wants the same over MCP | `project_gid`, plus the shared pagination params | the same result, JSON-serialized |
 | `section get <gid>` (CLI) | caller holds a section GID and wants its record | the section GID, positionally | the unwrapped section record, rendered as Name/ID fields in text mode |
 | `asana_section_get` (MCP) | same, over MCP | `section_gid` only | the same record, JSON-serialized |
-| `section create <name>` (CLI) | caller wants a new bucket in a known project | the new name positionally, the project GID as `--project-gid` | the created section's record, rendered as Name/ID fields in text mode |
-| `asana_section_create` (MCP) | same, over MCP | `project_gid` and `name` | the same record, JSON-serialized |
+| `section create <name>` (CLI) | caller wants a new bucket in a known project | the new name positionally, the project GID as `--project-gid`, and optionally one of `--insert-before` / `--insert-after` naming a sibling section | the created section's record, rendered as Name/ID fields in text mode |
+| `asana_section_create` (MCP) | same, over MCP | `project_gid`, `name`, and optionally one of `insert_before` / `insert_after` | the same record, JSON-serialized |
 | `section update <gid>` (CLI) | caller wants to rename an existing bucket | the section GID positionally, the new name as the required flag `--name` | the updated record, rendered as Name/ID fields in text mode |
 | `asana_section_update` (MCP) | same, over MCP | `section_gid` and `name` | the same record, JSON-serialized |
 | `section delete <gid>` (CLI) | caller wants a bucket gone | the section GID, positionally | a one-line confirmation naming the deleted GID; no record |
@@ -97,7 +97,9 @@ graph TD
     CN -->|no| CE1[usage error — the name argument is required]
     CN -->|yes| CS{project GID supplied?}
     CS -->|no| CE2[usage error — Project GID is required]
-    CS -->|yes| CW[create the section in that project<br/>with that name]
+    CS -->|yes| CP{both placements named?}
+    CP -->|yes| CE3[usage error — the two placements<br/>are mutually exclusive]
+    CP -->|no| CW[create the section in that project<br/>with that name, carrying whichever<br/>placement was named]
     CW --> CR[render Name / ID fields of the new record]
   end
 
@@ -172,6 +174,10 @@ The five groups share no decision, so they are drawn separately. The load-bearin
 | render Name / ID fields of the new record | text mode, a created section | `create renders the new section's name and GID in text mode` |
 | project GID absent → usage error | a name given, no project GID | `create without a project GID is a usage error` |
 | name absent → usage error | a project GID given, no name argument | `create without a name is a usage error` |
+| one placement named → the new section lands there | a project, a name, and a sibling section to sit before | `create places the new section before the sibling it was given` |
+| the other placement named → the new section lands there | a project, a name, and a sibling section to sit after | `create places the new section after the sibling it was given` |
+| both placements named → usage error (barred) | a create invocation naming a section to sit both before and after | `create naming both placements is a usage error` |
+| no placement named → Asana's default position | a project and a name, no placement flag | `create without a placement sends neither placement field` |
 
 ### `section update` / `asana_section_update`
 
