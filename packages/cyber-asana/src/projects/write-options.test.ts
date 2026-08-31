@@ -53,4 +53,35 @@ describe('projects/write-options', () => {
 			start_on: null,
 		})
 	})
+
+	it('buildProjectCreateFields carries the archived flag when it is given', () => {
+		expect(buildProjectCreateFields({ archived: true })).toEqual({ archived: true })
+		expect(buildProjectCreateFields({})).toEqual({})
+	})
+
+	it('buildProjectUpdateFields carries the archived flag in both directions', () => {
+		expect(buildProjectUpdateFields({ archived: true })).toEqual({ archived: true })
+		expect(buildProjectUpdateFields({ archived: false })).toEqual({ archived: false })
+		expect(buildProjectUpdateFields({})).toEqual({})
+	})
+
+	it('buildProjectCreateFields carries the owner when it is given', () => {
+		expect(buildProjectCreateFields({ owner: 'me' })).toEqual({ owner: 'me' })
+	})
+
+	it('buildProjectUpdateFields maps the clear owner flag to owner null', () => {
+		expect(buildProjectUpdateFields({ clearOwner: true })).toEqual({ owner: null })
+		expect(buildProjectUpdateFields({ owner: '12345' })).toEqual({ owner: '12345' })
+	})
+
+	it('buildProjectUpdateFields rejects owner and clear_owner together', () => {
+		expect(() => buildProjectUpdateFields({ owner: '12345', clearOwner: true })).toThrow(
+			'--owner and --clear-owner are mutually exclusive',
+		)
+	})
+
+	it('build*ProjectFields carry the default access level', () => {
+		expect(buildProjectCreateFields({ defaultAccessLevel: 'editor' })).toEqual({ default_access_level: 'editor' })
+		expect(buildProjectUpdateFields({ defaultAccessLevel: 'viewer' })).toEqual({ default_access_level: 'viewer' })
+	})
 })

@@ -1,34 +1,44 @@
 type BuildProjectWriteInput = {
+	archived?: boolean
+	owner?: string
 	notes?: string
 	htmlNotes?: string
 	color?: string
 	privacySetting?: 'public_to_workspace' | 'private' | 'private_to_team'
 	defaultView?: 'list' | 'board' | 'calendar' | 'timeline'
+	defaultAccessLevel?: 'admin' | 'editor' | 'commenter' | 'viewer'
 	dueOn?: string
 	startOn?: string
 }
 
 type BuildProjectUpdateInput = BuildProjectWriteInput & {
+	clearOwner?: boolean
 	clearDueOn?: boolean
 	clearStartOn?: boolean
 }
 
 type ProjectCreateFields = {
+	archived?: boolean
+	owner?: string
 	notes?: string
 	html_notes?: string
 	color?: string
 	privacy_setting?: 'public_to_workspace' | 'private' | 'private_to_team'
 	default_view?: 'list' | 'board' | 'calendar' | 'timeline'
+	default_access_level?: 'admin' | 'editor' | 'commenter' | 'viewer'
 	due_on?: string
 	start_on?: string
 }
 
 type ProjectUpdateFields = {
+	archived?: boolean
+	owner?: string | null
 	notes?: string
 	html_notes?: string
 	color?: string
 	privacy_setting?: 'public_to_workspace' | 'private' | 'private_to_team'
 	default_view?: 'list' | 'board' | 'calendar' | 'timeline'
+	default_access_level?: 'admin' | 'editor' | 'commenter' | 'viewer'
 	due_on?: string | null
 	start_on?: string | null
 }
@@ -59,15 +69,24 @@ function assertProjectDateMode(input: {
 	}
 }
 
+function assertOwnerMode(input: { owner?: string; clearOwner?: boolean }) {
+	if (input.owner !== undefined && input.clearOwner) {
+		throw new Error('--owner and --clear-owner are mutually exclusive')
+	}
+}
+
 export function buildProjectCreateFields(input: BuildProjectWriteInput): ProjectCreateFields {
 	assertNotesMode(input.notes, input.htmlNotes)
 	assertProjectDateMode(input)
 	return {
+		...(input.archived !== undefined && { archived: input.archived }),
+		...(input.owner !== undefined && { owner: input.owner }),
 		...(input.notes !== undefined && { notes: input.notes }),
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
 		...(input.color !== undefined && { color: input.color }),
 		...(input.privacySetting !== undefined && { privacy_setting: input.privacySetting }),
 		...(input.defaultView !== undefined && { default_view: input.defaultView }),
+		...(input.defaultAccessLevel !== undefined && { default_access_level: input.defaultAccessLevel }),
 		...(input.dueOn !== undefined && { due_on: input.dueOn }),
 		...(input.startOn !== undefined && { start_on: input.startOn }),
 	}
@@ -76,12 +95,17 @@ export function buildProjectCreateFields(input: BuildProjectWriteInput): Project
 export function buildProjectUpdateFields(input: BuildProjectUpdateInput): ProjectUpdateFields {
 	assertNotesMode(input.notes, input.htmlNotes)
 	assertProjectDateMode(input)
+	assertOwnerMode(input)
 	return {
+		...(input.archived !== undefined && { archived: input.archived }),
+		...(input.owner !== undefined && { owner: input.owner }),
+		...(input.clearOwner !== undefined && { owner: input.clearOwner ? null : input.owner }),
 		...(input.notes !== undefined && { notes: input.notes }),
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
 		...(input.color !== undefined && { color: input.color }),
 		...(input.privacySetting !== undefined && { privacy_setting: input.privacySetting }),
 		...(input.defaultView !== undefined && { default_view: input.defaultView }),
+		...(input.defaultAccessLevel !== undefined && { default_access_level: input.defaultAccessLevel }),
 		...(input.dueOn !== undefined && { due_on: input.dueOn }),
 		...(input.clearDueOn !== undefined && { due_on: input.clearDueOn ? null : input.dueOn }),
 		...(input.startOn !== undefined && { start_on: input.startOn }),

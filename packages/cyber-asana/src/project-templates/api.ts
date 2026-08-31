@@ -8,10 +8,18 @@ import {
 	type InstantiateProjectFields,
 	type ProjectTemplateFilters,
 	type ProjectTemplateGateway,
+	type ProjectTemplatePrivacySetting,
 	type RequestedDate,
+	type RequestedRole,
 } from './gateway.js'
 
-export type { InstantiateProjectFields, ProjectTemplateFilters, RequestedDate }
+export type {
+	InstantiateProjectFields,
+	ProjectTemplateFilters,
+	ProjectTemplatePrivacySetting,
+	RequestedDate,
+	RequestedRole,
+}
 
 /** The project an instantiation job produced, once it has succeeded. */
 export type NewProject = { gid?: string; name?: string }

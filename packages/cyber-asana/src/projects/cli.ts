@@ -115,29 +115,33 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		addGidOption(cmd.command('list').description('List projects in a workspace'), 'workspace', 'Workspace GID', {
 			env: 'ASANA_WORKSPACE',
 		}),
-	).action(
-		async (opts: {
-			workspace?: string
-			workspaceGid?: string
-			limit?: number
-			offset?: string
-			optFields?: string
-		}) => {
-			const pagination = paginationOptionsFromCli(opts)
-			pagination.optFields ??= PROJECT_LIST_FIELDS
-			const data = await resolveProjectApi(api).listProjects(
-				requiredGid(opts, 'workspace', 'Workspace GID'),
-				pagination,
-			)
-			output(data, () => {
-				const items = itemsForOutput(data)
-				fmtProjectList(items)
-				printCountSummary(items.length, 'project(s)')
-				printNextPageHint(data)
-				printNextSteps(PROJECT_LIST_NEXT_STEPS)
-			})
-		},
 	)
+		.option('--archived', 'Only archived projects')
+		.option('--no-archived', 'Only projects that are not archived')
+		.action(
+			async (opts: {
+				workspace?: string
+				workspaceGid?: string
+				archived?: boolean
+				limit?: number
+				offset?: string
+				optFields?: string
+			}) => {
+				const pagination = paginationOptionsFromCli(opts)
+				pagination.optFields ??= PROJECT_LIST_FIELDS
+				const data = await resolveProjectApi(api).listProjects(requiredGid(opts, 'workspace', 'Workspace GID'), {
+					...pagination,
+					...(opts.archived !== undefined && { archived: opts.archived }),
+				})
+				output(data, () => {
+					const items = itemsForOutput(data)
+					fmtProjectList(items)
+					printCountSummary(items.length, 'project(s)')
+					printNextPageHint(data)
+					printNextSteps(PROJECT_LIST_NEXT_STEPS)
+				})
+			},
+		)
 
 	cmd
 		.command('get <gid>')
@@ -273,11 +277,17 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		},
 	)
 	createCmd
+		.option('--archived', 'Create the project already archived')
+		.option('--owner <user>', 'Project owner — a user GID, an email, or "me"')
 		.option('--notes <text>', 'Project notes')
 		.option('--html-notes <html>', 'Project notes as HTML')
 		.option('--color <color>', 'Project color')
 		.option('--privacy-setting <value>', 'Project privacy setting')
 		.option('--default-view <value>', 'Project default view')
+		.option(
+			'--default-access-level <value>',
+			'Default access for users or teams who join the project: admin, editor, commenter, viewer',
+		)
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
 		.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
 		.action(
@@ -286,11 +296,14 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 				opts: {
 					workspace?: string
 					workspaceGid?: string
+					archived?: boolean
+					owner?: string
 					notes?: string
 					htmlNotes?: string
 					color?: string
 					privacySetting?: 'public_to_workspace' | 'private' | 'private_to_team'
 					defaultView?: 'list' | 'board' | 'calendar' | 'timeline'
+					defaultAccessLevel?: 'admin' | 'editor' | 'commenter' | 'viewer'
 					dueOn?: string
 					startOn?: string
 				},
@@ -299,11 +312,14 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 					requiredGid(opts, 'workspace', 'Workspace GID'),
 					name,
 					buildProjectCreateFields({
+						archived: opts.archived,
+						owner: opts.owner,
 						notes: opts.notes,
 						htmlNotes: opts.htmlNotes,
 						color: opts.color,
 						privacySetting: opts.privacySetting,
 						defaultView: opts.defaultView,
+						defaultAccessLevel: opts.defaultAccessLevel,
 						dueOn: opts.dueOn,
 						startOn: opts.startOn,
 					}),
@@ -316,11 +332,19 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		.command('update <gid>')
 		.description('Update a project')
 		.option('--name <name>', 'New name')
+		.option('--archived', 'Archive the project')
+		.option('--no-archived', 'Unarchive the project')
+		.option('--owner <user>', 'New owner — a user GID, an email, or "me"')
+		.option('--clear-owner', 'Leave the project without an owner')
 		.option('--notes <text>', 'New notes')
 		.option('--html-notes <html>', 'New notes as HTML')
 		.option('--color <color>', 'New color')
 		.option('--privacy-setting <value>', 'New project privacy setting')
 		.option('--default-view <value>', 'New default view')
+		.option(
+			'--default-access-level <value>',
+			'Default access for users or teams who join the project: admin, editor, commenter, viewer',
+		)
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
 		.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
 		.option('--clear-due-on', 'Clear the due date')
@@ -330,11 +354,15 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 				gid: string,
 				opts: {
 					name?: string
+					archived?: boolean
+					owner?: string
+					clearOwner?: boolean
 					notes?: string
 					htmlNotes?: string
 					color?: string
 					privacySetting?: 'public_to_workspace' | 'private' | 'private_to_team'
 					defaultView?: 'list' | 'board' | 'calendar' | 'timeline'
+					defaultAccessLevel?: 'admin' | 'editor' | 'commenter' | 'viewer'
 					dueOn?: string
 					startOn?: string
 					clearDueOn?: boolean
@@ -344,11 +372,15 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 				const data = await resolveProjectApi(api).updateProject(gid, {
 					name: opts.name,
 					...buildProjectUpdateFields({
+						archived: opts.archived,
+						owner: opts.owner,
+						clearOwner: opts.clearOwner,
 						notes: opts.notes,
 						htmlNotes: opts.htmlNotes,
 						color: opts.color,
 						privacySetting: opts.privacySetting,
 						defaultView: opts.defaultView,
+						defaultAccessLevel: opts.defaultAccessLevel,
 						dueOn: opts.dueOn,
 						startOn: opts.startOn,
 						clearDueOn: opts.clearDueOn,

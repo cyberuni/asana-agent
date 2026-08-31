@@ -340,4 +340,127 @@ describe('projects/cli', () => {
 
 		expect(injectedCreateProject).toHaveBeenCalledWith('ws1', 'Launch', {})
 	})
+
+	it('project list forwards --archived and --no-archived as the archived filter', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const projectCommand = await loadProjectCommand()
+		const deps = {
+			listProjects,
+			getProject: vi.fn(),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		}
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1', '--archived'], { from: 'node' })
+		expect(listProjects).toHaveBeenLastCalledWith('ws1', expect.objectContaining({ archived: true }))
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1', '--no-archived'], { from: 'node' })
+		expect(listProjects).toHaveBeenLastCalledWith('ws1', expect.objectContaining({ archived: false }))
+	})
+
+	it('project list leaves the archived filter unset when neither flag is given', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(
+				projectCommand({
+					listProjects,
+					getProject: vi.fn(),
+					getProjectTaskCounts: vi.fn(),
+					createProject: vi.fn(),
+					updateProject: vi.fn(),
+					deleteProject: vi.fn(),
+					searchProjects: vi.fn(),
+					exportProject: vi.fn(),
+				}),
+			)
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(listProjects.mock.calls[0]?.[1]).not.toHaveProperty('archived')
+	})
+
+	it('project update archives and unarchives a project', async () => {
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--archived'], { from: 'node' })
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { archived: true })
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--no-archived'], { from: 'node' })
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { archived: false })
+	})
+
+	it('project create carries the archived flag', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'create', 'Launch', '--workspace-gid', 'ws1', '--archived'], {
+				from: 'node',
+			})
+
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { archived: true })
+	})
+
+	it('project create and update carry the owner', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'create', 'Launch', '--workspace-gid', 'ws1', '--owner', 'me'], {
+				from: 'node',
+			})
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { owner: 'me' })
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--owner', '12345'], { from: 'node' })
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { owner: '12345' })
+	})
+
+	it('project update maps clear owner to owner null', async () => {
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--clear-owner'], { from: 'node' })
+
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { owner: null })
+	})
+
+	it('project create and update carry the default access level', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(
+				['node', 'test', 'project', 'create', 'Launch', '--workspace-gid', 'ws1', '--default-access-level', 'editor'],
+				{ from: 'node' },
+			)
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { default_access_level: 'editor' })
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--default-access-level', 'viewer'], { from: 'node' })
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { default_access_level: 'viewer' })
+	})
 })

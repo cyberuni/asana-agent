@@ -65,11 +65,26 @@ export function registerProjectTemplateTools(server: McpServer, api?: ProjectTem
 			project_template_gid: z.string().describe('Project template GID'),
 			name: z.string().describe('Name for the new project'),
 			team_gid: z.string().optional().describe('Team GID for the new project; required in an organization'),
-			public: z.boolean().optional().describe('Whether the new project is visible to the whole team'),
+			public: z
+				.boolean()
+				.optional()
+				.describe('Deprecated by Asana in favour of privacy_setting: whether the new project is visible to the team'),
+			privacy_setting: z
+				.enum(['public_to_workspace', 'private_to_team', 'private'])
+				.optional()
+				.describe('Privacy of the new project; Asana prefers this over the deprecated public flag'),
 			requested_dates: z
 				.array(z.object({ gid: z.string(), value: z.string() }))
 				.optional()
 				.describe("Values for the template's date variables, from the template's requested_dates"),
+			requested_roles: z
+				.array(z.object({ gid: z.string(), value: z.string() }))
+				.optional()
+				.describe('Users for the template\'s roles; value is a user GID, an email, or "me"'),
+			is_strict: z
+				.boolean()
+				.optional()
+				.describe('Fail the instantiation when a date variable is left unfilled instead of defaulting it'),
 			wait: z
 				.boolean()
 				.optional()
@@ -80,12 +95,26 @@ export function registerProjectTemplateTools(server: McpServer, api?: ProjectTem
 				.optional()
 				.describe(`Bound on the wait (default ${DEFAULT_INSTANTIATE_TIMEOUT_SECONDS} seconds)`),
 		},
-		async ({ project_template_gid, name, team_gid, public: isPublic, requested_dates, wait, timeout_seconds }) => {
+		async ({
+			project_template_gid,
+			name,
+			team_gid,
+			public: isPublic,
+			privacy_setting,
+			is_strict,
+			requested_dates,
+			requested_roles,
+			wait,
+			timeout_seconds,
+		}) => {
 			const fields = {
 				name,
 				...(team_gid !== undefined && { team: team_gid }),
 				...(isPublic !== undefined && { public: isPublic }),
+				...(privacy_setting !== undefined && { privacySetting: privacy_setting }),
+				...(is_strict !== undefined && { isStrict: is_strict }),
 				...(requested_dates !== undefined && { requestedDates: requested_dates }),
+				...(requested_roles !== undefined && { requestedRoles: requested_roles }),
 			}
 			const templateApi = resolveProjectTemplateApi(api)
 			const job =

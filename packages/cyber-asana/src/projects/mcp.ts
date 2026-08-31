@@ -35,12 +35,21 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 	server.tool(
 		'asana_project_list',
 		'List Asana projects in a workspace',
-		{ workspace_gid: z.string().describe('Workspace GID'), ...paginationParams },
-		async ({ workspace_gid, ...params }) => ({
+		{
+			workspace_gid: z.string().describe('Workspace GID'),
+			archived: z.boolean().optional().describe('Only return projects whose archived flag matches this value'),
+			...paginationParams,
+		},
+		async ({ workspace_gid, archived, ...params }) => ({
 			content: [
 				{
 					type: 'text',
-					text: JSON.stringify(await resolveProjectApi(api).listProjects(workspace_gid, paginationOptions(params))),
+					text: JSON.stringify(
+						await resolveProjectApi(api).listProjects(workspace_gid, {
+							...paginationOptions(params),
+							...(archived !== undefined && { archived }),
+						}),
+					),
 				},
 			],
 		}),
@@ -185,6 +194,8 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 		{
 			workspace_gid: z.string().describe('Workspace GID'),
 			name: z.string().describe('Project name'),
+			archived: z.boolean().optional().describe('Create the project already archived'),
+			owner: z.string().optional().describe('Project owner — a user GID, an email, or "me"'),
 			notes: z.string().optional().describe('Project notes'),
 			html_notes: z.string().optional().describe('Project notes as HTML'),
 			color: z.string().optional().describe('Project color'),
@@ -193,10 +204,27 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 				.optional()
 				.describe('Project privacy setting'),
 			default_view: z.enum(['list', 'board', 'calendar', 'timeline']).optional().describe('Project default view'),
+			default_access_level: z
+				.enum(['admin', 'editor', 'commenter', 'viewer'])
+				.optional()
+				.describe('Default access for users or teams who join the project'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
 			start_on: z.string().optional().describe('Start date (YYYY-MM-DD)'),
 		},
-		async ({ workspace_gid, name, notes, html_notes, color, privacy_setting, default_view, due_on, start_on }) => ({
+		async ({
+			workspace_gid,
+			name,
+			archived,
+			owner,
+			notes,
+			html_notes,
+			color,
+			privacy_setting,
+			default_view,
+			default_access_level,
+			due_on,
+			start_on,
+		}) => ({
 			content: [
 				{
 					type: 'text',
@@ -205,11 +233,14 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 							workspace_gid,
 							name,
 							buildProjectCreateFields({
+								archived,
+								owner,
 								notes,
 								htmlNotes: html_notes,
 								color,
 								privacySetting: privacy_setting,
 								defaultView: default_view,
+								defaultAccessLevel: default_access_level,
 								dueOn: due_on,
 								startOn: start_on,
 							}),
@@ -226,6 +257,9 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 		{
 			project_gid: z.string().describe('Project GID'),
 			name: z.string().optional().describe('New name'),
+			archived: z.boolean().optional().describe('Archive (true) or unarchive (false) the project'),
+			owner: z.string().optional().describe('New owner — a user GID, an email, or "me"'),
+			clear_owner: z.boolean().optional().describe('Leave the project without an owner'),
 			notes: z.string().optional().describe('New notes'),
 			html_notes: z.string().optional().describe('New notes as HTML'),
 			color: z.string().optional().describe('New color'),
@@ -234,6 +268,10 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 				.optional()
 				.describe('New project privacy setting'),
 			default_view: z.enum(['list', 'board', 'calendar', 'timeline']).optional().describe('New default view'),
+			default_access_level: z
+				.enum(['admin', 'editor', 'commenter', 'viewer'])
+				.optional()
+				.describe('Default access for users or teams who join the project'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
 			start_on: z.string().optional().describe('Start date (YYYY-MM-DD)'),
 			clear_due_on: z.boolean().optional().describe('Clear the due date'),
@@ -242,11 +280,15 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 		async ({
 			project_gid,
 			name,
+			archived,
+			owner,
+			clear_owner,
 			notes,
 			html_notes,
 			color,
 			privacy_setting,
 			default_view,
+			default_access_level,
 			due_on,
 			start_on,
 			clear_due_on,
@@ -259,11 +301,15 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 						await resolveProjectApi(api).updateProject(project_gid, {
 							...(name !== undefined && { name }),
 							...buildProjectUpdateFields({
+								archived,
+								owner,
+								clearOwner: clear_owner,
 								notes,
 								htmlNotes: html_notes,
 								color,
 								privacySetting: privacy_setting,
 								defaultView: default_view,
+								defaultAccessLevel: default_access_level,
 								dueOn: due_on,
 								startOn: start_on,
 								clearDueOn: clear_due_on,

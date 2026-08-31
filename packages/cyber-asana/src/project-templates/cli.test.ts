@@ -198,4 +198,113 @@ describe('project-templates/cli', () => {
 
 		expect(listProjectTemplatesMock).toHaveBeenCalled()
 	})
+
+	it('instantiate carries --privacy-setting into the instantiation fields', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const api = templateApiStub()
+		api.instantiateProjectAndWait = vi.fn().mockResolvedValue(succeededJob)
+		const program = new Command().addCommand(projectTemplateCommand(api))
+
+		await program.parseAsync(
+			['node', 'test', 'project-template', 'instantiate', 'tpl1', '--name', 'Acme', '--privacy-setting', 'private'],
+			{ from: 'node' },
+		)
+
+		expect(api.instantiateProjectAndWait).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme', privacySetting: 'private' },
+			expect.anything(),
+		)
+	})
+
+	it('instantiate rejects --privacy-setting alongside --public', async () => {
+		const api = templateApiStub()
+		const program = exitOverriding(new Command().addCommand(projectTemplateCommand(api)))
+
+		await expect(
+			program.parseAsync(
+				[
+					'node',
+					'test',
+					'project-template',
+					'instantiate',
+					'tpl1',
+					'--name',
+					'Acme',
+					'--public',
+					'--privacy-setting',
+					'private',
+				],
+				{ from: 'node' },
+			),
+		).rejects.toThrow(/privacy-setting/)
+		expect(api.instantiateProjectAndWait).not.toHaveBeenCalled()
+	})
+
+	it('instantiate carries --strict-dates into the instantiation fields', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const api = templateApiStub()
+		api.instantiateProjectAndWait = vi.fn().mockResolvedValue(succeededJob)
+		const program = new Command().addCommand(projectTemplateCommand(api))
+
+		await program.parseAsync(
+			['node', 'test', 'project-template', 'instantiate', 'tpl1', '--name', 'Acme', '--strict-dates'],
+			{ from: 'node' },
+		)
+
+		expect(api.instantiateProjectAndWait).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme', isStrict: true },
+			expect.anything(),
+		)
+	})
+
+	it('instantiate collects repeated --requested-role pairs', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const api = templateApiStub()
+		api.instantiateProjectAndWait = vi.fn().mockResolvedValue(succeededJob)
+		const program = new Command().addCommand(projectTemplateCommand(api))
+
+		await program.parseAsync(
+			[
+				'node',
+				'test',
+				'project-template',
+				'instantiate',
+				'tpl1',
+				'--name',
+				'Acme',
+				'--requested-role',
+				'role1=me',
+				'--requested-role',
+				'role2=potter@nettlefold.test',
+			],
+			{ from: 'node' },
+		)
+
+		expect(api.instantiateProjectAndWait).toHaveBeenCalledWith(
+			'tpl1',
+			{
+				name: 'Acme',
+				requestedRoles: [
+					{ gid: 'role1', value: 'me' },
+					{ gid: 'role2', value: 'potter@nettlefold.test' },
+				],
+			},
+			expect.anything(),
+		)
+	})
+
+	it('instantiate rejects a --requested-role without a value', async () => {
+		const api = templateApiStub()
+		const program = new Command().addCommand(exitOverriding(projectTemplateCommand(api)))
+
+		await expect(
+			program.parseAsync(
+				['node', 'test', 'project-template', 'instantiate', 'tpl1', '--name', 'Acme', '--requested-role', 'role1'],
+				{ from: 'node' },
+			),
+		).rejects.toThrow(/--requested-role must be <template-role-gid>=<user>/)
+		expect(api.instantiateProjectAndWait).not.toHaveBeenCalled()
+	})
 })

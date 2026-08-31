@@ -14,6 +14,20 @@ cyber-asana project create "Launch" --workspace-gid <gid>
 `list`, `create`, and `search` are workspace-scoped and fall back to `ASANA_WORKSPACE` when
 `--workspace-gid` is omitted.
 
+## List
+
+```sh
+cyber-asana project list --workspace-gid <gid> --archived
+cyber-asana project list --workspace-gid <gid> --no-archived
+```
+
+| Option | Description |
+| --- | --- |
+| `--archived` | Only archived projects |
+| `--no-archived` | Only projects that are not archived |
+
+With neither flag the filter is left unset and Asana's own default applies.
+
 ## Create and update
 
 ```sh
@@ -23,6 +37,8 @@ cyber-asana project create "Q3 Launch" \
   --due-on 2026-09-30
 
 cyber-asana project update <gid> --name "Q3 Launch (revised)" --clear-due-on
+cyber-asana project update <gid> --archived
+cyber-asana project update <gid> --no-archived
 cyber-asana project delete <gid>
 ```
 
@@ -30,15 +46,20 @@ cyber-asana project delete <gid>
 | --- | --- | --- |
 | `--workspace-gid <gid>` / `--workspace <gid>` | `create` | Workspace (defaults to `ASANA_WORKSPACE`) |
 | `--name <name>` | `update` | New name |
+| `--archived` | `create`, `update` | Archive the project (on `create`, create it archived) |
+| `--no-archived` | `update` | Unarchive the project |
+| `--owner <user>` | `create`, `update` | Project owner — a user GID, an email, or `me` |
 | `--notes <text>` | `create`, `update` | Project notes |
 | `--html-notes <html>` | `create`, `update` | Notes as Asana rich-text HTML |
 | `--color <color>` | `create`, `update` | Project color |
 | `--privacy-setting <value>` | `create`, `update` | Project privacy setting |
 | `--default-view <value>` | `create`, `update` | Default view |
+| `--default-access-level <value>` | `create`, `update` | Default access for users or teams who join: `admin`, `editor`, `commenter`, `viewer` |
 | `--due-on <date>` | `create`, `update` | Due date (`YYYY-MM-DD`) |
 | `--start-on <date>` | `create`, `update` | Start date (`YYYY-MM-DD`) |
 | `--clear-due-on` | `update` | Clear the due date |
 | `--clear-start-on` | `update` | Clear the start date |
+| `--clear-owner` | `update` | Leave the project without an owner |
 
 ## Task counts
 

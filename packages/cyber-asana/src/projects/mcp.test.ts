@@ -150,4 +150,93 @@ describe('projects/mcp', () => {
 
 		expect(injectedCreateProject).toHaveBeenCalledWith('ws1', 'Launch', {})
 	})
+
+	it('asana_project_list forwards the archived filter', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const server = createServer()
+		registerProjectTools(server as any, {
+			listProjects,
+			getProject: vi.fn(),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		})
+
+		await server.handlers.get('asana_project_list')?.({ workspace_gid: 'ws1', archived: true })
+
+		expect(listProjects).toHaveBeenCalledWith('ws1', expect.objectContaining({ archived: true }))
+		expect(listProjects.mock.calls[0]?.[1]).not.toHaveProperty('workspace_gid')
+	})
+
+	it('asana_project_list leaves the archived filter unset when it is not given', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const server = createServer()
+		registerProjectTools(server as any, {
+			listProjects,
+			getProject: vi.fn(),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		})
+
+		await server.handlers.get('asana_project_list')?.({ workspace_gid: 'ws1' })
+
+		expect(listProjects.mock.calls[0]?.[1]).not.toHaveProperty('archived')
+	})
+
+	it('asana_project_update forwards the archived flag', async () => {
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const server = createServer()
+		registerProjectTools(server as any)
+
+		await server.handlers.get('asana_project_update')?.({ project_gid: '123', archived: true })
+
+		expect(updateProjectMock).toHaveBeenCalledWith('123', { archived: true })
+	})
+
+	it('asana_project_create forwards the archived flag', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const server = createServer()
+		registerProjectTools(server as any)
+
+		await server.handlers.get('asana_project_create')?.({ workspace_gid: 'ws1', name: 'Launch', archived: true })
+
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { archived: true })
+	})
+
+	it('asana_project_create and asana_project_update forward the owner', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const server = createServer()
+		registerProjectTools(server as any)
+
+		await server.handlers.get('asana_project_create')?.({ workspace_gid: 'ws1', name: 'Launch', owner: 'me' })
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { owner: 'me' })
+
+		await server.handlers.get('asana_project_update')?.({ project_gid: '123', clear_owner: true })
+		expect(updateProjectMock).toHaveBeenCalledWith('123', { owner: null })
+	})
+
+	it('asana_project_create and asana_project_update forward the default access level', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const server = createServer()
+		registerProjectTools(server as any)
+
+		await server.handlers.get('asana_project_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Launch',
+			default_access_level: 'editor',
+		})
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { default_access_level: 'editor' })
+
+		await server.handlers.get('asana_project_update')?.({ project_gid: '123', default_access_level: 'viewer' })
+		expect(updateProjectMock).toHaveBeenCalledWith('123', { default_access_level: 'viewer' })
+	})
 })

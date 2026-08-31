@@ -136,4 +136,58 @@ describe('project-templates/mcp', () => {
 			project_gid: null,
 		})
 	})
+
+	it('asana_project_template_instantiate forwards the privacy setting', async () => {
+		instantiateProjectAndWaitMock.mockResolvedValue({ gid: 'job1', new_project: { gid: 'proj1' } })
+		const server = createServer()
+		registerProjectTemplateTools(server as any)
+
+		await server.handlers.get('asana_project_template_instantiate')?.({
+			project_template_gid: 'tpl1',
+			name: 'Acme',
+			privacy_setting: 'private_to_team',
+		})
+
+		expect(instantiateProjectAndWaitMock).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme', privacySetting: 'private_to_team' },
+			expect.anything(),
+		)
+	})
+
+	it('asana_project_template_instantiate forwards the strict date flag', async () => {
+		instantiateProjectAndWaitMock.mockResolvedValue({ gid: 'job1', new_project: { gid: 'proj1' } })
+		const server = createServer()
+		registerProjectTemplateTools(server as any)
+
+		await server.handlers.get('asana_project_template_instantiate')?.({
+			project_template_gid: 'tpl1',
+			name: 'Acme',
+			is_strict: true,
+		})
+
+		expect(instantiateProjectAndWaitMock).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme', isStrict: true },
+			expect.anything(),
+		)
+	})
+
+	it('asana_project_template_instantiate forwards requested roles', async () => {
+		instantiateProjectAndWaitMock.mockResolvedValue({ gid: 'job1', new_project: { gid: 'proj1' } })
+		const server = createServer()
+		registerProjectTemplateTools(server as any)
+
+		await server.handlers.get('asana_project_template_instantiate')?.({
+			project_template_gid: 'tpl1',
+			name: 'Acme',
+			requested_roles: [{ gid: 'role1', value: 'me' }],
+		})
+
+		expect(instantiateProjectAndWaitMock).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme', requestedRoles: [{ gid: 'role1', value: 'me' }] },
+			expect.anything(),
+		)
+	})
 })

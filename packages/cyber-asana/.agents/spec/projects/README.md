@@ -76,17 +76,17 @@ over the two surfaces (CLI and MCP) that share one `api.ts`.
 
 | Entry point | Trigger | Inputs | Outcome |
 |---|---|---|---|
-| `project list` (CLI) | caller wants every project in a workspace | a workspace GID by flag or from `ASANA_WORKSPACE`, plus pagination options | the workspace's projects, rendered as a Name/ID table in text mode |
-| `asana_project_list` (MCP) | agent wants the same enumeration | `workspace_gid` plus the shared pagination params | the same result, JSON-serialized |
+| `project list` (CLI) | caller wants every project in a workspace | a workspace GID by flag or from `ASANA_WORKSPACE`, pagination options, and an optional `--archived` / `--no-archived` filter | the workspace's projects, rendered as a Name/ID table in text mode |
+| `asana_project_list` (MCP) | agent wants the same enumeration | `workspace_gid`, the shared pagination params, and an optional `archived` filter | the same result, JSON-serialized |
 | `project search [text]` (CLI) | caller wants the projects of a workspace matching filters | a workspace GID, an optional text term, and any of the team / owner / member / portfolio / date-window / sort filters | the matching projects, rendered as a Name/ID table in text mode |
 | `asana_project_search` (MCP) | same, over MCP | `workspace_gid` plus the same filters under snake_case names | the same result, JSON-serialized |
 | `project get <gid>` (CLI) | caller holds a project GID and wants the record | the project GID, positionally | the project record, rendered as Name/ID/URL/Color/Notes fields; the repo registry's name for that GID is refreshed |
 | `asana_project_get` (MCP) | same, over MCP | `project_gid` | the same record, JSON-serialized |
 | `project counts <gid>` (CLI) | caller wants how much work a project holds without listing it | the project GID, optional `--opt-fields` | the count fields, rendered as labelled totals in text mode |
 | `asana_project_counts` (MCP) | same, over MCP | `project_gid`, optional `opt_fields` | the same counts, JSON-serialized |
-| `project create <name>` (CLI) | caller wants a new project in a workspace | the name positionally, a workspace GID by flag or environment, optional notes / HTML notes / colour / privacy / default view / due / start | the created project, rendered as fields in text mode |
+| `project create <name>` (CLI) | caller wants a new project in a workspace | the name positionally, a workspace GID by flag or environment, optional archived flag / owner / notes / HTML notes / colour / privacy / default view / default access level / due / start | the created project, rendered as fields in text mode |
 | `asana_project_create` (MCP) | same, over MCP | `workspace_gid`, `name`, the same optional fields | the created project, JSON-serialized |
-| `project update <gid>` (CLI) | caller wants to edit a project | the project GID, plus any of name / notes / HTML notes / colour / privacy / default view / due / start / `--clear-due-on` / `--clear-start-on` | the updated project, rendered as fields in text mode |
+| `project update <gid>` (CLI) | caller wants to edit a project | the project GID, plus any of name / `--archived` / `--no-archived` / owner / notes / HTML notes / colour / privacy / default view / default access level / due / start / `--clear-owner` / `--clear-due-on` / `--clear-start-on` | the updated project, rendered as fields in text mode |
 | `asana_project_update` (MCP) | same, over MCP | `project_gid` plus the same optional fields | the updated project, JSON-serialized |
 | `project delete <gid>` (CLI) | caller wants a project removed | the project GID, positionally | a confirmation naming the removed GID |
 | `asana_project_delete` (MCP) | same, over MCP | `project_gid` | the same confirmation as text |
@@ -188,6 +188,8 @@ The load-bearing edges:
 | workspace GID → enumerate that workspace | a workspace holding two projects | `list returns the projects of the workspace it was given` |
 | no workspace GID from flag or environment → usage error | neither a workspace flag nor `ASANA_WORKSPACE` | `list without a workspace GID anywhere is a usage error` |
 | named filters mapped to Asana's search parameters | a text term plus team, member-exclusion, and due-window filters | `search maps each named filter onto its Asana search parameter` |
+| archived filter passed through to Asana | `--archived` or `--no-archived` on list | `list passes the archived filter through to Asana` |
+| archived filter left to Asana's default when unasked | neither archived flag on list | `list omits the archived filter when neither flag is given` |
 | no pagination options on search (barred) | the search subcommand's help text | `search offers no pagination options` |
 | no workspace GID from flag or environment on search → usage error | neither a workspace flag nor `ASANA_WORKSPACE` | `search without a workspace GID anywhere is a usage error` |
 | render Name / ID table | text mode, two projects, reached by either read | `list and search render each project's name and GID in text mode` |
@@ -196,6 +198,10 @@ The load-bearing edges:
 
 | Edge | Path (Given) | Scenario |
 |---|---|---|
+| default access level carried onto both writes | a default access level on create or update | `create and update carry the default access level` |
+| owner set, and cleared by its own flag | an owner or a clear-owner flag on update | `update sets and clears the project owner` |
+| owner and its clear flag together → usage error | both flags on one update | `update rejects an owner and a clear-owner flag together` |
+| archived set on a write in either direction | an archive flag on update | `update archives and unarchives a project` |
 | create body carries name, workspace, and only supplied fields | a name and a workspace GID and nothing else | `create sends the project name and workspace without the fields that were not supplied` |
 | workspace taken from the environment on a write | `ASANA_WORKSPACE` set, no workspace flag passed | `create takes its workspace from the environment when no workspace flag is given` |
 | plain notes and HTML notes together → refused | both note forms supplied to create | `create refuses plain notes and HTML notes together` |

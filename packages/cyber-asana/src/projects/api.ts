@@ -11,6 +11,7 @@ import {
 
 export type {
 	CreateProjectFields,
+	ProjectAccessLevel,
 	ProjectDefaultView,
 	ProjectPrivacySetting,
 	SearchProjectsOptions,

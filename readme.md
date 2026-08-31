@@ -847,6 +847,28 @@ cyber-asana task search --modified-on-after 2026-05-17 --project-not <gid>
 
 **Other:** `--subtype <subtype>`, `--sort-by <field>`, `--sort-asc`, `--opt-fields <fields>`
 
+### Project list filters
+
+`project list` enumerates a workspace's projects. Asana hides archived projects from
+the default listing, so pass `--archived` to see only archived projects, or
+`--no-archived` to exclude them explicitly.
+
+```sh
+cyber-asana project list --workspace-gid <gid> --archived
+cyber-asana project list --workspace-gid <gid> --no-archived
+```
+
+Omitting both flags leaves the filter unset and takes Asana's own default.
+
+Archiving is a write, not a filter: `project update <gid> --archived` archives a
+project and `--no-archived` restores it. `project create` accepts `--archived` too.
+
+A project's owner is a write too: `--owner <user>` on `create` and `update` takes a
+user GID, an email, or `me`, and `update --clear-owner` leaves the project unowned.
+
+`--default-access-level <admin|editor|commenter|viewer>` sets the access members get
+when they join the project, alongside the `--privacy-setting` that governs who can join.
+
 ### Project search filters
 
 `project search` accepts an optional text query plus filters.
@@ -910,10 +932,17 @@ cyber-asana project-template get <gid>                  # includes the template'
 cyber-asana project-template instantiate <gid> --name "Acme onboarding" --team-gid <gid>
 ```
 
-`--team-gid` is required when the workspace is an organization. `--public` / `--private` set
-the new project's visibility; omit both to let Asana decide. Templates that ask for dates
-list them under `requested_dates` in `project-template get`; pass each one as
-`--requested-date <date-variable-gid>=<YYYY-MM-DD>` (repeatable).
+`--team-gid` is required when the workspace is an organization.
+`--privacy-setting <public_to_workspace|private_to_team|private>` sets the new project's
+visibility; `--public` / `--private` are the older two-valued form of the same thing and
+Asana has deprecated the `public` field behind them, so pass one form or the other, never
+both. Omit all three to let Asana decide. Templates that ask for dates list them under
+`requested_dates` in `project-template get`; pass each one as
+`--requested-date <date-variable-gid>=<YYYY-MM-DD>` (repeatable). By default Asana
+substitutes a default date for any variable you leave unfilled; `--strict-dates` makes an
+unfilled variable an error instead, so a half-dated project never gets created silently. Templates that
+carry roles take `--requested-role <template-role-gid>=<user>` the same way, where the user
+is a GID, an email, or `me`.
 
 Asana builds the project asynchronously and returns a job, so:
 

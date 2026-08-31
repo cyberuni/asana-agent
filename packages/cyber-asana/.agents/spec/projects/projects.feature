@@ -21,6 +21,17 @@ Feature: projects
     And stderr states that a Workspace GID is required
     And no request reaches Asana
 
+  Scenario: list passes the archived filter through to Asana
+    Given a workspace with GID "6120"
+    When the project list entry point runs for workspace "6120" asking only for archived projects
+    Then the request reaching Asana carries the archived filter set to true
+    And a run asking only for projects that are not archived carries the archived filter set to false
+
+  Scenario: list omits the archived filter when neither flag is given
+    Given a workspace with GID "6120"
+    When the project list entry point runs for workspace "6120" with no archived flag
+    Then the request reaching Asana carries no archived filter
+
   Scenario: search maps each named filter onto its Asana search parameter
     Given a workspace with GID "6120"
     And the team GID "7301"
@@ -52,6 +63,30 @@ Feature: projects
     And stdout from each run pairs "Kiln Ledger" with "44018" on one row
 
   # ── project create / project update / project delete ──
+
+  Scenario: create and update carry the default access level
+    Given a workspace with GID "6120"
+    When the project create entry point runs with the default access level "editor"
+    Then the request body reaching Asana carries the default access level "editor"
+    And an update run with the default access level "viewer" carries "viewer" the same way
+
+  Scenario: update sets and clears the project owner
+    Given a project with GID "44017"
+    When the project update entry point runs for "44017" with the owner "me"
+    Then the request body reaching Asana carries the owner "me"
+    And a run asking to clear the owner carries the owner as null
+
+  Scenario: update rejects an owner and a clear-owner flag together
+    Given a project with GID "44017"
+    When the project update entry point runs for "44017" with both an owner and a clear-owner flag
+    Then it fails stating that the two are mutually exclusive
+    And no request reaches Asana
+
+  Scenario: update archives and unarchives a project
+    Given a project with GID "44017"
+    When the project update entry point runs for "44017" asking to archive it
+    Then the request body reaching Asana carries the archived flag set to true
+    And a run asking to unarchive it carries the archived flag set to false
 
   Scenario: create sends the project name and workspace without the fields that were not supplied
     Given a workspace with GID "6120"

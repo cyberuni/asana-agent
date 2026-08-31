@@ -22,7 +22,7 @@ import {
 	listProjectTemplatesForTeam,
 	newProjectOf,
 } from './api.js'
-import type { RequestedDate } from './gateway.js'
+import type { ProjectTemplatePrivacySetting, RequestedDate, RequestedRole } from './gateway.js'
 
 type ProjectTemplate = {
 	gid: string
@@ -67,6 +67,15 @@ function collectRequestedDate(value: string, previous: RequestedDate[] = []): Re
 	const separator = value.indexOf('=')
 	if (separator < 1 || separator === value.length - 1) {
 		throw new InvalidArgumentError('--requested-date must be <date-variable-gid>=<value>')
+	}
+	return [...previous, { gid: value.slice(0, separator), value: value.slice(separator + 1) }]
+}
+
+/** `--requested-role <template-role-gid>=<user>`, repeatable. */
+function collectRequestedRole(value: string, previous: RequestedRole[] = []): RequestedRole[] {
+	const separator = value.indexOf('=')
+	if (separator < 1 || separator === value.length - 1) {
+		throw new InvalidArgumentError('--requested-role must be <template-role-gid>=<user>')
 	}
 	return [...previous, { gid: value.slice(0, separator), value: value.slice(separator + 1) }]
 }
@@ -191,11 +200,22 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 		.option('--public', 'Make the new project visible to the whole team')
 		.option('--private', 'Make the new project private to its members')
 		.option(
+			'--privacy-setting <value>',
+			'Privacy of the new project: public_to_workspace, private_to_team, private (replaces --public/--private)',
+		)
+		.option(
 			'--requested-date <gid=value>',
 			'Value for a template date variable, repeatable',
 			collectRequestedDate,
 			undefined,
 		)
+		.option(
+			'--requested-role <gid=user>',
+			'User for a template role — a user GID, an email, or “me” — repeatable',
+			collectRequestedRole,
+			undefined,
+		)
+		.option('--strict-dates', 'Fail if any of the template’s date variables is left unfilled')
 		.option('--no-wait', 'Return the job immediately instead of waiting for the project')
 		.option(
 			'--timeout <seconds>',
@@ -211,7 +231,10 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 					teamGid?: string
 					public?: boolean
 					private?: boolean
+					privacySetting?: ProjectTemplatePrivacySetting
 					requestedDate?: RequestedDate[]
+					requestedRole?: RequestedRole[]
+					strictDates?: boolean
 					wait: boolean
 					timeout?: number
 				},
@@ -219,12 +242,18 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 				if (opts.public && opts.private) {
 					throw new InvalidArgumentError('--public and --private cannot be used together')
 				}
+				if (opts.privacySetting !== undefined && (opts.public || opts.private)) {
+					throw new InvalidArgumentError('--privacy-setting cannot be used with --public or --private')
+				}
 				const teamGid = normalizedGid(opts, 'team')
 				const fields = {
 					name: opts.name,
 					...(teamGid !== undefined && { team: teamGid }),
 					...((opts.public || opts.private) && { public: opts.public === true }),
+					...(opts.privacySetting !== undefined && { privacySetting: opts.privacySetting }),
 					...(opts.requestedDate !== undefined && { requestedDates: opts.requestedDate }),
+					...(opts.requestedRole !== undefined && { requestedRoles: opts.requestedRole }),
+					...(opts.strictDates !== undefined && { isStrict: opts.strictDates }),
 				}
 				const templateApi = resolveProjectTemplateApi(api)
 
