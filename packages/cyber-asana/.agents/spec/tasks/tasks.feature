@@ -181,7 +181,8 @@ Feature: tasks
     When the task create entry point runs with the notes "grind to 400 grit" and the rich notes "<body>grind to 400 grit</body>"
     And the task update entry point runs for the GID "7301" with the parent GID "7302" and the clear-parent flag
     And the task update entry point runs for the GID "7301" with the due date "2026-03-02" and the clear-due-on flag
-    Then each of those three runs exits with a non-zero status
+    And the task update entry point runs for the GID "7301" with the start date "2026-03-02" and the clear-start-on flag
+    Then each of those four runs exits with a non-zero status
     And no request reaches the task-creation endpoint or the task-update endpoint
     And stderr names the mutually exclusive pair for each run
 
@@ -216,6 +217,11 @@ Feature: tasks
     Given a task with GID "7301" whose due date is "2026-03-02"
     When the task update entry point runs for the GID "7301" with the clear-due-on flag as its only input
     Then the request body reaching the task-update endpoint carries a due_on value of null
+
+  Scenario: clear-start-on sets the start date to null
+    Given a task with GID "7301" whose start date is "2026-03-02"
+    When the task update entry point runs for the GID "7301" with the clear-start-on flag as its only input
+    Then the request body reaching the task-update endpoint carries a start_on value of null
 
   Scenario: update routes a parent change through a separate request from the other fields
     Given a task with GID "7301"

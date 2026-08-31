@@ -484,7 +484,7 @@ Notable parameters:
 - `asana_task_list`, `asana_task_my_tasks`, `asana_task_subtask_list` — `incomplete: true` filters to incomplete tasks
 - `asana_task_subtask_list` — `assignee_email`, `follower_emails`, `num_subtasks`, `custom_fields` expand returned fields
 - `asana_task_create` — `project_gid`, `project_gids`, `follower_gids`, `html_notes`, `parent_gid`, `resource_subtype`, `custom_fields`
-- `asana_task_update` — `html_notes`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
+- `asana_task_update` — `html_notes`, `start_on`, `clear_start_on`, `parent_gid`, `clear_parent`, `resource_subtype`, `custom_fields`
 - `asana_task_follower_add` / `asana_task_follower_remove` — manage followers on existing tasks
 - `asana_project_search` — `text`, `completed`, team/owner/member/portfolio filters, date filters, `sort_by`, `sort_ascending`, `opt_fields`
 - `asana_project_counts` — `opt_fields` defaults to `num_tasks,num_incomplete_tasks,num_completed_tasks`
@@ -689,6 +689,8 @@ cyber-asana task update <task-gid> \
 | Flag | Command(s) | Notes |
 |---|---|---|
 | `--html-notes <html>` | `task create`, `task update` | Send task notes as HTML |
+| `--due-on <date>` / `--clear-due-on` | `task create`, `task update` (clear: `task update`) | Due date (`YYYY-MM-DD`), or clear it |
+| `--start-on <date>` / `--clear-start-on` | `task update` | Start date (`YYYY-MM-DD`), or clear it |
 | `--parent-gid <gid>` / `--parent <gid>` | `task create`, `task update` | Set the task parent |
 | `--clear-parent` | `task update` | Remove the task parent |
 | `--resource-subtype <subtype>` | `task create`, `task update` | Example: `default_task`, `milestone` |

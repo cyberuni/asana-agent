@@ -68,6 +68,8 @@ cyber-asana task delete <task-gid>
 | `--html-notes <html>` | `create`, `update` | Notes as Asana rich-text HTML |
 | `--due-on <date>` | `create`, `update` | Due date (`YYYY-MM-DD`) |
 | `--clear-due-on` | `update` | Clear the due date |
+| `--start-on <date>` | `update` | Start date (`YYYY-MM-DD`) |
+| `--clear-start-on` | `update` | Clear the start date |
 | `--completed` | `update` | Mark as completed |
 | `--resource-subtype <subtype>` | `create`, `update` | e.g. `default_task`, `milestone` |
 | `--follower <gid[,gid...]>` | `create` | Add followers right after creation |
