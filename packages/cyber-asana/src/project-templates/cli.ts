@@ -200,6 +200,7 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 			collectRequestedDate,
 			undefined,
 		)
+		.option('--strict-dates', 'Fail if any of the template’s date variables is left unfilled')
 		.option('--no-wait', 'Return the job immediately instead of waiting for the project')
 		.option(
 			'--timeout <seconds>',
@@ -217,6 +218,7 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 					private?: boolean
 					privacySetting?: ProjectTemplatePrivacySetting
 					requestedDate?: RequestedDate[]
+					strictDates?: boolean
 					wait: boolean
 					timeout?: number
 				},
@@ -234,6 +236,7 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 					...((opts.public || opts.private) && { public: opts.public === true }),
 					...(opts.privacySetting !== undefined && { privacySetting: opts.privacySetting }),
 					...(opts.requestedDate !== undefined && { requestedDates: opts.requestedDate }),
+					...(opts.strictDates !== undefined && { isStrict: opts.strictDates }),
 				}
 				const templateApi = resolveProjectTemplateApi(api)
 

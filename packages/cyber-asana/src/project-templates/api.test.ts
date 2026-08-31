@@ -158,4 +158,16 @@ describe('project-templates/api', () => {
 			body: { data: { name: 'Acme onboarding', privacy_setting: 'private_to_team' } },
 		})
 	})
+
+	it('instantiateProject carries the strict date flag into the instantiation body', async () => {
+		vi.spyOn(Asana.ProjectTemplatesApi.prototype, 'instantiateProject').mockResolvedValue({
+			data: mockJob,
+		} as never)
+
+		await instantiateProject('tpl1', { name: 'Acme onboarding', isStrict: true })
+
+		expect(Asana.ProjectTemplatesApi.prototype.instantiateProject).toHaveBeenCalledWith('tpl1', {
+			body: { data: { name: 'Acme onboarding', is_strict: true } },
+		})
+	})
 })

@@ -924,7 +924,9 @@ visibility; `--public` / `--private` are the older two-valued form of the same t
 Asana has deprecated the `public` field behind them, so pass one form or the other, never
 both. Omit all three to let Asana decide. Templates that ask for dates list them under
 `requested_dates` in `project-template get`; pass each one as
-`--requested-date <date-variable-gid>=<YYYY-MM-DD>` (repeatable).
+`--requested-date <date-variable-gid>=<YYYY-MM-DD>` (repeatable). By default Asana
+substitutes a default date for any variable you leave unfilled; `--strict-dates` makes an
+unfilled variable an error instead, so a half-dated project never gets created silently.
 
 Asana builds the project asynchronously and returns a job, so:
 

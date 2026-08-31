@@ -77,6 +77,10 @@ export function registerProjectTemplateTools(server: McpServer, api?: ProjectTem
 				.array(z.object({ gid: z.string(), value: z.string() }))
 				.optional()
 				.describe("Values for the template's date variables, from the template's requested_dates"),
+			is_strict: z
+				.boolean()
+				.optional()
+				.describe('Fail the instantiation when a date variable is left unfilled instead of defaulting it'),
 			wait: z
 				.boolean()
 				.optional()
@@ -93,6 +97,7 @@ export function registerProjectTemplateTools(server: McpServer, api?: ProjectTem
 			team_gid,
 			public: isPublic,
 			privacy_setting,
+			is_strict,
 			requested_dates,
 			wait,
 			timeout_seconds,
@@ -102,6 +107,7 @@ export function registerProjectTemplateTools(server: McpServer, api?: ProjectTem
 				...(team_gid !== undefined && { team: team_gid }),
 				...(isPublic !== undefined && { public: isPublic }),
 				...(privacy_setting !== undefined && { privacySetting: privacy_setting }),
+				...(is_strict !== undefined && { isStrict: is_strict }),
 				...(requested_dates !== undefined && { requestedDates: requested_dates }),
 			}
 			const templateApi = resolveProjectTemplateApi(api)

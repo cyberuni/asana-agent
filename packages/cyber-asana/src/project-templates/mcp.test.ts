@@ -154,4 +154,22 @@ describe('project-templates/mcp', () => {
 			expect.anything(),
 		)
 	})
+
+	it('asana_project_template_instantiate forwards the strict date flag', async () => {
+		instantiateProjectAndWaitMock.mockResolvedValue({ gid: 'job1', new_project: { gid: 'proj1' } })
+		const server = createServer()
+		registerProjectTemplateTools(server as any)
+
+		await server.handlers.get('asana_project_template_instantiate')?.({
+			project_template_gid: 'tpl1',
+			name: 'Acme',
+			is_strict: true,
+		})
+
+		expect(instantiateProjectAndWaitMock).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme', isStrict: true },
+			expect.anything(),
+		)
+	})
 })

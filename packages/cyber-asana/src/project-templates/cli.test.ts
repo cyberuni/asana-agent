@@ -240,4 +240,22 @@ describe('project-templates/cli', () => {
 		).rejects.toThrow(/privacy-setting/)
 		expect(api.instantiateProjectAndWait).not.toHaveBeenCalled()
 	})
+
+	it('instantiate carries --strict-dates into the instantiation fields', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const api = templateApiStub()
+		api.instantiateProjectAndWait = vi.fn().mockResolvedValue(succeededJob)
+		const program = new Command().addCommand(projectTemplateCommand(api))
+
+		await program.parseAsync(
+			['node', 'test', 'project-template', 'instantiate', 'tpl1', '--name', 'Acme', '--strict-dates'],
+			{ from: 'node' },
+		)
+
+		expect(api.instantiateProjectAndWait).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme', isStrict: true },
+			expect.anything(),
+		)
+	})
 })

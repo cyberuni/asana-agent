@@ -19,3 +19,7 @@ Close cross-surface gaps in the projects and project-templates domains.
 - `project-template instantiate` gains `--privacy-setting` and
   `asana_project_template_instantiate` gains `privacy_setting`. Both surfaces exposed only
   the `public` boolean, which Asana deprecated in favour of `privacy_setting`.
+- `project-template instantiate` gains `--strict-dates` and
+  `asana_project_template_instantiate` gains `is_strict`. Asana's `is_strict` turns an
+  unfilled date variable into an error rather than a silently defaulted date; neither
+  surface could ask for it.

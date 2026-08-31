@@ -23,6 +23,11 @@ export type InstantiateProjectFields = {
 	/** *Deprecated by Asana* in favour of `privacySetting`. */
 	public?: boolean
 	privacySetting?: ProjectTemplatePrivacySetting
+	/**
+	 * Fail the instantiation when a date variable is left unfilled, instead of
+	 * letting Asana substitute a default date for it.
+	 */
+	isStrict?: boolean
 	requestedDates?: RequestedDate[]
 }
 
@@ -46,6 +51,7 @@ function instantiationBody(fields: InstantiateProjectFields) {
 			...(fields.team !== undefined && { team: fields.team }),
 			...(fields.public !== undefined && { public: fields.public }),
 			...(fields.privacySetting !== undefined && { privacy_setting: fields.privacySetting }),
+			...(fields.isStrict !== undefined && { is_strict: fields.isStrict }),
 			...(fields.requestedDates !== undefined && { requested_dates: fields.requestedDates }),
 		},
 	}
