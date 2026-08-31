@@ -10,6 +10,7 @@ Portfolios group projects for roll-up reporting. `list` and `create` fall back t
 
 ```sh
 cyber-asana portfolio list
+cyber-asana portfolio list --owner-gid <user-gid>
 cyber-asana portfolio get <gid>
 cyber-asana portfolio items <gid>
 cyber-asana portfolio create "2026 Roadmap"
@@ -19,7 +20,7 @@ cyber-asana portfolio delete <gid>
 
 | Command | Arguments | Options |
 | --- | --- | --- |
-| `list` | — | `--workspace-gid <gid>` / `--workspace <gid>`, [pagination](/cyber-asana/cli/#pagination) |
+| `list` | — | `--workspace-gid <gid>` / `--workspace <gid>`, `--owner-gid <gid>` / `--owner <gid>`, [pagination](/cyber-asana/cli/#pagination) |
 | `items` | `<gid>` | [pagination](/cyber-asana/cli/#pagination) |
 | `get` | `<gid>` | — |
 | `create` | `<name>` | `--workspace-gid <gid>` / `--workspace <gid>` |
@@ -27,6 +28,9 @@ cyber-asana portfolio delete <gid>
 | `delete` | `<gid>` | — |
 
 `items` lists the projects a portfolio contains.
+
+`--owner-gid` narrows `list` to the portfolios one user owns. Asana honors it for service-account
+tokens only; a regular personal access token can list just its own portfolios either way.
 
 Adding and removing portfolio items is not wrapped — see
 [API coverage](/cyber-asana/reference/api-coverage/). Portfolio members are managed with

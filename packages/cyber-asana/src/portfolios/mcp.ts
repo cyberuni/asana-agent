@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
+import { deleteIdempotently } from '../idempotent-delete.js'
 import { paginationOptions, paginationParams } from '../mcp-options.js'
 import type { PortfolioApi } from './api.js'
 import {
@@ -29,12 +30,24 @@ export function registerPortfolioTools(server: McpServer, api?: PortfolioApi | (
 	server.tool(
 		'asana_portfolio_list',
 		'List Asana portfolios in a workspace',
-		{ workspace_gid: z.string().describe('Workspace GID'), ...paginationParams },
-		async ({ workspace_gid, ...params }) => ({
+		{
+			workspace_gid: z.string().describe('Workspace GID'),
+			owner_gid: z
+				.string()
+				.optional()
+				.describe('Only list portfolios owned by this user GID; honored for service accounts only'),
+			...paginationParams,
+		},
+		async ({ workspace_gid, owner_gid, ...params }) => ({
 			content: [
 				{
 					type: 'text',
-					text: JSON.stringify(await resolvePortfolioApi(api).listPortfolios(workspace_gid, paginationOptions(params))),
+					text: JSON.stringify(
+						await resolvePortfolioApi(api).listPortfolios(workspace_gid, {
+							...paginationOptions(params),
+							...(owner_gid ? { owner: owner_gid } : {}),
+						}),
+					),
 				},
 			],
 		}),
@@ -104,8 +117,10 @@ export function registerPortfolioTools(server: McpServer, api?: PortfolioApi | (
 		'Delete an Asana portfolio',
 		{ portfolio_gid: z.string().describe('Portfolio GID') },
 		async ({ portfolio_gid }) => {
-			await resolvePortfolioApi(api).deletePortfolio(portfolio_gid)
-			return { content: [{ type: 'text', text: `Deleted portfolio ${portfolio_gid}` }] }
+			const result = await deleteIdempotently('portfolio', portfolio_gid, () =>
+				resolvePortfolioApi(api).deletePortfolio(portfolio_gid),
+			)
+			return { content: [{ type: 'text', text: JSON.stringify(result) }] }
 		},
 	)
 }

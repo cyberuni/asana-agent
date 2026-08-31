@@ -52,9 +52,13 @@ known gap, not a considered cut.
 
 The `owner` parameter entered in commit `2f073b2` ("feat: add pagination options"), which widened the
 `listPortfolios` signature and forwarded `owner` to Asana while wiring only the pagination flags into
-the CLI; no surface for it ever existed to be removed. Asana documents `owner` as optional and notes
-that a caller outside a service account can only list portfolios they themselves own, so the filter
-has at most one legal value per token. The parameter stays reachable from the API layer alone.
+the CLI; for a long while it was reachable from the API layer alone. It now has a surface on both
+CLI (`--owner-gid`, legacy alias `--owner`) and MCP (`owner_gid`), because a parameter the gateway
+already sends and neither caller can set is a drop between surfaces, not a decision. Asana documents
+`owner` as optional and honors it for **service-account** tokens: with one, an unfiltered listing
+returns every portfolio in the workspace and `owner` narrows it to one person's. A regular PAT or
+OAuth token can only list the portfolios it owns either way, so the filter is a no-op there rather
+than an error. The option is omitted from the request entirely when the caller does not give it.
 
 **What this node does not own.** Paginated list behavior — bare array versus envelope, what `--all`
 walks, where `--max-pages` stops — is the shared list contract in [axi](../axi/README.md), adopted
@@ -70,8 +74,8 @@ and MCP) that share one `api.ts`.
 
 | Entry point | Trigger | Inputs | Outcome |
 |---|---|---|---|
-| `portfolio list` (CLI) | operator or agent needs the portfolios of a workspace | a workspace GID by flag or from `ASANA_WORKSPACE`, plus pagination options | the workspace's portfolios, rendered as a Name/ID table in text mode |
-| `asana_portfolio_list` (MCP) | agent needs the same listing over MCP | `workspace_gid` (required) plus the shared pagination params | the same result, JSON-serialized |
+| `portfolio list` (CLI) | operator or agent needs the portfolios of a workspace | a workspace GID by flag or from `ASANA_WORKSPACE`, an optional owner GID, plus pagination options | the workspace's portfolios, rendered as a Name/ID table in text mode |
+| `asana_portfolio_list` (MCP) | agent needs the same listing over MCP | `workspace_gid` (required), optional `owner_gid`, plus the shared pagination params | the same result, JSON-serialized |
 | `portfolio items <gid>` (CLI) | caller wants the projects inside a known portfolio | the portfolio GID, positionally, plus pagination options | the portfolio's items, rendered as a Name/ID table in text mode |
 | `asana_portfolio_item_list` (MCP) | same, over MCP | `portfolio_gid` plus the shared pagination params | the same result, JSON-serialized |
 | `portfolio get <gid>` (CLI) | caller holds a portfolio GID and wants that portfolio's record | the portfolio GID, positionally | the unwrapped record, rendered as Name/ID/URL fields in text mode |
@@ -94,7 +98,11 @@ graph TD
     LF -->|no, MCP| LX[schema rejects the call —<br/>workspace_gid is required]
     LE -->|yes| LQ
     LE -->|no| LU[usage error — Workspace GID is required]
-    LQ --> LR[render Name / ID table]
+    LQ --> LO{owner GID given?}
+    LO -->|yes| LW[send owner alongside the workspace]
+    LO -->|no| LN[send no owner key at all]
+    LW --> LR[render Name / ID table]
+    LN --> LR
   end
 
   subgraph items["portfolio items / asana_portfolio_item_list"]
@@ -124,7 +132,9 @@ graph TD
     UN -->|no| UZ[send an update carrying no field]
     D[delete invoked] --> DG{portfolio GID given?}
     DG -->|no| DU[usage error — the argument is required]
-    DG -->|yes| DS[delete, then print a confirmation<br/>sentence — no record is returned]
+    DG -->|yes| DD{Asana still has it?}
+    DD -->|yes| DS[delete, then acknowledge —<br/>no record is returned]
+    DD -->|no, 404| DA[acknowledge with already_absent,<br/>not an error]
   end
 
   subgraph bound["surface boundary"]
@@ -140,7 +150,8 @@ The groups run genuinely different logic, so they are drawn separately. The load
   wrongly-defaulted portfolio GID would silently address the wrong portfolio — and for `delete` it
   would destroy it. The fallback is deliberately **absent** over MCP for both `list` and `create`: an
   MCP client has no shell of its own to configure, so an environment default there would bind every
-  tool call to whatever the server process happened to start with.
+  tool call to whatever the server process happened to start with. The **owner** filter is never
+  defaulted from anywhere on either surface: it is sent only when the caller names it.
 - **`create` carries the environment default even though it writes.** That is the one place a write
   takes an input the caller did not type. It is defensible because a workspace is the coarsest
   possible scope — creating a portfolio in the wrong *workspace* requires having the wrong workspace
@@ -151,8 +162,15 @@ The groups run genuinely different logic, so they are drawn separately. The load
 - **The permalink URL is optional.** Asana omits it on some records, so the text rendering simply has
   no URL line when there is no URL. Name and GID are always there.
 - **`delete` returns no record, so it does not render one.** Asana answers a delete with an empty
-  body. Both surfaces answer with the same one-line confirmation sentence naming the GID, rather than
-  serializing an empty object that would read like a failed read.
+  body. Both surfaces answer with an acknowledgement naming the GID, rather than serializing an empty
+  object that would read like a failed read — a sentence in CLI text mode, the structured
+  acknowledgement in `--json`/`--toon` and over MCP.
+- **`delete` is idempotent on both surfaces.** Deleting a portfolio that is already gone is the state
+  the caller asked for, so the shared `deleteIdempotently` turns Asana's 404 into
+  `already_absent: true` rather than an error. The CLI has always done this; the MCP tool called
+  Asana bare and handed the 404 to the agent, which made a retry fail where the same retry on the CLI
+  succeeded. That was a drop between surfaces, not a decision, and the tool now uses the same helper
+  every other delete in the package uses.
 
 - **`update` with no new name is not rejected.** `--name` is optional on both surfaces, and an update
   carrying no field goes out as an empty `data` block; Asana updates only the fields provided, so it
@@ -169,7 +187,8 @@ The groups run genuinely different logic, so they are drawn separately. The load
 | no flag → environment fallback | `ASANA_WORKSPACE` set, no flag passed | `list falls back to the workspace environment variable` |
 | no flag, no environment → usage error | neither flag nor environment supplies a workspace | `list without a workspace GID anywhere is a usage error` |
 | no environment fallback over MCP (barred) | the registered portfolio list tool | `asana_portfolio_list requires an explicit workspace GID` |
-| no owner filter on either surface (barred) | the portfolio list entry point on both surfaces | `list offers no owner filter` |
+| owner filter given → narrow the listing | an owner GID supplied on either surface | `list narrows to one owner when an owner GID is given` |
+| no owner filter given → send none | a list invocation naming only a workspace | `list sends no owner filter when none is given` |
 | render Name / ID table | text mode, two portfolios | `list renders each portfolio's name and GID in text mode` |
 
 ### `portfolio items` / `asana_portfolio_item_list`
@@ -216,7 +235,8 @@ The groups run genuinely different logic, so they are drawn separately. The load
 |---|---|---|
 | portfolio GID given → delete and confirm | an existing portfolio named in the invocation | `delete removes the portfolio and confirms with its GID` |
 | portfolio GID absent → usage error, nothing deleted | no positional argument on the delete verb | `delete without a portfolio GID is a usage error` |
-| empty delete response → confirmation text, not a record | the MCP delete tool applied to an existing portfolio | `asana_portfolio_delete answers with a confirmation sentence rather than a record` |
+| empty delete response → acknowledgement, not a record | the MCP delete tool applied to an existing portfolio | `asana_portfolio_delete answers with a structured acknowledgement rather than a record` |
+| already-deleted portfolio → success, not a 404 | a portfolio GID Asana no longer has | `deleting a portfolio that is already gone succeeds on both surfaces` |
 
 ### surface boundary
 

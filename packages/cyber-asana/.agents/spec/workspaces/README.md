@@ -109,9 +109,7 @@ it, and silently reading a different workspace than the one named would be worse
 
 ## Known gaps
 
-**`list` sets no default `opt_fields`.** AGENTS.md requires list commands to set a small default
-schema when the caller gives none, and this command does not — nor do the other workspace-scoped list
-commands; `task list` is the only one in the package that applies one today. The omission is a
-package-wide gap against a written rule rather than a workspaces-specific choice, and it costs little
-here, because Asana's compact workspace record already carries exactly the name and GID this command
-renders.
+None open. The one recorded here — `list` setting no default `opt_fields` — is closed: the command
+now applies `gid,name` when the caller gives none, as AGENTS.md requires and as the other list
+commands in the package now do. The default costs nothing here, because Asana's compact workspace
+record already carries exactly the name and GID this command renders.

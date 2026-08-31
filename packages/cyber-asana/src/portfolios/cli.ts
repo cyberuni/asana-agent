@@ -3,6 +3,7 @@ import {
 	addGidOption,
 	addPaginationOptions,
 	itemsForOutput,
+	normalizedGid,
 	paginationOptionsFromCli,
 	printNextPageHint,
 	requiredGid,
@@ -56,6 +57,7 @@ export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 			'',
 			'Examples:',
 			'  cyber-asana portfolio list --workspace-gid <gid>',
+			'  cyber-asana portfolio list --workspace-gid <gid> --owner-gid <user-gid>',
 			'  cyber-asana portfolio items <gid>',
 			'  cyber-asana portfolio get <gid> --toon',
 			'  cyber-asana portfolio create "Roadmap" --workspace-gid <gid>',
@@ -67,23 +69,30 @@ export function portfolioCommand(api?: PortfolioApi | (() => PortfolioApi)) {
 	)
 
 	addPaginationOptions(
-		addGidOption(cmd.command('list').description('List portfolios in a workspace'), 'workspace', 'Workspace GID', {
-			env: 'ASANA_WORKSPACE',
-		}),
+		addGidOption(
+			addGidOption(cmd.command('list').description('List portfolios in a workspace'), 'workspace', 'Workspace GID', {
+				env: 'ASANA_WORKSPACE',
+			}),
+			'owner',
+			'Only list portfolios owned by this user GID (service accounts only)',
+		),
 	).action(
 		async (opts: {
 			workspace?: string
 			workspaceGid?: string
+			owner?: string
+			ownerGid?: string
 			limit?: number
 			offset?: string
 			optFields?: string
 		}) => {
 			const pagination = paginationOptionsFromCli(opts)
 			pagination.optFields ??= PORTFOLIO_LIST_FIELDS
-			const data = await resolvePortfolioApi(api).listPortfolios(
-				requiredGid(opts, 'workspace', 'Workspace GID'),
-				pagination,
-			)
+			const owner = normalizedGid(opts, 'owner')
+			const data = await resolvePortfolioApi(api).listPortfolios(requiredGid(opts, 'workspace', 'Workspace GID'), {
+				...pagination,
+				...(owner ? { owner } : {}),
+			})
 			output(data, () => {
 				const items = itemsForOutput(data)
 				printTable(
