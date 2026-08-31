@@ -415,4 +415,33 @@ describe('projects/cli', () => {
 
 		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { archived: true })
 	})
+
+	it('project create and update carry the owner', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'create', 'Launch', '--workspace-gid', 'ws1', '--owner', 'me'], {
+				from: 'node',
+			})
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { owner: 'me' })
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--owner', '12345'], { from: 'node' })
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { owner: '12345' })
+	})
+
+	it('project update maps clear owner to owner null', async () => {
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--clear-owner'], { from: 'node' })
+
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { owner: null })
+	})
 })

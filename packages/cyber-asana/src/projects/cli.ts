@@ -278,6 +278,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 	)
 	createCmd
 		.option('--archived', 'Create the project already archived')
+		.option('--owner <user>', 'Project owner — a user GID, an email, or "me"')
 		.option('--notes <text>', 'Project notes')
 		.option('--html-notes <html>', 'Project notes as HTML')
 		.option('--color <color>', 'Project color')
@@ -292,6 +293,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 					workspace?: string
 					workspaceGid?: string
 					archived?: boolean
+					owner?: string
 					notes?: string
 					htmlNotes?: string
 					color?: string
@@ -306,6 +308,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 					name,
 					buildProjectCreateFields({
 						archived: opts.archived,
+						owner: opts.owner,
 						notes: opts.notes,
 						htmlNotes: opts.htmlNotes,
 						color: opts.color,
@@ -325,6 +328,8 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		.option('--name <name>', 'New name')
 		.option('--archived', 'Archive the project')
 		.option('--no-archived', 'Unarchive the project')
+		.option('--owner <user>', 'New owner — a user GID, an email, or "me"')
+		.option('--clear-owner', 'Leave the project without an owner')
 		.option('--notes <text>', 'New notes')
 		.option('--html-notes <html>', 'New notes as HTML')
 		.option('--color <color>', 'New color')
@@ -340,6 +345,8 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 				opts: {
 					name?: string
 					archived?: boolean
+					owner?: string
+					clearOwner?: boolean
 					notes?: string
 					htmlNotes?: string
 					color?: string
@@ -355,6 +362,8 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 					name: opts.name,
 					...buildProjectUpdateFields({
 						archived: opts.archived,
+						owner: opts.owner,
+						clearOwner: opts.clearOwner,
 						notes: opts.notes,
 						htmlNotes: opts.htmlNotes,
 						color: opts.color,

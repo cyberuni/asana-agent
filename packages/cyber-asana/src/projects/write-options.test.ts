@@ -64,4 +64,19 @@ describe('projects/write-options', () => {
 		expect(buildProjectUpdateFields({ archived: false })).toEqual({ archived: false })
 		expect(buildProjectUpdateFields({})).toEqual({})
 	})
+
+	it('buildProjectCreateFields carries the owner when it is given', () => {
+		expect(buildProjectCreateFields({ owner: 'me' })).toEqual({ owner: 'me' })
+	})
+
+	it('buildProjectUpdateFields maps the clear owner flag to owner null', () => {
+		expect(buildProjectUpdateFields({ clearOwner: true })).toEqual({ owner: null })
+		expect(buildProjectUpdateFields({ owner: '12345' })).toEqual({ owner: '12345' })
+	})
+
+	it('buildProjectUpdateFields rejects owner and clear_owner together', () => {
+		expect(() => buildProjectUpdateFields({ owner: '12345', clearOwner: true })).toThrow(
+			'--owner and --clear-owner are mutually exclusive',
+		)
+	})
 })

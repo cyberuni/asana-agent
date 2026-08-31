@@ -64,6 +64,18 @@ Feature: projects
 
   # ── project create / project update / project delete ──
 
+  Scenario: update sets and clears the project owner
+    Given a project with GID "44017"
+    When the project update entry point runs for "44017" with the owner "me"
+    Then the request body reaching Asana carries the owner "me"
+    And a run asking to clear the owner carries the owner as null
+
+  Scenario: update rejects an owner and a clear-owner flag together
+    Given a project with GID "44017"
+    When the project update entry point runs for "44017" with both an owner and a clear-owner flag
+    Then it fails stating that the two are mutually exclusive
+    And no request reaches Asana
+
   Scenario: update archives and unarchives a project
     Given a project with GID "44017"
     When the project update entry point runs for "44017" asking to archive it

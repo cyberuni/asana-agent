@@ -84,9 +84,9 @@ over the two surfaces (CLI and MCP) that share one `api.ts`.
 | `asana_project_get` (MCP) | same, over MCP | `project_gid` | the same record, JSON-serialized |
 | `project counts <gid>` (CLI) | caller wants how much work a project holds without listing it | the project GID, optional `--opt-fields` | the count fields, rendered as labelled totals in text mode |
 | `asana_project_counts` (MCP) | same, over MCP | `project_gid`, optional `opt_fields` | the same counts, JSON-serialized |
-| `project create <name>` (CLI) | caller wants a new project in a workspace | the name positionally, a workspace GID by flag or environment, optional archived flag / notes / HTML notes / colour / privacy / default view / due / start | the created project, rendered as fields in text mode |
+| `project create <name>` (CLI) | caller wants a new project in a workspace | the name positionally, a workspace GID by flag or environment, optional archived flag / owner / notes / HTML notes / colour / privacy / default view / due / start | the created project, rendered as fields in text mode |
 | `asana_project_create` (MCP) | same, over MCP | `workspace_gid`, `name`, the same optional fields | the created project, JSON-serialized |
-| `project update <gid>` (CLI) | caller wants to edit a project | the project GID, plus any of name / `--archived` / `--no-archived` / notes / HTML notes / colour / privacy / default view / due / start / `--clear-due-on` / `--clear-start-on` | the updated project, rendered as fields in text mode |
+| `project update <gid>` (CLI) | caller wants to edit a project | the project GID, plus any of name / `--archived` / `--no-archived` / owner / notes / HTML notes / colour / privacy / default view / due / start / `--clear-owner` / `--clear-due-on` / `--clear-start-on` | the updated project, rendered as fields in text mode |
 | `asana_project_update` (MCP) | same, over MCP | `project_gid` plus the same optional fields | the updated project, JSON-serialized |
 | `project delete <gid>` (CLI) | caller wants a project removed | the project GID, positionally | a confirmation naming the removed GID |
 | `asana_project_delete` (MCP) | same, over MCP | `project_gid` | the same confirmation as text |
@@ -198,6 +198,8 @@ The load-bearing edges:
 
 | Edge | Path (Given) | Scenario |
 |---|---|---|
+| owner set, and cleared by its own flag | an owner or a clear-owner flag on update | `update sets and clears the project owner` |
+| owner and its clear flag together → usage error | both flags on one update | `update rejects an owner and a clear-owner flag together` |
 | archived set on a write in either direction | an archive flag on update | `update archives and unarchives a project` |
 | create body carries name, workspace, and only supplied fields | a name and a workspace GID and nothing else | `create sends the project name and workspace without the fields that were not supplied` |
 | workspace taken from the environment on a write | `ASANA_WORKSPACE` set, no workspace flag passed | `create takes its workspace from the environment when no workspace flag is given` |

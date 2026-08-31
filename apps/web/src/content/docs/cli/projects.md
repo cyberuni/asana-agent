@@ -48,6 +48,7 @@ cyber-asana project delete <gid>
 | `--name <name>` | `update` | New name |
 | `--archived` | `create`, `update` | Archive the project (on `create`, create it archived) |
 | `--no-archived` | `update` | Unarchive the project |
+| `--owner <user>` | `create`, `update` | Project owner — a user GID, an email, or `me` |
 | `--notes <text>` | `create`, `update` | Project notes |
 | `--html-notes <html>` | `create`, `update` | Notes as Asana rich-text HTML |
 | `--color <color>` | `create`, `update` | Project color |
@@ -57,6 +58,7 @@ cyber-asana project delete <gid>
 | `--start-on <date>` | `create`, `update` | Start date (`YYYY-MM-DD`) |
 | `--clear-due-on` | `update` | Clear the due date |
 | `--clear-start-on` | `update` | Clear the start date |
+| `--clear-owner` | `update` | Leave the project without an owner |
 
 ## Task counts
 

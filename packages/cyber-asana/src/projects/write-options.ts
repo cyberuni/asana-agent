@@ -1,5 +1,6 @@
 type BuildProjectWriteInput = {
 	archived?: boolean
+	owner?: string
 	notes?: string
 	htmlNotes?: string
 	color?: string
@@ -10,12 +11,14 @@ type BuildProjectWriteInput = {
 }
 
 type BuildProjectUpdateInput = BuildProjectWriteInput & {
+	clearOwner?: boolean
 	clearDueOn?: boolean
 	clearStartOn?: boolean
 }
 
 type ProjectCreateFields = {
 	archived?: boolean
+	owner?: string
 	notes?: string
 	html_notes?: string
 	color?: string
@@ -27,6 +30,7 @@ type ProjectCreateFields = {
 
 type ProjectUpdateFields = {
 	archived?: boolean
+	owner?: string | null
 	notes?: string
 	html_notes?: string
 	color?: string
@@ -62,11 +66,18 @@ function assertProjectDateMode(input: {
 	}
 }
 
+function assertOwnerMode(input: { owner?: string; clearOwner?: boolean }) {
+	if (input.owner !== undefined && input.clearOwner) {
+		throw new Error('--owner and --clear-owner are mutually exclusive')
+	}
+}
+
 export function buildProjectCreateFields(input: BuildProjectWriteInput): ProjectCreateFields {
 	assertNotesMode(input.notes, input.htmlNotes)
 	assertProjectDateMode(input)
 	return {
 		...(input.archived !== undefined && { archived: input.archived }),
+		...(input.owner !== undefined && { owner: input.owner }),
 		...(input.notes !== undefined && { notes: input.notes }),
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
 		...(input.color !== undefined && { color: input.color }),
@@ -80,8 +91,11 @@ export function buildProjectCreateFields(input: BuildProjectWriteInput): Project
 export function buildProjectUpdateFields(input: BuildProjectUpdateInput): ProjectUpdateFields {
 	assertNotesMode(input.notes, input.htmlNotes)
 	assertProjectDateMode(input)
+	assertOwnerMode(input)
 	return {
 		...(input.archived !== undefined && { archived: input.archived }),
+		...(input.owner !== undefined && { owner: input.owner }),
+		...(input.clearOwner !== undefined && { owner: input.clearOwner ? null : input.owner }),
 		...(input.notes !== undefined && { notes: input.notes }),
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
 		...(input.color !== undefined && { color: input.color }),

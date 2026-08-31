@@ -11,6 +11,7 @@ export type ProjectDefaultView = 'list' | 'board' | 'calendar' | 'timeline'
 
 export type CreateProjectFields = {
 	archived?: boolean
+	owner?: string
 	notes?: string
 	html_notes?: string
 	color?: string
@@ -23,6 +24,7 @@ export type CreateProjectFields = {
 export type UpdateProjectFields = {
 	name?: string
 	archived?: boolean
+	owner?: string | null
 	notes?: string
 	html_notes?: string
 	color?: string

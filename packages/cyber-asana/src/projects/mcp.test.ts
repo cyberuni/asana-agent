@@ -209,4 +209,17 @@ describe('projects/mcp', () => {
 
 		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { archived: true })
 	})
+
+	it('asana_project_create and asana_project_update forward the owner', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const server = createServer()
+		registerProjectTools(server as any)
+
+		await server.handlers.get('asana_project_create')?.({ workspace_gid: 'ws1', name: 'Launch', owner: 'me' })
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { owner: 'me' })
+
+		await server.handlers.get('asana_project_update')?.({ project_gid: '123', clear_owner: true })
+		expect(updateProjectMock).toHaveBeenCalledWith('123', { owner: null })
+	})
 })

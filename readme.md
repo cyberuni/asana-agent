@@ -849,6 +849,9 @@ Omitting both flags leaves the filter unset and takes Asana's own default.
 Archiving is a write, not a filter: `project update <gid> --archived` archives a
 project and `--no-archived` restores it. `project create` accepts `--archived` too.
 
+A project's owner is a write too: `--owner <user>` on `create` and `update` takes a
+user GID, an email, or `me`, and `update --clear-owner` leaves the project unowned.
+
 ### Project search filters
 
 `project search` accepts an optional text query plus filters.
