@@ -9,7 +9,7 @@ import {
 export type SectionGateway = {
 	listSections(projectGid: string, opts?: PaginationOptions): Promise<ListResult<any>>
 	getSection(sectionGid: string): Promise<any>
-	createSection(projectGid: string, name: string): Promise<any>
+	createSection(projectGid: string, name: string, opts?: SectionPlacement): Promise<any>
 	updateSection(sectionGid: string, name: string): Promise<any>
 	deleteSection(sectionGid: string): Promise<void>
 	moveSection(projectGid: string, sectionGid: string, opts?: SectionPlacement): Promise<void>
@@ -34,8 +34,16 @@ export function createAsanaSectionGateway(client: Asana.ApiClient): SectionGatew
 			const res = await sectionsApi.getSection(sectionGid, {})
 			return res.data
 		},
-		async createSection(projectGid, name) {
-			const res = await sectionsApi.createSectionForProject(projectGid, { body: { data: { name } } })
+		async createSection(projectGid, name, opts) {
+			const res = await sectionsApi.createSectionForProject(projectGid, {
+				body: {
+					data: {
+						name,
+						...(opts?.insertBefore !== undefined && { insert_before: opts.insertBefore }),
+						...(opts?.insertAfter !== undefined && { insert_after: opts.insertAfter }),
+					},
+				},
+			})
 			return res.data
 		},
 		async updateSection(sectionGid, name) {

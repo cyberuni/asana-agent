@@ -12,6 +12,7 @@ project.
 cyber-asana section list --project <project-gid>
 cyber-asana section get <gid>
 cyber-asana section create "In Review" --project <project-gid>
+cyber-asana section create "In Review" --project <project-gid> --insert-after <section-gid>
 cyber-asana section update <gid> --name "In QA"
 cyber-asana section move <gid> --project <project-gid> --insert-after <section-gid>
 cyber-asana section task add <section-gid> <task-gid>
@@ -22,11 +23,22 @@ cyber-asana section delete <gid>
 | --- | --- | --- |
 | `list` | — | `--project-gid <gid>` / `--project <gid>`, [pagination](/cyber-asana/cli/#pagination) |
 | `get` | `<gid>` | — |
-| `create` | `<name>` | `--project-gid <gid>` / `--project <gid>` |
+| `create` | `<name>` | `--project-gid <gid>` / `--project <gid>`, `--insert-before <gid>`, `--insert-after <gid>` |
 | `update` | `<gid>` | `--name <name>` (required) |
 | `move` | `<gid>` | `--project-gid <gid>` / `--project <gid>`, `--insert-before <gid>`, `--insert-after <gid>` |
 | `task add` | `<section-gid> <task-gid>` | `--insert-before <gid>`, `--insert-after <gid>` |
 | `delete` | `<gid>` | — |
+
+## Placing a new column
+
+`section create` takes the same placement flags as `section move`, so a new column can
+land in the right place in one call instead of a create followed by a move. They are
+mutually exclusive, and omitting both leaves Asana's default position:
+
+```sh
+cyber-asana section create "In Review" --project <project-gid> --insert-after <section-gid>
+cyber-asana section create "In Review" --project <project-gid> --insert-before <section-gid>
+```
 
 ## Reordering columns
 

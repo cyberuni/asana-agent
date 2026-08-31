@@ -1,8 +1,10 @@
 @frozen
 Feature: sections
 
-  Listing, reading, creating, renaming and deleting the named buckets that divide
+  Listing, reading, creating, renaming, reordering and deleting the named buckets that divide
   an Asana project's task list, over the CLI and MCP surfaces that share one api.ts.
+  A section can be placed relative to a sibling section at create time as well as
+  by a later move.
 
   # ── section list / asana_section_list ──
 
@@ -104,6 +106,31 @@ Feature: sections
     Then the process exits with a non-zero status
     And no request reaches the Asana sections endpoint
 
+  Scenario: create places the new section before the sibling it was given
+    Given a project with GID "4402" containing a section named "Dry Dock" with GID "6610"
+    When the section create entry point runs with the project GID "4402" and the name "Sea Trials" placed before section "6610"
+    Then the request reaching Asana creates a section in project "4402"
+    And that request carries the placement naming section "6610" as the one to insert before
+
+  Scenario: create places the new section after the sibling it was given
+    Given a project with GID "4402" containing a section named "Dry Dock" with GID "6610"
+    When the section create entry point runs with the project GID "4402" and the name "Sea Trials" placed after section "6610"
+    Then the request reaching Asana creates a section in project "4402"
+    And that request carries the placement naming section "6610" as the one to insert after
+
+  Scenario: create naming both placements is a usage error
+    Given the section create CLI verb receives the project GID "4402" and the name "Sea Trials"
+    And that same invocation names a section to insert before and a section to insert after
+    When the section create CLI verb runs
+    Then the process exits with a non-zero status
+    And no request reaches the Asana sections endpoint
+
+  Scenario: create without a placement sends neither placement field
+    Given a project with GID "4402" that accepts a new section
+    When the section create entry point runs with the project GID "4402" and the name "Sea Trials"
+    Then the request reaching Asana creates a section in project "4402"
+    And that request carries neither placement field
+
   # ── section update / asana_section_update ──
 
   Scenario: update renames the section named by the GID it was given
@@ -156,12 +183,12 @@ Feature: sections
 
   # ── surface boundary ──
 
-  Scenario: the section command group offers exactly five verbs
+  Scenario: the section command group offers exactly seven verbs
     Given the section CLI command group
     When the help text for the group is rendered
-    Then the subcommands it lists are exactly "list", "get", "create", "update" and "delete"
+    Then the subcommands it lists are exactly "list", "get", "create", "update", "move", "task" and "delete"
 
-  Scenario: the MCP surface registers exactly the five section tools
+  Scenario: the MCP surface registers exactly the seven section tools
     Given an MCP server with the section tools registered
     When the registered tool names beginning with "asana_section_" are listed
-    Then those names are exactly "asana_section_list", "asana_section_get", "asana_section_create", "asana_section_update" and "asana_section_delete"
+    Then those names are exactly "asana_section_list", "asana_section_get", "asana_section_create", "asana_section_update", "asana_section_move", "asana_section_task_add" and "asana_section_delete"

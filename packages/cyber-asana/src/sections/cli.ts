@@ -67,6 +67,7 @@ export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 			'  cyber-asana section list --project-gid <gid>',
 			'  cyber-asana section get <gid> --toon',
 			'  cyber-asana section create "In Progress" --project-gid <gid>',
+			'  cyber-asana section create "Review" --project-gid <gid> --insert-after <section-gid>',
 			'  cyber-asana section update <gid> --name "Done"',
 			'  cyber-asana section move <gid> --project-gid <gid> --insert-after <section-gid>',
 			'  cyber-asana section task add <section-gid> <task-gid> --insert-before <task-gid>',
@@ -109,13 +110,26 @@ export function sectionCommand(api?: SectionApi | (() => SectionApi)) {
 		})
 
 	addGidOption(
-		cmd.command('create <name>').description('Create a section in a project'),
+		cmd
+			.command('create <name>')
+			.description('Create a section in a project')
+			.option('--insert-before <gid>', 'Insert before this section GID')
+			.option('--insert-after <gid>', 'Insert after this section GID'),
 		'project',
 		'Project GID',
-	).action(async (name: string, opts: { project?: string; projectGid?: string }) => {
-		const data = await resolveSectionApi(api).createSection(requiredGid(opts, 'project', 'Project GID'), name)
-		output(data, () => fmtSection(data))
-	})
+	).action(
+		async (
+			name: string,
+			opts: { project?: string; projectGid?: string; insertBefore?: string; insertAfter?: string },
+		) => {
+			assertSinglePlacement(opts)
+			const data = await resolveSectionApi(api).createSection(requiredGid(opts, 'project', 'Project GID'), name, {
+				insertBefore: opts.insertBefore,
+				insertAfter: opts.insertAfter,
+			})
+			output(data, () => fmtSection(data))
+		},
+	)
 
 	cmd
 		.command('update <gid>')

@@ -41,23 +41,22 @@ offers it. The one attribute a section exposes for change is its **name** — `u
 does nothing else, because a name is the only thing about a section that a caller can meaningfully
 edit.
 
-Reordering is a gap, not a cut. Asana exposes a section-move endpoint and the pinned SDK ships
-`insertSectionForProject` for it, so the operation is one gateway method away — but the domain has
-carried the same five operations since its first commit and nothing in the history weighs the sixth.
-This node specifies five operations because five is what was built; a caller who needs to move a
-column falls back to the Asana UI or a raw API call.
+Reordering was that gap, and it is closed. `move` places a section relative to a sibling via
+`insertSectionForProject`, `task add` puts a task straight into a section, and `create` takes the
+same placement so a new column can land in position without a follow-up move. Seven operations,
+then — the five record operations plus the two placement ones.
 
 **What this node does not own.** How a paginated list behaves — bare array versus envelope, what
 `--all` walks, where `--max-pages` stops — is the shared list contract in [axi](../axi/README.md),
 adopted here rather than re-decided. Likewise the `--json` / `--toon` formats, empty-state
 rendering, truncation, exit-code conventions, and the normalized-GID flag mechanism
-(`--project-gid` with its legacy `--project` alias). This node decides only which five operations
+(`--project-gid` with its legacy `--project` alias). This node decides only which seven operations
 exist, where each one's GIDs come from, what the text rendering shows, and what a delete reports.
 
 ## Use Cases
 
-**Subject** — the five section operations (list, get, create, update, delete) over the two surfaces
-(CLI and MCP) that share one `api.ts`.
+**Subject** — the seven section operations (list, get, create, update, delete, move, task add) over
+the two surfaces (CLI and MCP) that share one `api.ts`.
 
 | Entry point | Trigger | Inputs | Outcome |
 |---|---|---|---|
@@ -65,10 +64,14 @@ exist, where each one's GIDs come from, what the text rendering shows, and what 
 | `asana_section_list` (MCP) | agent wants the same over MCP | `project_gid`, plus the shared pagination params | the same result, JSON-serialized |
 | `section get <gid>` (CLI) | caller holds a section GID and wants its record | the section GID, positionally | the unwrapped section record, rendered as Name/ID fields in text mode |
 | `asana_section_get` (MCP) | same, over MCP | `section_gid` only | the same record, JSON-serialized |
-| `section create <name>` (CLI) | caller wants a new bucket in a known project | the new name positionally, the project GID as `--project-gid` | the created section's record, rendered as Name/ID fields in text mode |
-| `asana_section_create` (MCP) | same, over MCP | `project_gid` and `name` | the same record, JSON-serialized |
+| `section create <name>` (CLI) | caller wants a new bucket in a known project | the new name positionally, the project GID as `--project-gid`, and optionally one of `--insert-before` / `--insert-after` naming a sibling section | the created section's record, rendered as Name/ID fields in text mode |
+| `asana_section_create` (MCP) | same, over MCP | `project_gid`, `name`, and optionally one of `insert_before` / `insert_after` | the same record, JSON-serialized |
 | `section update <gid>` (CLI) | caller wants to rename an existing bucket | the section GID positionally, the new name as the required flag `--name` | the updated record, rendered as Name/ID fields in text mode |
 | `asana_section_update` (MCP) | same, over MCP | `section_gid` and `name` | the same record, JSON-serialized |
+| `section move <gid>` (CLI) | caller wants a column reordered within its project | the section GID positionally, the project GID as `--project-gid`, and exactly one of `--insert-before` / `--insert-after` | a one-line acknowledgement naming the moved section and project; Asana returns no record |
+| `asana_section_move` (MCP) | same, over MCP | `project_gid`, `section_gid`, and one of `insert_before` / `insert_after` | the same acknowledgement text |
+| `section task add <section-gid> <task-gid>` (CLI) | caller is thinking in board columns and wants a task in one | both GIDs positionally, optionally one of `--insert-before` / `--insert-after` naming a sibling task | a one-line acknowledgement naming the task and section; Asana returns no record |
+| `asana_section_task_add` (MCP) | same, over MCP | `section_gid`, `task_gid`, and optionally one of `insert_before` / `insert_after` | the same acknowledgement text |
 | `section delete <gid>` (CLI) | caller wants a bucket gone | the section GID, positionally | a one-line confirmation naming the deleted GID; no record |
 | `asana_section_delete` (MCP) | same, over MCP | `section_gid` | the same confirmation text |
 
@@ -97,7 +100,9 @@ graph TD
     CN -->|no| CE1[usage error — the name argument is required]
     CN -->|yes| CS{project GID supplied?}
     CS -->|no| CE2[usage error — Project GID is required]
-    CS -->|yes| CW[create the section in that project<br/>with that name]
+    CS -->|yes| CP{both placements named?}
+    CP -->|yes| CE3[usage error — the two placements<br/>are mutually exclusive]
+    CP -->|no| CW[create the section in that project<br/>with that name, carrying whichever<br/>placement was named]
     CW --> CR[render Name / ID fields of the new record]
   end
 
@@ -118,7 +123,7 @@ graph TD
   end
 ```
 
-The five groups share no decision, so they are drawn separately. The load-bearing edges:
+The groups share no decision, so they are drawn separately. The load-bearing edges:
 
 - **The project GID is required and is never defaulted from the environment.** `list` and `create`
   both refuse to run without it. Only a *workspace* GID gets an environment default in this package
@@ -172,6 +177,10 @@ The five groups share no decision, so they are drawn separately. The load-bearin
 | render Name / ID fields of the new record | text mode, a created section | `create renders the new section's name and GID in text mode` |
 | project GID absent → usage error | a name given, no project GID | `create without a project GID is a usage error` |
 | name absent → usage error | a project GID given, no name argument | `create without a name is a usage error` |
+| one placement named → the new section lands there | a project, a name, and a sibling section to sit before | `create places the new section before the sibling it was given` |
+| the other placement named → the new section lands there | a project, a name, and a sibling section to sit after | `create places the new section after the sibling it was given` |
+| both placements named → usage error (barred) | a create invocation naming a section to sit both before and after | `create naming both placements is a usage error` |
+| no placement named → Asana's default position | a project and a name, no placement flag | `create without a placement sends neither placement field` |
 
 ### `section update` / `asana_section_update`
 
@@ -194,8 +203,8 @@ The five groups share no decision, so they are drawn separately. The load-bearin
 
 | Edge | Path (Given) | Scenario |
 |---|---|---|
-| the CLI offers these five verbs and no others (barred) | the section command group | `the section command group offers exactly five verbs` |
-| the MCP surface registers these five tools and no others (barred) | the registered section tool set | `the MCP surface registers exactly the five section tools` |
+| the CLI offers these seven verbs and no others (barred) | the section command group | `the section command group offers exactly seven verbs` |
+| the MCP surface registers these seven tools and no others (barred) | the registered section tool set | `the MCP surface registers exactly the seven section tools` |
 
 ## References
 

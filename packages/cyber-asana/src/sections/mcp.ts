@@ -53,16 +53,23 @@ export function registerSectionTools(server: McpServer, api?: SectionApi | (() =
 
 	server.tool(
 		'asana_section_create',
-		'Create an Asana section in a project',
+		'Create an Asana section in a project, optionally at a specific position',
 		{
 			project_gid: z.string().describe('Project GID'),
 			name: z.string().describe('Section name'),
+			insert_before: z.string().optional().describe('Section GID to insert before'),
+			insert_after: z.string().optional().describe('Section GID to insert after'),
 		},
-		async ({ project_gid, name }) => ({
+		async ({ project_gid, name, insert_before, insert_after }) => ({
 			content: [
 				{
 					type: 'text',
-					text: JSON.stringify(await resolveSectionApi(api).createSection(project_gid, name)),
+					text: JSON.stringify(
+						await resolveSectionApi(api).createSection(project_gid, name, {
+							insertBefore: insert_before,
+							insertAfter: insert_after,
+						}),
+					),
 				},
 			],
 		}),

@@ -12,8 +12,8 @@ export function createSectionApi(gateway: SectionGateway) {
 		getSection(sectionGid: string) {
 			return gateway.getSection(sectionGid)
 		},
-		createSection(projectGid: string, name: string) {
-			return gateway.createSection(projectGid, name)
+		createSection(projectGid: string, name: string, opts?: SectionPlacement) {
+			return gateway.createSection(projectGid, name, opts)
 		},
 		updateSection(sectionGid: string, name: string) {
 			return gateway.updateSection(sectionGid, name)
@@ -42,8 +42,8 @@ export async function getSection(sectionGid: string) {
 	return defaultSectionApi().getSection(sectionGid)
 }
 
-export async function createSection(projectGid: string, name: string) {
-	return defaultSectionApi().createSection(projectGid, name)
+export async function createSection(projectGid: string, name: string, opts?: SectionPlacement) {
+	return defaultSectionApi().createSection(projectGid, name, opts)
 }
 
 export async function updateSection(sectionGid: string, name: string) {
