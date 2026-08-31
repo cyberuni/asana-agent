@@ -8,6 +8,7 @@ import {
 
 export type ProjectPrivacySetting = 'public_to_workspace' | 'private' | 'private_to_team'
 export type ProjectDefaultView = 'list' | 'board' | 'calendar' | 'timeline'
+export type ProjectAccessLevel = 'admin' | 'editor' | 'commenter' | 'viewer'
 
 export type CreateProjectFields = {
 	archived?: boolean
@@ -17,6 +18,7 @@ export type CreateProjectFields = {
 	color?: string
 	privacy_setting?: ProjectPrivacySetting
 	default_view?: ProjectDefaultView
+	default_access_level?: ProjectAccessLevel
 	due_on?: string
 	start_on?: string
 }
@@ -30,6 +32,7 @@ export type UpdateProjectFields = {
 	color?: string
 	privacy_setting?: ProjectPrivacySetting
 	default_view?: ProjectDefaultView
+	default_access_level?: ProjectAccessLevel
 	due_on?: string | null
 	start_on?: string | null
 }

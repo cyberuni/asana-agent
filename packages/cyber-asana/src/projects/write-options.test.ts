@@ -79,4 +79,9 @@ describe('projects/write-options', () => {
 			'--owner and --clear-owner are mutually exclusive',
 		)
 	})
+
+	it('build*ProjectFields carry the default access level', () => {
+		expect(buildProjectCreateFields({ defaultAccessLevel: 'editor' })).toEqual({ default_access_level: 'editor' })
+		expect(buildProjectUpdateFields({ defaultAccessLevel: 'viewer' })).toEqual({ default_access_level: 'viewer' })
+	})
 })

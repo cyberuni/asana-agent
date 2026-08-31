@@ -64,6 +64,12 @@ Feature: projects
 
   # ── project create / project update / project delete ──
 
+  Scenario: create and update carry the default access level
+    Given a workspace with GID "6120"
+    When the project create entry point runs with the default access level "editor"
+    Then the request body reaching Asana carries the default access level "editor"
+    And an update run with the default access level "viewer" carries "viewer" the same way
+
   Scenario: update sets and clears the project owner
     Given a project with GID "44017"
     When the project update entry point runs for "44017" with the owner "me"

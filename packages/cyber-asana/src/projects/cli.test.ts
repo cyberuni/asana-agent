@@ -444,4 +444,23 @@ describe('projects/cli', () => {
 
 		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { owner: null })
 	})
+
+	it('project create and update carry the default access level', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(
+				['node', 'test', 'project', 'create', 'Launch', '--workspace-gid', 'ws1', '--default-access-level', 'editor'],
+				{ from: 'node' },
+			)
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { default_access_level: 'editor' })
+
+		await new Command()
+			.addCommand(projectCommand())
+			.parseAsync(['node', 'test', 'project', 'update', '123', '--default-access-level', 'viewer'], { from: 'node' })
+		expect(updateProjectMock).toHaveBeenLastCalledWith('123', { default_access_level: 'viewer' })
+	})
 })

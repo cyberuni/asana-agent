@@ -6,6 +6,7 @@ type BuildProjectWriteInput = {
 	color?: string
 	privacySetting?: 'public_to_workspace' | 'private' | 'private_to_team'
 	defaultView?: 'list' | 'board' | 'calendar' | 'timeline'
+	defaultAccessLevel?: 'admin' | 'editor' | 'commenter' | 'viewer'
 	dueOn?: string
 	startOn?: string
 }
@@ -24,6 +25,7 @@ type ProjectCreateFields = {
 	color?: string
 	privacy_setting?: 'public_to_workspace' | 'private' | 'private_to_team'
 	default_view?: 'list' | 'board' | 'calendar' | 'timeline'
+	default_access_level?: 'admin' | 'editor' | 'commenter' | 'viewer'
 	due_on?: string
 	start_on?: string
 }
@@ -36,6 +38,7 @@ type ProjectUpdateFields = {
 	color?: string
 	privacy_setting?: 'public_to_workspace' | 'private' | 'private_to_team'
 	default_view?: 'list' | 'board' | 'calendar' | 'timeline'
+	default_access_level?: 'admin' | 'editor' | 'commenter' | 'viewer'
 	due_on?: string | null
 	start_on?: string | null
 }
@@ -83,6 +86,7 @@ export function buildProjectCreateFields(input: BuildProjectWriteInput): Project
 		...(input.color !== undefined && { color: input.color }),
 		...(input.privacySetting !== undefined && { privacy_setting: input.privacySetting }),
 		...(input.defaultView !== undefined && { default_view: input.defaultView }),
+		...(input.defaultAccessLevel !== undefined && { default_access_level: input.defaultAccessLevel }),
 		...(input.dueOn !== undefined && { due_on: input.dueOn }),
 		...(input.startOn !== undefined && { start_on: input.startOn }),
 	}
@@ -101,6 +105,7 @@ export function buildProjectUpdateFields(input: BuildProjectUpdateInput): Projec
 		...(input.color !== undefined && { color: input.color }),
 		...(input.privacySetting !== undefined && { privacy_setting: input.privacySetting }),
 		...(input.defaultView !== undefined && { default_view: input.defaultView }),
+		...(input.defaultAccessLevel !== undefined && { default_access_level: input.defaultAccessLevel }),
 		...(input.dueOn !== undefined && { due_on: input.dueOn }),
 		...(input.clearDueOn !== undefined && { due_on: input.clearDueOn ? null : input.dueOn }),
 		...(input.startOn !== undefined && { start_on: input.startOn }),

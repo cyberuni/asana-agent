@@ -13,3 +13,6 @@ Close cross-surface gaps in the projects and project-templates domains.
 - `project create` / `project update` gain `--owner`, `project update` gains
   `--clear-owner`, and the matching MCP tools gain `owner` / `clear_owner`. Asana's
   nullable `owner` had no setter on any surface.
+- `project create` / `project update` gain `--default-access-level`, and the matching
+  MCP tools gain `default_access_level`. Its sibling `privacy_setting` was already
+  exposed on both surfaces.

@@ -54,6 +54,7 @@ cyber-asana project delete <gid>
 | `--color <color>` | `create`, `update` | Project color |
 | `--privacy-setting <value>` | `create`, `update` | Project privacy setting |
 | `--default-view <value>` | `create`, `update` | Default view |
+| `--default-access-level <value>` | `create`, `update` | Default access for users or teams who join: `admin`, `editor`, `commenter`, `viewer` |
 | `--due-on <date>` | `create`, `update` | Due date (`YYYY-MM-DD`) |
 | `--start-on <date>` | `create`, `update` | Start date (`YYYY-MM-DD`) |
 | `--clear-due-on` | `update` | Clear the due date |

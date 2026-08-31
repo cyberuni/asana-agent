@@ -204,6 +204,10 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 				.optional()
 				.describe('Project privacy setting'),
 			default_view: z.enum(['list', 'board', 'calendar', 'timeline']).optional().describe('Project default view'),
+			default_access_level: z
+				.enum(['admin', 'editor', 'commenter', 'viewer'])
+				.optional()
+				.describe('Default access for users or teams who join the project'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
 			start_on: z.string().optional().describe('Start date (YYYY-MM-DD)'),
 		},
@@ -217,6 +221,7 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 			color,
 			privacy_setting,
 			default_view,
+			default_access_level,
 			due_on,
 			start_on,
 		}) => ({
@@ -235,6 +240,7 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 								color,
 								privacySetting: privacy_setting,
 								defaultView: default_view,
+								defaultAccessLevel: default_access_level,
 								dueOn: due_on,
 								startOn: start_on,
 							}),
@@ -262,6 +268,10 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 				.optional()
 				.describe('New project privacy setting'),
 			default_view: z.enum(['list', 'board', 'calendar', 'timeline']).optional().describe('New default view'),
+			default_access_level: z
+				.enum(['admin', 'editor', 'commenter', 'viewer'])
+				.optional()
+				.describe('Default access for users or teams who join the project'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
 			start_on: z.string().optional().describe('Start date (YYYY-MM-DD)'),
 			clear_due_on: z.boolean().optional().describe('Clear the due date'),
@@ -278,6 +288,7 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 			color,
 			privacy_setting,
 			default_view,
+			default_access_level,
 			due_on,
 			start_on,
 			clear_due_on,
@@ -298,6 +309,7 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 								color,
 								privacySetting: privacy_setting,
 								defaultView: default_view,
+								defaultAccessLevel: default_access_level,
 								dueOn: due_on,
 								startOn: start_on,
 								clearDueOn: clear_due_on,

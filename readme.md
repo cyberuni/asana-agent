@@ -852,6 +852,9 @@ project and `--no-archived` restores it. `project create` accepts `--archived` t
 A project's owner is a write too: `--owner <user>` on `create` and `update` takes a
 user GID, an email, or `me`, and `update --clear-owner` leaves the project unowned.
 
+`--default-access-level <admin|editor|commenter|viewer>` sets the access members get
+when they join the project, alongside the `--privacy-setting` that governs who can join.
+
 ### Project search filters
 
 `project search` accepts an optional text query plus filters.

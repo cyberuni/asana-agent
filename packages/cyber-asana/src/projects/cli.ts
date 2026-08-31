@@ -284,6 +284,10 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		.option('--color <color>', 'Project color')
 		.option('--privacy-setting <value>', 'Project privacy setting')
 		.option('--default-view <value>', 'Project default view')
+		.option(
+			'--default-access-level <value>',
+			'Default access for users or teams who join the project: admin, editor, commenter, viewer',
+		)
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
 		.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
 		.action(
@@ -299,6 +303,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 					color?: string
 					privacySetting?: 'public_to_workspace' | 'private' | 'private_to_team'
 					defaultView?: 'list' | 'board' | 'calendar' | 'timeline'
+					defaultAccessLevel?: 'admin' | 'editor' | 'commenter' | 'viewer'
 					dueOn?: string
 					startOn?: string
 				},
@@ -314,6 +319,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 						color: opts.color,
 						privacySetting: opts.privacySetting,
 						defaultView: opts.defaultView,
+						defaultAccessLevel: opts.defaultAccessLevel,
 						dueOn: opts.dueOn,
 						startOn: opts.startOn,
 					}),
@@ -335,6 +341,10 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		.option('--color <color>', 'New color')
 		.option('--privacy-setting <value>', 'New project privacy setting')
 		.option('--default-view <value>', 'New default view')
+		.option(
+			'--default-access-level <value>',
+			'Default access for users or teams who join the project: admin, editor, commenter, viewer',
+		)
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
 		.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
 		.option('--clear-due-on', 'Clear the due date')
@@ -352,6 +362,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 					color?: string
 					privacySetting?: 'public_to_workspace' | 'private' | 'private_to_team'
 					defaultView?: 'list' | 'board' | 'calendar' | 'timeline'
+					defaultAccessLevel?: 'admin' | 'editor' | 'commenter' | 'viewer'
 					dueOn?: string
 					startOn?: string
 					clearDueOn?: boolean
@@ -369,6 +380,7 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 						color: opts.color,
 						privacySetting: opts.privacySetting,
 						defaultView: opts.defaultView,
+						defaultAccessLevel: opts.defaultAccessLevel,
 						dueOn: opts.dueOn,
 						startOn: opts.startOn,
 						clearDueOn: opts.clearDueOn,

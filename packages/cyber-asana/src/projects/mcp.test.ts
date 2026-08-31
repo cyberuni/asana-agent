@@ -222,4 +222,21 @@ describe('projects/mcp', () => {
 		await server.handlers.get('asana_project_update')?.({ project_gid: '123', clear_owner: true })
 		expect(updateProjectMock).toHaveBeenCalledWith('123', { owner: null })
 	})
+
+	it('asana_project_create and asana_project_update forward the default access level', async () => {
+		createProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		updateProjectMock.mockResolvedValue({ gid: '1', name: 'Launch' })
+		const server = createServer()
+		registerProjectTools(server as any)
+
+		await server.handlers.get('asana_project_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Launch',
+			default_access_level: 'editor',
+		})
+		expect(createProjectMock).toHaveBeenCalledWith('ws1', 'Launch', { default_access_level: 'editor' })
+
+		await server.handlers.get('asana_project_update')?.({ project_gid: '123', default_access_level: 'viewer' })
+		expect(updateProjectMock).toHaveBeenCalledWith('123', { default_access_level: 'viewer' })
+	})
 })
