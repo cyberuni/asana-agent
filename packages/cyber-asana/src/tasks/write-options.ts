@@ -3,8 +3,11 @@ import type { CreateTaskFields, UpdateTaskFields } from './api.js'
 type BuildTaskWriteInput = {
 	notes?: string
 	htmlNotes?: string
+	completed?: boolean
 	dueOn?: string
+	dueAt?: string
 	startOn?: string
+	startAt?: string
 	assignee?: string
 	parent?: string
 	resourceSubtype?: string
@@ -22,10 +25,12 @@ type BuildTaskCreateInput = BuildTaskWriteInput & {
 
 type BuildTaskUpdateInput = BuildTaskWriteInput & {
 	name?: string
-	completed?: boolean
 	clearParent?: boolean
+	clearAssignee?: boolean
 	clearDueOn?: boolean
+	clearDueAt?: boolean
 	clearStartOn?: boolean
+	clearStartAt?: boolean
 }
 
 export function parseGidList(value?: string) {
@@ -70,16 +75,33 @@ function assertNotesMode(notes?: string, htmlNotes?: string) {
 	}
 }
 
+// Asana treats the date and date-time forms of a field as one value: `due_at` and `due_on` "should
+// not be used together", and neither should `start_at` and `start_on`. Catch it here rather than
+// letting Asana silently keep whichever it saw last.
+function assertDateModes(input: BuildTaskWriteInput) {
+	if (input.dueOn !== undefined && input.dueAt !== undefined) {
+		throw new Error('--due-on and --due-at are mutually exclusive')
+	}
+	if (input.startOn !== undefined && input.startAt !== undefined) {
+		throw new Error('--start-on and --start-at are mutually exclusive')
+	}
+}
+
 export function buildTaskCreateFields(input: BuildTaskCreateInput): CreateTaskFields {
 	assertNotesMode(input.notes, input.htmlNotes)
+	assertDateModes(input)
 	const customFields = { ...input.customFields, ...mergeCustomFields(input.customFieldsJson, input.customFieldEntries) }
 	const projects = input.projectGids ?? parseGidList(input.projectInput)
 	const followers = input.followerGids ?? parseGidList(input.followerInput)
 	return {
 		...(input.notes !== undefined && { notes: input.notes }),
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
+		...(input.completed !== undefined && { completed: input.completed }),
 		...(input.assignee !== undefined && { assignee: input.assignee }),
 		...(input.dueOn !== undefined && { due_on: input.dueOn }),
+		...(input.dueAt !== undefined && { due_at: input.dueAt }),
+		...(input.startOn !== undefined && { start_on: input.startOn }),
+		...(input.startAt !== undefined && { start_at: input.startAt }),
 		...(input.parent !== undefined && { parent: input.parent }),
 		...(input.resourceSubtype !== undefined && { resource_subtype: input.resourceSubtype }),
 		...(projects && { projects }),
@@ -90,14 +112,24 @@ export function buildTaskCreateFields(input: BuildTaskCreateInput): CreateTaskFi
 
 export function buildTaskUpdateFields(input: BuildTaskUpdateInput): UpdateTaskFields {
 	assertNotesMode(input.notes, input.htmlNotes)
+	assertDateModes(input)
 	if (input.parent !== undefined && input.clearParent) {
 		throw new Error('--parent and --clear-parent are mutually exclusive')
+	}
+	if (input.assignee !== undefined && input.clearAssignee) {
+		throw new Error('--assignee-gid and --clear-assignee are mutually exclusive')
 	}
 	if (input.dueOn !== undefined && input.clearDueOn) {
 		throw new Error('--due-on and --clear-due-on are mutually exclusive')
 	}
 	if (input.startOn !== undefined && input.clearStartOn) {
 		throw new Error('--start-on and --clear-start-on are mutually exclusive')
+	}
+	if (input.dueAt !== undefined && input.clearDueAt) {
+		throw new Error('--due-at and --clear-due-at are mutually exclusive')
+	}
+	if (input.startAt !== undefined && input.clearStartAt) {
+		throw new Error('--start-at and --clear-start-at are mutually exclusive')
 	}
 	const customFields = { ...input.customFields, ...mergeCustomFields(input.customFieldsJson, input.customFieldEntries) }
 	return {
@@ -106,10 +138,15 @@ export function buildTaskUpdateFields(input: BuildTaskUpdateInput): UpdateTaskFi
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
 		...(input.completed !== undefined && { completed: input.completed }),
 		...(input.assignee !== undefined && { assignee: input.assignee }),
+		...(input.clearAssignee && { assignee: null }),
 		...(input.dueOn !== undefined && { due_on: input.dueOn }),
 		...(input.clearDueOn !== undefined && { due_on: input.clearDueOn ? null : input.dueOn }),
 		...(input.startOn !== undefined && { start_on: input.startOn }),
 		...(input.clearStartOn !== undefined && { start_on: input.clearStartOn ? null : input.startOn }),
+		...(input.dueAt !== undefined && { due_at: input.dueAt }),
+		...(input.clearDueAt && { due_at: null }),
+		...(input.startAt !== undefined && { start_at: input.startAt }),
+		...(input.clearStartAt && { start_at: null }),
 		...(input.parent !== undefined && { parent: input.parent }),
 		...(input.clearParent !== undefined && { clear_parent: input.clearParent }),
 		...(input.resourceSubtype !== undefined && { resource_subtype: input.resourceSubtype }),

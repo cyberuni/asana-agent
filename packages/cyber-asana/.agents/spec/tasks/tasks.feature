@@ -175,6 +175,13 @@ Feature: tasks
     And the create request body has no notes field and no assignee field
     And the update request body has no notes field and no due_on field
 
+  Scenario: create accepts every scheduling and completion field update accepts
+    Given a workspace named "Tidewater Cartography" with GID "7100"
+    When the task create entry point runs for the workspace GID "7100" with the name "Varnish the plane table", the start date "2026-03-01", the due date "2026-03-02", and the completed flag
+    Then the create request body carries the start_on value "2026-03-01"
+    And that request body carries the due_on value "2026-03-02"
+    And that request body carries a completed value of true
+
   Scenario: conflicting write options are rejected before any request reaches Asana
     Given a workspace named "Tidewater Cartography" with GID "7100"
     And a task with GID "7301"
@@ -182,7 +189,12 @@ Feature: tasks
     And the task update entry point runs for the GID "7301" with the parent GID "7302" and the clear-parent flag
     And the task update entry point runs for the GID "7301" with the due date "2026-03-02" and the clear-due-on flag
     And the task update entry point runs for the GID "7301" with the start date "2026-03-02" and the clear-start-on flag
-    Then each of those four runs exits with a non-zero status
+    And the task update entry point runs for the GID "7301" with the due date-time "2026-03-02T17:00:00.000Z" and the clear-due-at flag
+    And the task update entry point runs for the GID "7301" with the start date-time "2026-03-02T09:00:00.000Z" and the clear-start-at flag
+    And the task update entry point runs for the GID "7301" with the assignee GID "7501" and the clear-assignee flag
+    And the task create entry point runs with the due date "2026-03-02" and the due date-time "2026-03-02T17:00:00.000Z"
+    And the task create entry point runs with the start date "2026-03-02" and the start date-time "2026-03-02T09:00:00.000Z"
+    Then each of those runs exits with a non-zero status
     And no request reaches the task-creation endpoint or the task-update endpoint
     And stderr names the mutually exclusive pair for each run
 
@@ -222,6 +234,18 @@ Feature: tasks
     Given a task with GID "7301" whose start date is "2026-03-02"
     When the task update entry point runs for the GID "7301" with the clear-start-on flag as its only input
     Then the request body reaching the task-update endpoint carries a start_on value of null
+
+  Scenario: the clear date-time flags set the due and start times to null
+    Given a task with GID "7301" whose due date-time is "2026-03-02T17:00:00.000Z"
+    And that task's start date-time is "2026-03-02T09:00:00.000Z"
+    When the task update entry point runs for the GID "7301" with the clear-due-at and clear-start-at flags as its only input
+    Then the request body reaching the task-update endpoint carries a due_at value of null
+    And that request body carries a start_at value of null
+
+  Scenario: clear-assignee unassigns the task
+    Given a task with GID "7301" assigned to the user "7501"
+    When the task update entry point runs for the GID "7301" with the clear-assignee flag as its only input
+    Then the request body reaching the task-update endpoint carries an assignee value of null
 
   Scenario: update routes a parent change through a separate request from the other fields
     Given a task with GID "7301"
@@ -263,6 +287,16 @@ Feature: tasks
     Then the subtask-creation request reaches Asana for the parent task GID "7301"
     And that request body carries the name "Order the grinding paste"
     And that request body has no notes field and no due_on field
+
+  Scenario: subtask create carries the same write fields as task create
+    Given a task with GID "7301" named "Regrind the theodolite lens"
+    When the subtask create entry point runs for the parent GID "7301" with the name "Order the grinding paste", the rich notes "<body>200 grit</body>", the start date "2026-03-01", the resource subtype "milestone", the custom-field entry "7602=survey", and the follower GID "7501"
+    Then the subtask-creation request reaches Asana for the parent task GID "7301"
+    And that request body carries the html_notes value "<body>200 grit</body>"
+    And that request body carries the start_on value "2026-03-01"
+    And that request body carries the resource_subtype value "milestone"
+    And that request body carries the custom field "7602" with the value "survey"
+    And that request body carries the follower GID "7501"
 
   Scenario: subtask create without its parent GID and name is a usage error
     Given the task command group

@@ -161,20 +161,72 @@ export function registerTaskTools(server: McpServer, api?: TaskApi | (() => Task
 
 	server.tool(
 		'asana_task_subtask_create',
-		'Create a subtask under an Asana task',
+		`Create a subtask under an Asana task.
+
+Takes the same write fields as asana_task_create; the parent task and its workspace come from task_gid.
+When setting notes, prefer html_notes over notes to preserve rich formatting (headings, lists, code).`,
 		{
 			task_gid: z.string().describe('Parent task GID'),
 			name: z.string().describe('Subtask name'),
 			notes: z.string().optional().describe('Subtask notes'),
+			html_notes: z
+				.string()
+				.optional()
+				.describe(
+					'Subtask notes as HTML (preferred over notes). Must be valid XML wrapped in <body>. Use <h1>, <h2>, <strong>, <code>, <ul>, <ol>, <li>, <hr/>, <pre>, <blockquote>. Use \\n for line breaks.',
+				),
+			completed: z.boolean().optional().describe('Create the subtask already marked complete'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
+			due_at: z.string().optional().describe('Due date and time (ISO 8601 UTC); cannot be combined with due_on'),
+			start_on: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+			start_at: z
+				.string()
+				.optional()
+				.describe('Start date and time (ISO 8601 UTC); Asana requires a due time alongside it'),
 			assignee_gid: z.string().optional().describe('Assignee user GID'),
+			follower_gids: z
+				.union([z.array(z.string()), z.string()])
+				.optional()
+				.describe('Follower user GIDs'),
+			resource_subtype: z.string().optional().describe('Task resource subtype'),
+			custom_fields: z.record(z.string(), z.unknown()).optional().describe('Custom field values keyed by GID'),
 		},
-		async ({ task_gid, name, notes, due_on, assignee_gid }) => ({
+		async ({
+			task_gid,
+			name,
+			notes,
+			html_notes,
+			completed,
+			due_on,
+			due_at,
+			start_on,
+			start_at,
+			assignee_gid,
+			follower_gids,
+			resource_subtype,
+			custom_fields,
+		}) => ({
 			content: [
 				{
 					type: 'text',
 					text: JSON.stringify(
-						await resolveTaskApi(api).createSubtask(task_gid, name, { notes, dueOn: due_on, assignee: assignee_gid }),
+						await resolveTaskApi(api).createSubtask(
+							task_gid,
+							name,
+							buildTaskCreateFields({
+								notes,
+								htmlNotes: html_notes,
+								completed,
+								assignee: assignee_gid,
+								followerGids: typeof follower_gids === 'string' ? parseGidList(follower_gids) : follower_gids,
+								dueOn: due_on,
+								dueAt: due_at,
+								startOn: start_on,
+								startAt: start_at,
+								resourceSubtype: resource_subtype,
+								customFields: custom_fields,
+							}),
+						),
 					),
 				},
 			],
@@ -233,7 +285,14 @@ Use \\n for line breaks (not <br> or <p>). Example: "<body><h1>Title</h1>Content
 				.describe(
 					'Task notes as HTML (preferred over notes). Must be valid XML wrapped in <body>. Use <h1>, <h2>, <strong>, <code>, <ul>, <ol>, <li>, <hr/>, <pre>, <blockquote>. Use \\n for line breaks.',
 				),
+			completed: z.boolean().optional().describe('Create the task already marked complete'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
+			due_at: z.string().optional().describe('Due date and time (ISO 8601 UTC); cannot be combined with due_on'),
+			start_on: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+			start_at: z
+				.string()
+				.optional()
+				.describe('Start date and time (ISO 8601 UTC); Asana requires a due time alongside it'),
 			parent_gid: z.string().optional().describe('Parent task GID'),
 			resource_subtype: z.string().optional().describe('Task resource subtype'),
 			custom_fields: z.record(z.string(), z.unknown()).optional().describe('Custom field values keyed by GID'),
@@ -247,7 +306,11 @@ Use \\n for line breaks (not <br> or <p>). Example: "<body><h1>Title</h1>Content
 			assignee_gid,
 			notes,
 			html_notes,
+			completed,
 			due_on,
+			due_at,
+			start_on,
+			start_at,
 			parent_gid,
 			resource_subtype,
 			custom_fields,
@@ -262,10 +325,14 @@ Use \\n for line breaks (not <br> or <p>). Example: "<body><h1>Title</h1>Content
 							buildTaskCreateFields({
 								notes,
 								htmlNotes: html_notes,
+								completed,
 								assignee: assignee_gid,
 								projectGids: project_gids ?? parseGidList(project_gid),
 								followerGids: typeof follower_gids === 'string' ? parseGidList(follower_gids) : follower_gids,
 								dueOn: due_on,
+								dueAt: due_at,
+								startOn: start_on,
+								startAt: start_at,
 								parent: parent_gid,
 								resourceSubtype: resource_subtype,
 								customFields: custom_fields,
@@ -297,9 +364,17 @@ Use \\n for line breaks (not <br> or <p>). Example: "<body><h1>Title</h1>Content
 			completed: z.boolean().optional().describe('Mark as completed'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
 			clear_due_on: z.boolean().optional().describe('Clear the due date'),
+			due_at: z.string().optional().describe('Due date and time (ISO 8601 UTC); cannot be combined with due_on'),
+			clear_due_at: z.boolean().optional().describe('Clear the due date and time'),
 			start_on: z.string().optional().describe('Start date (YYYY-MM-DD)'),
 			clear_start_on: z.boolean().optional().describe('Clear the start date'),
+			start_at: z
+				.string()
+				.optional()
+				.describe('Start date and time (ISO 8601 UTC); Asana requires a due time alongside it'),
+			clear_start_at: z.boolean().optional().describe('Clear the start date and time'),
 			assignee_gid: z.string().optional().describe('Assignee user GID'),
+			clear_assignee: z.boolean().optional().describe('Unassign the task'),
 			parent_gid: z.string().optional().describe('Parent task GID'),
 			clear_parent: z.boolean().optional().describe('Remove the parent task relationship'),
 			resource_subtype: z.string().optional().describe('Task resource subtype'),
@@ -313,9 +388,14 @@ Use \\n for line breaks (not <br> or <p>). Example: "<body><h1>Title</h1>Content
 			completed,
 			due_on,
 			clear_due_on,
+			due_at,
+			clear_due_at,
 			start_on,
 			clear_start_on,
+			start_at,
+			clear_start_at,
 			assignee_gid,
+			clear_assignee,
 			parent_gid,
 			clear_parent,
 			resource_subtype,
@@ -334,9 +414,14 @@ Use \\n for line breaks (not <br> or <p>). Example: "<body><h1>Title</h1>Content
 								completed,
 								dueOn: due_on,
 								clearDueOn: clear_due_on,
+								dueAt: due_at,
+								clearDueAt: clear_due_at,
 								startOn: start_on,
 								clearStartOn: clear_start_on,
+								startAt: start_at,
+								clearStartAt: clear_start_at,
 								assignee: assignee_gid,
+								clearAssignee: clear_assignee,
 								parent: parent_gid,
 								clearParent: clear_parent,
 								resourceSubtype: resource_subtype,

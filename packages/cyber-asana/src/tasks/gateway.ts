@@ -11,9 +11,13 @@ export type TaskCustomFields = Record<string, unknown>
 export type CreateTaskFields = {
 	notes?: string
 	html_notes?: string
+	completed?: boolean
 	assignee?: string
 	projects?: string[]
 	due_on?: string
+	due_at?: string
+	start_on?: string
+	start_at?: string
 	parent?: string
 	resource_subtype?: string
 	custom_fields?: TaskCustomFields
@@ -26,8 +30,10 @@ export type UpdateTaskFields = {
 	html_notes?: string
 	completed?: boolean
 	due_on?: string | null
+	due_at?: string | null
 	start_on?: string | null
-	assignee?: string
+	start_at?: string | null
+	assignee?: string | null
 	parent?: string
 	clear_parent?: boolean
 	resource_subtype?: string
@@ -119,11 +125,7 @@ export type TaskGateway = {
 	deleteTask(taskGid: string): Promise<void>
 	getMyTasks(workspaceGid: string, opts?: PaginationOptions & { completedSince?: string }): Promise<ListResult<any>>
 	listSubtasks(taskGid: string, opts?: PaginationOptions & { completedSince?: string }): Promise<ListResult<any>>
-	createSubtask(
-		parentTaskGid: string,
-		name: string,
-		opts?: { notes?: string; assignee?: string; dueOn?: string },
-	): Promise<any>
+	createSubtask(parentTaskGid: string, name: string, opts?: CreateTaskFields): Promise<any>
 	addTaskToProject(
 		taskGid: string,
 		projectGid: string,
@@ -248,18 +250,9 @@ export function createAsanaTaskGateway(client: Asana.ApiClient): TaskGateway {
 			return await collectListResponse(res, opts)
 		},
 		async createSubtask(parentTaskGid, name, opts) {
-			const res = await tasksApi.createSubtaskForTask(
-				{
-					data: {
-						name,
-						...(opts?.notes !== undefined && { notes: opts.notes }),
-						...(opts?.assignee !== undefined && { assignee: opts.assignee }),
-						...(opts?.dueOn !== undefined && { due_on: opts.dueOn }),
-					},
-				},
-				parentTaskGid,
-				{},
-			)
+			// The create-subtask endpoint takes the same body as create-task, minus the workspace and
+			// parent it already knows from the path, so it gets the same built field set.
+			const res = await tasksApi.createSubtaskForTask({ data: { name, ...opts } }, parentTaskGid, {})
 			return res.data
 		},
 		async addTaskToProject(taskGid, projectGid, opts) {

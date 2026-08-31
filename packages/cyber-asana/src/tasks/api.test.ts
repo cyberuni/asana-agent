@@ -302,9 +302,38 @@ describe('tasks/api', () => {
 		vi.spyOn(Asana.TasksApi.prototype, 'createSubtaskForTask').mockResolvedValue({
 			data: mockTask,
 		} as never)
-		await createSubtask('parent1', 'Sub Task', { notes: 'note', assignee: 'u1', dueOn: '2026-06-01' })
+		await createSubtask('parent1', 'Sub Task', { notes: 'note', assignee: 'u1', due_on: '2026-06-01' })
 		expect(Asana.TasksApi.prototype.createSubtaskForTask).toHaveBeenCalledWith(
 			{ data: { name: 'Sub Task', notes: 'note', assignee: 'u1', due_on: '2026-06-01' } },
+			'parent1',
+			{},
+		)
+	})
+
+	it('createSubtask forwards the same write fields as createTask', async () => {
+		vi.spyOn(Asana.TasksApi.prototype, 'createSubtaskForTask').mockResolvedValue({
+			data: mockTask,
+		} as never)
+		await createSubtask('parent1', 'Sub Task', {
+			html_notes: '<body>Sub</body>',
+			start_on: '2026-05-01',
+			due_on: '2026-06-01',
+			resource_subtype: 'milestone',
+			custom_fields: { cf1: 'value' },
+			followers: ['u1'],
+		})
+		expect(Asana.TasksApi.prototype.createSubtaskForTask).toHaveBeenCalledWith(
+			{
+				data: {
+					name: 'Sub Task',
+					html_notes: '<body>Sub</body>',
+					start_on: '2026-05-01',
+					due_on: '2026-06-01',
+					resource_subtype: 'milestone',
+					custom_fields: { cf1: 'value' },
+					followers: ['u1'],
+				},
+			},
 			'parent1',
 			{},
 		)

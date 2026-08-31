@@ -271,7 +271,11 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 	)
 		.option('--notes <text>', 'Task notes')
 		.option('--html-notes <html>', 'Task notes as HTML')
+		.option('--completed', 'Create the task already marked complete')
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
+		.option('--due-at <datetime>', 'Due date and time (ISO 8601 UTC); not usable with --due-on')
+		.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
+		.option('--start-at <datetime>', 'Start date and time (ISO 8601 UTC); Asana requires a due time alongside it')
 		.option('--resource-subtype <subtype>', 'Task resource subtype (e.g. default_task, milestone)')
 		.option('--follower <gid[,gid...]>', 'Follower user GIDs')
 		.option('--custom-fields-json <json>', 'Custom field values as a JSON object')
@@ -290,7 +294,11 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 					assigneeGid?: string
 					notes?: string
 					htmlNotes?: string
+					completed?: boolean
 					dueOn?: string
+					dueAt?: string
+					startOn?: string
+					startAt?: string
 					resourceSubtype?: string
 					follower?: string
 					customFieldsJson?: string
@@ -303,10 +311,14 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 					buildTaskCreateFields({
 						notes: opts.notes,
 						htmlNotes: opts.htmlNotes,
+						completed: opts.completed,
 						assignee: normalizedGid(opts, 'assignee'),
 						projectInput: opts.projectGid ?? opts.project,
 						followerInput: opts.follower,
 						dueOn: opts.dueOn,
+						dueAt: opts.dueAt,
+						startOn: opts.startOn,
+						startAt: opts.startAt,
 						parent: normalizedGid(opts, 'parent'),
 						resourceSubtype: opts.resourceSubtype,
 						customFieldsJson: opts.customFieldsJson,
@@ -334,8 +346,13 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 				.option('--completed', 'Mark as completed')
 				.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
 				.option('--clear-due-on', 'Clear the due date')
+				.option('--due-at <datetime>', 'Due date and time (ISO 8601 UTC); not usable with --due-on')
+				.option('--clear-due-at', 'Clear the due date and time')
 				.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
 				.option('--clear-start-on', 'Clear the start date')
+				.option('--start-at <datetime>', 'Start date and time (ISO 8601 UTC); Asana requires a due time alongside it')
+				.option('--clear-start-at', 'Clear the start date and time')
+				.option('--clear-assignee', 'Unassign the task')
 				.option('--clear-parent', 'Remove the parent task relationship')
 				.option('--resource-subtype <subtype>', 'Task resource subtype (e.g. default_task, milestone)')
 				.option('--custom-fields-json <json>', 'Custom field values as a JSON object')
@@ -355,8 +372,12 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 				completed?: boolean
 				dueOn?: string
 				clearDueOn?: boolean
+				dueAt?: string
+				clearDueAt?: boolean
 				startOn?: string
 				clearStartOn?: boolean
+				startAt?: string
+				clearStartAt?: boolean
 				parent?: string
 				parentGid?: string
 				clearParent?: boolean
@@ -365,6 +386,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 				customField: string[]
 				assignee?: string
 				assigneeGid?: string
+				clearAssignee?: boolean
 			},
 		) => {
 			const data = await resolveTaskApi(api).updateTask(
@@ -376,9 +398,14 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 					completed: opts.completed,
 					dueOn: opts.dueOn,
 					clearDueOn: opts.clearDueOn,
+					dueAt: opts.dueAt,
+					clearDueAt: opts.clearDueAt,
 					startOn: opts.startOn,
 					clearStartOn: opts.clearStartOn,
+					startAt: opts.startAt,
+					clearStartAt: opts.clearStartAt,
 					assignee: normalizedGid(opts, 'assignee'),
+					clearAssignee: opts.clearAssignee,
 					parent: normalizedGid(opts, 'parent'),
 					clearParent: opts.clearParent,
 					resourceSubtype: opts.resourceSubtype,
@@ -451,20 +478,56 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 			.command('create <task-gid> <name>')
 			.description('Create a subtask under a task')
 			.option('--notes <text>', 'Task notes')
-			.option('--due-on <date>', 'Due date (YYYY-MM-DD)'),
+			.option('--html-notes <html>', 'Task notes as HTML')
+			.option('--completed', 'Create the subtask already marked complete')
+			.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
+			.option('--due-at <datetime>', 'Due date and time (ISO 8601 UTC); not usable with --due-on')
+			.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
+			.option('--start-at <datetime>', 'Start date and time (ISO 8601 UTC); Asana requires a due time alongside it')
+			.option('--resource-subtype <subtype>', 'Task resource subtype (e.g. default_task, milestone)')
+			.option('--follower <gid[,gid...]>', 'Follower user GIDs')
+			.option('--custom-fields-json <json>', 'Custom field values as a JSON object')
+			.option('--custom-field <gid=value>', 'Custom field value override', collectOption, []),
 		'assignee',
 		'Assignee user GID',
 	).action(
 		async (
 			taskGid: string,
 			name: string,
-			opts: { notes?: string; dueOn?: string; assignee?: string; assigneeGid?: string },
+			opts: {
+				notes?: string
+				htmlNotes?: string
+				completed?: boolean
+				dueOn?: string
+				dueAt?: string
+				startOn?: string
+				startAt?: string
+				resourceSubtype?: string
+				follower?: string
+				customFieldsJson?: string
+				customField: string[]
+				assignee?: string
+				assigneeGid?: string
+			},
 		) => {
-			const data = await resolveTaskApi(api).createSubtask(taskGid, name, {
-				notes: opts.notes,
-				assignee: normalizedGid(opts, 'assignee'),
-				dueOn: opts.dueOn,
-			})
+			const data = await resolveTaskApi(api).createSubtask(
+				taskGid,
+				name,
+				buildTaskCreateFields({
+					notes: opts.notes,
+					htmlNotes: opts.htmlNotes,
+					completed: opts.completed,
+					assignee: normalizedGid(opts, 'assignee'),
+					followerInput: opts.follower,
+					dueOn: opts.dueOn,
+					dueAt: opts.dueAt,
+					startOn: opts.startOn,
+					startAt: opts.startAt,
+					resourceSubtype: opts.resourceSubtype,
+					customFieldsJson: opts.customFieldsJson,
+					customFieldEntries: opts.customField,
+				}),
+			)
 			output(data, () => fmtTask(data))
 		},
 	)

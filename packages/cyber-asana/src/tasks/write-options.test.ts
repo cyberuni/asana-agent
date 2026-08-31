@@ -23,6 +23,30 @@ describe('tasks/write-options', () => {
 		})
 	})
 
+	it('buildTaskCreateFields maps start_on', () => {
+		expect(buildTaskCreateFields({ startOn: '2026-09-01', dueOn: '2026-10-31' })).toEqual({
+			start_on: '2026-09-01',
+			due_on: '2026-10-31',
+		})
+	})
+
+	it('buildTaskCreateFields maps due_at and start_at', () => {
+		expect(buildTaskCreateFields({ startAt: '2026-09-01T09:00:00.000Z', dueAt: '2026-10-31T17:00:00.000Z' })).toEqual({
+			start_at: '2026-09-01T09:00:00.000Z',
+			due_at: '2026-10-31T17:00:00.000Z',
+		})
+	})
+
+	it('buildTaskCreateFields rejects due_on and due_at together', () => {
+		expect(() => buildTaskCreateFields({ dueOn: '2026-10-31', dueAt: '2026-10-31T17:00:00.000Z' })).toThrow(
+			'--due-on and --due-at are mutually exclusive',
+		)
+	})
+
+	it('buildTaskCreateFields maps completed', () => {
+		expect(buildTaskCreateFields({ completed: true })).toEqual({ completed: true })
+	})
+
 	it('buildTaskCreateFields rejects notes and html_notes together', () => {
 		expect(() => buildTaskCreateFields({ notes: 'plain', htmlNotes: '<body>html</body>' })).toThrow(
 			'--notes and --html-notes are mutually exclusive',
@@ -55,6 +79,42 @@ describe('tasks/write-options', () => {
 	it('buildTaskUpdateFields rejects start_on and clear_start_on together', () => {
 		expect(() => buildTaskUpdateFields({ startOn: '2026-09-01', clearStartOn: true })).toThrow(
 			'--start-on and --clear-start-on are mutually exclusive',
+		)
+	})
+
+	it('buildTaskUpdateFields maps due_at and start_at', () => {
+		expect(buildTaskUpdateFields({ startAt: '2026-09-01T09:00:00.000Z', dueAt: '2026-10-31T17:00:00.000Z' })).toEqual({
+			start_at: '2026-09-01T09:00:00.000Z',
+			due_at: '2026-10-31T17:00:00.000Z',
+		})
+	})
+
+	it('buildTaskUpdateFields maps the clear date-time flags to null', () => {
+		expect(buildTaskUpdateFields({ clearDueAt: true, clearStartAt: true })).toEqual({
+			due_at: null,
+			start_at: null,
+		})
+	})
+
+	it('buildTaskUpdateFields rejects due_at and clear_due_at together', () => {
+		expect(() => buildTaskUpdateFields({ dueAt: '2026-10-31T17:00:00.000Z', clearDueAt: true })).toThrow(
+			'--due-at and --clear-due-at are mutually exclusive',
+		)
+	})
+
+	it('buildTaskUpdateFields rejects start_on and start_at together', () => {
+		expect(() => buildTaskUpdateFields({ startOn: '2026-09-01', startAt: '2026-09-01T09:00:00.000Z' })).toThrow(
+			'--start-on and --start-at are mutually exclusive',
+		)
+	})
+
+	it('buildTaskUpdateFields maps clear_assignee to null', () => {
+		expect(buildTaskUpdateFields({ clearAssignee: true })).toEqual({ assignee: null })
+	})
+
+	it('buildTaskUpdateFields rejects assignee and clear_assignee together', () => {
+		expect(() => buildTaskUpdateFields({ assignee: 'u1', clearAssignee: true })).toThrow(
+			'--assignee-gid and --clear-assignee are mutually exclusive',
 		)
 	})
 

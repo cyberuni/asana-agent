@@ -10,6 +10,7 @@ const getTaskMock = vi.fn()
 const listTasksMock = vi.fn()
 const getMyTasksMock = vi.fn()
 const listSubtasksMock = vi.fn()
+const createSubtaskMock = vi.fn()
 
 vi.mock('./api.js', async () => {
 	const actual = await vi.importActual<typeof import('./api.js')>('./api.js')
@@ -24,6 +25,7 @@ vi.mock('./api.js', async () => {
 		listTasks: listTasksMock,
 		getMyTasks: getMyTasksMock,
 		listSubtasks: listSubtasksMock,
+		createSubtask: createSubtaskMock,
 	}
 })
 
@@ -186,6 +188,135 @@ describe('tasks/cli', () => {
 
 		expect(updateTaskMock).toHaveBeenCalledWith('123', {
 			due_on: null,
+		})
+	})
+
+	it('task create sets start_on alongside due_on', async () => {
+		createTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			[
+				'node',
+				'test',
+				'task',
+				'create',
+				'Task',
+				'--workspace-gid',
+				'ws1',
+				'--start-on',
+				'2026-09-01',
+				'--due-on',
+				'2026-10-31',
+			],
+			{ from: 'node' },
+		)
+
+		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', {
+			start_on: '2026-09-01',
+			due_on: '2026-10-31',
+		})
+	})
+
+	it('task create sets due_at and start_at', async () => {
+		createTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			[
+				'node',
+				'test',
+				'task',
+				'create',
+				'Task',
+				'--workspace-gid',
+				'ws1',
+				'--start-at',
+				'2026-09-01T09:00:00.000Z',
+				'--due-at',
+				'2026-10-31T17:00:00.000Z',
+			],
+			{ from: 'node' },
+		)
+
+		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', {
+			start_at: '2026-09-01T09:00:00.000Z',
+			due_at: '2026-10-31T17:00:00.000Z',
+		})
+	})
+
+	it('task update maps the clear date-time flags to null', async () => {
+		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'update', '123', '--clear-due-at', '--clear-start-at'], {
+			from: 'node',
+		})
+
+		expect(updateTaskMock).toHaveBeenCalledWith('123', {
+			due_at: null,
+			start_at: null,
+		})
+	})
+
+	it('task update maps clear assignee flag to assignee null', async () => {
+		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'update', '123', '--clear-assignee'], { from: 'node' })
+
+		expect(updateTaskMock).toHaveBeenCalledWith('123', {
+			assignee: null,
+		})
+	})
+
+	it('task create marks the new task complete', async () => {
+		createTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'create', 'Task', '--workspace-gid', 'ws1', '--completed'], {
+			from: 'node',
+		})
+
+		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', { completed: true })
+	})
+
+	it('task subtask create forwards the same write fields as task create', async () => {
+		createSubtaskMock.mockResolvedValue({ gid: '2', name: 'Sub Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			[
+				'node',
+				'test',
+				'task',
+				'subtask',
+				'create',
+				'123',
+				'Sub Task',
+				'--html-notes',
+				'<body>Sub</body>',
+				'--start-on',
+				'2026-05-01',
+				'--due-on',
+				'2026-06-01',
+				'--resource-subtype',
+				'milestone',
+				'--custom-field',
+				'cf1=value',
+				'--follower',
+				'u1',
+			],
+			{ from: 'node' },
+		)
+
+		expect(createSubtaskMock).toHaveBeenCalledWith('123', 'Sub Task', {
+			html_notes: '<body>Sub</body>',
+			start_on: '2026-05-01',
+			due_on: '2026-06-01',
+			resource_subtype: 'milestone',
+			custom_fields: { cf1: 'value' },
+			followers: ['u1'],
 		})
 	})
 
