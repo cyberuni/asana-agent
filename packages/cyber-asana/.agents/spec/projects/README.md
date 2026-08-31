@@ -76,8 +76,8 @@ over the two surfaces (CLI and MCP) that share one `api.ts`.
 
 | Entry point | Trigger | Inputs | Outcome |
 |---|---|---|---|
-| `project list` (CLI) | caller wants every project in a workspace | a workspace GID by flag or from `ASANA_WORKSPACE`, plus pagination options | the workspace's projects, rendered as a Name/ID table in text mode |
-| `asana_project_list` (MCP) | agent wants the same enumeration | `workspace_gid` plus the shared pagination params | the same result, JSON-serialized |
+| `project list` (CLI) | caller wants every project in a workspace | a workspace GID by flag or from `ASANA_WORKSPACE`, pagination options, and an optional `--archived` / `--no-archived` filter | the workspace's projects, rendered as a Name/ID table in text mode |
+| `asana_project_list` (MCP) | agent wants the same enumeration | `workspace_gid`, the shared pagination params, and an optional `archived` filter | the same result, JSON-serialized |
 | `project search [text]` (CLI) | caller wants the projects of a workspace matching filters | a workspace GID, an optional text term, and any of the team / owner / member / portfolio / date-window / sort filters | the matching projects, rendered as a Name/ID table in text mode |
 | `asana_project_search` (MCP) | same, over MCP | `workspace_gid` plus the same filters under snake_case names | the same result, JSON-serialized |
 | `project get <gid>` (CLI) | caller holds a project GID and wants the record | the project GID, positionally | the project record, rendered as Name/ID/URL/Color/Notes fields; the repo registry's name for that GID is refreshed |
@@ -188,6 +188,8 @@ The load-bearing edges:
 | workspace GID → enumerate that workspace | a workspace holding two projects | `list returns the projects of the workspace it was given` |
 | no workspace GID from flag or environment → usage error | neither a workspace flag nor `ASANA_WORKSPACE` | `list without a workspace GID anywhere is a usage error` |
 | named filters mapped to Asana's search parameters | a text term plus team, member-exclusion, and due-window filters | `search maps each named filter onto its Asana search parameter` |
+| archived filter passed through to Asana | `--archived` or `--no-archived` on list | `list passes the archived filter through to Asana` |
+| archived filter left to Asana's default when unasked | neither archived flag on list | `list omits the archived filter when neither flag is given` |
 | no pagination options on search (barred) | the search subcommand's help text | `search offers no pagination options` |
 | no workspace GID from flag or environment on search → usage error | neither a workspace flag nor `ASANA_WORKSPACE` | `search without a workspace GID anywhere is a usage error` |
 | render Name / ID table | text mode, two projects, reached by either read | `list and search render each project's name and GID in text mode` |

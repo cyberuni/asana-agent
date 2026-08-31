@@ -115,29 +115,33 @@ export function projectCommand(api?: ProjectApi | (() => ProjectApi)) {
 		addGidOption(cmd.command('list').description('List projects in a workspace'), 'workspace', 'Workspace GID', {
 			env: 'ASANA_WORKSPACE',
 		}),
-	).action(
-		async (opts: {
-			workspace?: string
-			workspaceGid?: string
-			limit?: number
-			offset?: string
-			optFields?: string
-		}) => {
-			const pagination = paginationOptionsFromCli(opts)
-			pagination.optFields ??= PROJECT_LIST_FIELDS
-			const data = await resolveProjectApi(api).listProjects(
-				requiredGid(opts, 'workspace', 'Workspace GID'),
-				pagination,
-			)
-			output(data, () => {
-				const items = itemsForOutput(data)
-				fmtProjectList(items)
-				printCountSummary(items.length, 'project(s)')
-				printNextPageHint(data)
-				printNextSteps(PROJECT_LIST_NEXT_STEPS)
-			})
-		},
 	)
+		.option('--archived', 'Only archived projects')
+		.option('--no-archived', 'Only projects that are not archived')
+		.action(
+			async (opts: {
+				workspace?: string
+				workspaceGid?: string
+				archived?: boolean
+				limit?: number
+				offset?: string
+				optFields?: string
+			}) => {
+				const pagination = paginationOptionsFromCli(opts)
+				pagination.optFields ??= PROJECT_LIST_FIELDS
+				const data = await resolveProjectApi(api).listProjects(requiredGid(opts, 'workspace', 'Workspace GID'), {
+					...pagination,
+					...(opts.archived !== undefined && { archived: opts.archived }),
+				})
+				output(data, () => {
+					const items = itemsForOutput(data)
+					fmtProjectList(items)
+					printCountSummary(items.length, 'project(s)')
+					printNextPageHint(data)
+					printNextSteps(PROJECT_LIST_NEXT_STEPS)
+				})
+			},
+		)
 
 	cmd
 		.command('get <gid>')

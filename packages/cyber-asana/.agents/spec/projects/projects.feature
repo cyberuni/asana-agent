@@ -21,6 +21,17 @@ Feature: projects
     And stderr states that a Workspace GID is required
     And no request reaches Asana
 
+  Scenario: list passes the archived filter through to Asana
+    Given a workspace with GID "6120"
+    When the project list entry point runs for workspace "6120" asking only for archived projects
+    Then the request reaching Asana carries the archived filter set to true
+    And a run asking only for projects that are not archived carries the archived filter set to false
+
+  Scenario: list omits the archived filter when neither flag is given
+    Given a workspace with GID "6120"
+    When the project list entry point runs for workspace "6120" with no archived flag
+    Then the request reaching Asana carries no archived filter
+
   Scenario: search maps each named filter onto its Asana search parameter
     Given a workspace with GID "6120"
     And the team GID "7301"

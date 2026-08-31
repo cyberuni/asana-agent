@@ -14,6 +14,20 @@ cyber-asana project create "Launch" --workspace-gid <gid>
 `list`, `create`, and `search` are workspace-scoped and fall back to `ASANA_WORKSPACE` when
 `--workspace-gid` is omitted.
 
+## List
+
+```sh
+cyber-asana project list --workspace-gid <gid> --archived
+cyber-asana project list --workspace-gid <gid> --no-archived
+```
+
+| Option | Description |
+| --- | --- |
+| `--archived` | Only archived projects |
+| `--no-archived` | Only projects that are not archived |
+
+With neither flag the filter is left unset and Asana's own default applies.
+
 ## Create and update
 
 ```sh

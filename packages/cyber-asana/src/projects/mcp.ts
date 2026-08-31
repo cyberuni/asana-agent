@@ -35,12 +35,21 @@ export function registerProjectTools(server: McpServer, api?: ProjectApi | (() =
 	server.tool(
 		'asana_project_list',
 		'List Asana projects in a workspace',
-		{ workspace_gid: z.string().describe('Workspace GID'), ...paginationParams },
-		async ({ workspace_gid, ...params }) => ({
+		{
+			workspace_gid: z.string().describe('Workspace GID'),
+			archived: z.boolean().optional().describe('Only return projects whose archived flag matches this value'),
+			...paginationParams,
+		},
+		async ({ workspace_gid, archived, ...params }) => ({
 			content: [
 				{
 					type: 'text',
-					text: JSON.stringify(await resolveProjectApi(api).listProjects(workspace_gid, paginationOptions(params))),
+					text: JSON.stringify(
+						await resolveProjectApi(api).listProjects(workspace_gid, {
+							...paginationOptions(params),
+							...(archived !== undefined && { archived }),
+						}),
+					),
 				},
 			],
 		}),

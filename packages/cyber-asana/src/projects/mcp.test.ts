@@ -150,4 +150,43 @@ describe('projects/mcp', () => {
 
 		expect(injectedCreateProject).toHaveBeenCalledWith('ws1', 'Launch', {})
 	})
+
+	it('asana_project_list forwards the archived filter', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const server = createServer()
+		registerProjectTools(server as any, {
+			listProjects,
+			getProject: vi.fn(),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		})
+
+		await server.handlers.get('asana_project_list')?.({ workspace_gid: 'ws1', archived: true })
+
+		expect(listProjects).toHaveBeenCalledWith('ws1', expect.objectContaining({ archived: true }))
+		expect(listProjects.mock.calls[0]?.[1]).not.toHaveProperty('workspace_gid')
+	})
+
+	it('asana_project_list leaves the archived filter unset when it is not given', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const server = createServer()
+		registerProjectTools(server as any, {
+			listProjects,
+			getProject: vi.fn(),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		})
+
+		await server.handlers.get('asana_project_list')?.({ workspace_gid: 'ws1' })
+
+		expect(listProjects.mock.calls[0]?.[1]).not.toHaveProperty('archived')
+	})
 })

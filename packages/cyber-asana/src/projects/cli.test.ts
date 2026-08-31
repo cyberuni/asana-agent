@@ -340,4 +340,51 @@ describe('projects/cli', () => {
 
 		expect(injectedCreateProject).toHaveBeenCalledWith('ws1', 'Launch', {})
 	})
+
+	it('project list forwards --archived and --no-archived as the archived filter', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const projectCommand = await loadProjectCommand()
+		const deps = {
+			listProjects,
+			getProject: vi.fn(),
+			getProjectTaskCounts: vi.fn(),
+			createProject: vi.fn(),
+			updateProject: vi.fn(),
+			deleteProject: vi.fn(),
+			searchProjects: vi.fn(),
+			exportProject: vi.fn(),
+		}
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1', '--archived'], { from: 'node' })
+		expect(listProjects).toHaveBeenLastCalledWith('ws1', expect.objectContaining({ archived: true }))
+
+		await new Command()
+			.addCommand(projectCommand(deps))
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1', '--no-archived'], { from: 'node' })
+		expect(listProjects).toHaveBeenLastCalledWith('ws1', expect.objectContaining({ archived: false }))
+	})
+
+	it('project list leaves the archived filter unset when neither flag is given', async () => {
+		const listProjects = vi.fn().mockResolvedValue([])
+		const projectCommand = await loadProjectCommand()
+
+		await new Command()
+			.addCommand(
+				projectCommand({
+					listProjects,
+					getProject: vi.fn(),
+					getProjectTaskCounts: vi.fn(),
+					createProject: vi.fn(),
+					updateProject: vi.fn(),
+					deleteProject: vi.fn(),
+					searchProjects: vi.fn(),
+					exportProject: vi.fn(),
+				}),
+			)
+			.parseAsync(['node', 'test', 'project', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(listProjects.mock.calls[0]?.[1]).not.toHaveProperty('archived')
+	})
 })

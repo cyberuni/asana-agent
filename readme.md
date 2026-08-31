@@ -833,6 +833,19 @@ cyber-asana task search --modified-on-after 2026-05-17 --project-not <gid>
 
 **Other:** `--subtype <subtype>`, `--sort-by <field>`, `--sort-asc`, `--opt-fields <fields>`
 
+### Project list filters
+
+`project list` enumerates a workspace's projects. Asana hides archived projects from
+the default listing, so pass `--archived` to see only archived projects, or
+`--no-archived` to exclude them explicitly.
+
+```sh
+cyber-asana project list --workspace-gid <gid> --archived
+cyber-asana project list --workspace-gid <gid> --no-archived
+```
+
+Omitting both flags leaves the filter unset and takes Asana's own default.
+
 ### Project search filters
 
 `project search` accepts an optional text query plus filters.
