@@ -20,10 +20,13 @@ type ToolHandler = (params: any) => Promise<any>
 
 function createServer() {
 	const handlers = new Map<string, ToolHandler>()
+	const schemas = new Map<string, Record<string, unknown>>()
 	return {
 		handlers,
-		tool(name: string, _description: string, _schema: unknown, handler: ToolHandler) {
+		schemas,
+		tool(name: string, _description: string, schema: Record<string, unknown>, handler: ToolHandler) {
 			handlers.set(name, handler)
+			schemas.set(name, schema)
 		},
 	}
 }
@@ -90,5 +93,46 @@ describe('portfolios/mcp', () => {
 		})
 
 		expect(injectedCreatePortfolio).toHaveBeenCalledWith('ws1', 'Roadmap')
+	})
+
+	it('asana_portfolio_list forwards owner_gid as an owner filter', async () => {
+		const listPortfolios = vi.fn().mockResolvedValue([])
+		const server = createServer()
+		registerPortfolioTools(server as any, {
+			listPortfolios,
+			listPortfolioItems: vi.fn(),
+			getPortfolio: vi.fn(),
+			createPortfolio: vi.fn(),
+			updatePortfolio: vi.fn(),
+			deletePortfolio: vi.fn(),
+		})
+
+		await server.handlers.get('asana_portfolio_list')?.({ workspace_gid: 'ws1', owner_gid: 'u1' })
+
+		expect(listPortfolios).toHaveBeenCalledWith('ws1', expect.objectContaining({ owner: 'u1' }))
+	})
+
+	it('asana_portfolio_list omits the owner filter when no owner_gid is given', async () => {
+		const listPortfolios = vi.fn().mockResolvedValue([])
+		const server = createServer()
+		registerPortfolioTools(server as any, {
+			listPortfolios,
+			listPortfolioItems: vi.fn(),
+			getPortfolio: vi.fn(),
+			createPortfolio: vi.fn(),
+			updatePortfolio: vi.fn(),
+			deletePortfolio: vi.fn(),
+		})
+
+		await server.handlers.get('asana_portfolio_list')?.({ workspace_gid: 'ws1' })
+
+		expect(listPortfolios.mock.calls[0]?.[1]).not.toHaveProperty('owner')
+	})
+
+	it('asana_portfolio_list declares owner_gid as an optional parameter', async () => {
+		const server = createServer()
+		registerPortfolioTools(server as any)
+
+		expect(Object.keys(server.schemas.get('asana_portfolio_list') ?? {})).toContain('owner_gid')
 	})
 })

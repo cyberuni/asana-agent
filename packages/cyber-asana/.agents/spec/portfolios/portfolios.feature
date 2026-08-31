@@ -30,10 +30,18 @@ Feature: portfolios
     When its declared input schema is read
     Then the schema marks "workspace_gid" as a required parameter
 
-  Scenario: list offers no owner filter
-    Given the portfolio list entry point on the CLI and on MCP
-    When the inputs each one accepts are listed
-    Then neither list of inputs contains an owner option
+  Scenario: list narrows to one owner when an owner GID is given
+    Given a workspace with GID "4410"
+    And the owner user GID "7701" supplied on the invocation
+    When the portfolio list entry point runs with the workspace GID "4410"
+    Then the request reaching Asana asks for the portfolios of workspace "4410"
+    And that request carries the owner "7701"
+
+  Scenario: list sends no owner filter when none is given
+    Given a workspace with GID "4410"
+    And no owner GID supplied on the invocation
+    When the portfolio list entry point runs with the workspace GID "4410"
+    Then the request reaching Asana carries no owner filter
 
   Scenario: list renders each portfolio's name and GID in text mode
     Given a portfolio named "Foundry Program" with GID "6602" in workspace "4410"

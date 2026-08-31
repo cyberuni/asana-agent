@@ -161,4 +161,68 @@ describe('portfolios/cli', () => {
 
 		expect(injectedCreatePortfolio).toHaveBeenCalledWith('ws1', 'Roadmap')
 	})
+
+	it('portfolio list forwards --owner-gid as an owner filter', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listPortfolios = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			portfolioCommand({
+				listPortfolios,
+				listPortfolioItems: vi.fn(),
+				getPortfolio: vi.fn(),
+				createPortfolio: vi.fn(),
+				updatePortfolio: vi.fn(),
+				deletePortfolio: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'portfolio', 'list', '--workspace-gid', 'ws1', '--owner-gid', 'u1'], {
+			from: 'node',
+		})
+
+		expect(listPortfolios).toHaveBeenCalledWith('ws1', expect.objectContaining({ owner: 'u1' }))
+		vi.restoreAllMocks()
+	})
+
+	it('portfolio list accepts the legacy --owner alias', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listPortfolios = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			portfolioCommand({
+				listPortfolios,
+				listPortfolioItems: vi.fn(),
+				getPortfolio: vi.fn(),
+				createPortfolio: vi.fn(),
+				updatePortfolio: vi.fn(),
+				deletePortfolio: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'portfolio', 'list', '--workspace-gid', 'ws1', '--owner', 'u1'], {
+			from: 'node',
+		})
+
+		expect(listPortfolios).toHaveBeenCalledWith('ws1', expect.objectContaining({ owner: 'u1' }))
+		vi.restoreAllMocks()
+	})
+
+	it('portfolio list omits the owner filter when no owner is given', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const listPortfolios = vi.fn().mockResolvedValue([])
+		const program = new Command().addCommand(
+			portfolioCommand({
+				listPortfolios,
+				listPortfolioItems: vi.fn(),
+				getPortfolio: vi.fn(),
+				createPortfolio: vi.fn(),
+				updatePortfolio: vi.fn(),
+				deletePortfolio: vi.fn(),
+			}),
+		)
+
+		await program.parseAsync(['node', 'test', 'portfolio', 'list', '--workspace-gid', 'ws1'], { from: 'node' })
+
+		expect(listPortfolios.mock.calls[0]?.[1]).not.toHaveProperty('owner')
+		vi.restoreAllMocks()
+	})
 })

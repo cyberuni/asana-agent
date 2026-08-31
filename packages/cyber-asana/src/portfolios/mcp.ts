@@ -29,12 +29,24 @@ export function registerPortfolioTools(server: McpServer, api?: PortfolioApi | (
 	server.tool(
 		'asana_portfolio_list',
 		'List Asana portfolios in a workspace',
-		{ workspace_gid: z.string().describe('Workspace GID'), ...paginationParams },
-		async ({ workspace_gid, ...params }) => ({
+		{
+			workspace_gid: z.string().describe('Workspace GID'),
+			owner_gid: z
+				.string()
+				.optional()
+				.describe('Only list portfolios owned by this user GID; honored for service accounts only'),
+			...paginationParams,
+		},
+		async ({ workspace_gid, owner_gid, ...params }) => ({
 			content: [
 				{
 					type: 'text',
-					text: JSON.stringify(await resolvePortfolioApi(api).listPortfolios(workspace_gid, paginationOptions(params))),
+					text: JSON.stringify(
+						await resolvePortfolioApi(api).listPortfolios(workspace_gid, {
+							...paginationOptions(params),
+							...(owner_gid ? { owner: owner_gid } : {}),
+						}),
+					),
 				},
 			],
 		}),
