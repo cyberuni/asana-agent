@@ -135,4 +135,41 @@ describe('portfolios/mcp', () => {
 
 		expect(Object.keys(server.schemas.get('asana_portfolio_list') ?? {})).toContain('owner_gid')
 	})
+
+	it('asana_portfolio_delete answers with a structured acknowledgement', async () => {
+		const server = createServer()
+		registerPortfolioTools(server as any, {
+			listPortfolios: vi.fn(),
+			listPortfolioItems: vi.fn(),
+			getPortfolio: vi.fn(),
+			createPortfolio: vi.fn(),
+			updatePortfolio: vi.fn(),
+			deletePortfolio: vi.fn().mockResolvedValue(undefined),
+		})
+
+		const result = await server.handlers.get('asana_portfolio_delete')?.({ portfolio_gid: 'pf1' })
+
+		expect(JSON.parse(result.content[0].text)).toEqual({
+			deleted: true,
+			resource: 'portfolio',
+			gid: 'pf1',
+			already_absent: false,
+		})
+	})
+
+	it('asana_portfolio_delete treats an already-deleted portfolio as done', async () => {
+		const server = createServer()
+		registerPortfolioTools(server as any, {
+			listPortfolios: vi.fn(),
+			listPortfolioItems: vi.fn(),
+			getPortfolio: vi.fn(),
+			createPortfolio: vi.fn(),
+			updatePortfolio: vi.fn(),
+			deletePortfolio: vi.fn().mockRejectedValue({ response: { status: 404, body: { errors: [{ message: 'x' }] } } }),
+		})
+
+		const result = await server.handlers.get('asana_portfolio_delete')?.({ portfolio_gid: 'pf1' })
+
+		expect(JSON.parse(result.content[0].text)).toMatchObject({ deleted: true, already_absent: true })
+	})
 })

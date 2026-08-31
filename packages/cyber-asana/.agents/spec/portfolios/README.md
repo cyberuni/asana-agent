@@ -132,7 +132,9 @@ graph TD
     UN -->|no| UZ[send an update carrying no field]
     D[delete invoked] --> DG{portfolio GID given?}
     DG -->|no| DU[usage error — the argument is required]
-    DG -->|yes| DS[delete, then print a confirmation<br/>sentence — no record is returned]
+    DG -->|yes| DD{Asana still has it?}
+    DD -->|yes| DS[delete, then acknowledge —<br/>no record is returned]
+    DD -->|no, 404| DA[acknowledge with already_absent,<br/>not an error]
   end
 
   subgraph bound["surface boundary"]
@@ -160,8 +162,15 @@ The groups run genuinely different logic, so they are drawn separately. The load
 - **The permalink URL is optional.** Asana omits it on some records, so the text rendering simply has
   no URL line when there is no URL. Name and GID are always there.
 - **`delete` returns no record, so it does not render one.** Asana answers a delete with an empty
-  body. Both surfaces answer with the same one-line confirmation sentence naming the GID, rather than
-  serializing an empty object that would read like a failed read.
+  body. Both surfaces answer with an acknowledgement naming the GID, rather than serializing an empty
+  object that would read like a failed read — a sentence in CLI text mode, the structured
+  acknowledgement in `--json`/`--toon` and over MCP.
+- **`delete` is idempotent on both surfaces.** Deleting a portfolio that is already gone is the state
+  the caller asked for, so the shared `deleteIdempotently` turns Asana's 404 into
+  `already_absent: true` rather than an error. The CLI has always done this; the MCP tool called
+  Asana bare and handed the 404 to the agent, which made a retry fail where the same retry on the CLI
+  succeeded. That was a drop between surfaces, not a decision, and the tool now uses the same helper
+  every other delete in the package uses.
 
 - **`update` with no new name is not rejected.** `--name` is optional on both surfaces, and an update
   carrying no field goes out as an empty `data` block; Asana updates only the fields provided, so it
@@ -226,7 +235,8 @@ The groups run genuinely different logic, so they are drawn separately. The load
 |---|---|---|
 | portfolio GID given → delete and confirm | an existing portfolio named in the invocation | `delete removes the portfolio and confirms with its GID` |
 | portfolio GID absent → usage error, nothing deleted | no positional argument on the delete verb | `delete without a portfolio GID is a usage error` |
-| empty delete response → confirmation text, not a record | the MCP delete tool applied to an existing portfolio | `asana_portfolio_delete answers with a confirmation sentence rather than a record` |
+| empty delete response → acknowledgement, not a record | the MCP delete tool applied to an existing portfolio | `asana_portfolio_delete answers with a structured acknowledgement rather than a record` |
+| already-deleted portfolio → success, not a 404 | a portfolio GID Asana no longer has | `deleting a portfolio that is already gone succeeds on both surfaces` |
 
 ### surface boundary
 
