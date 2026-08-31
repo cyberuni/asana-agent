@@ -1,7 +1,7 @@
 @frozen
 Feature: sections
 
-  Listing, reading, creating, renaming and deleting the named buckets that divide
+  Listing, reading, creating, renaming, reordering and deleting the named buckets that divide
   an Asana project's task list, over the CLI and MCP surfaces that share one api.ts.
   A section can be placed relative to a sibling section at create time as well as
   by a later move.
@@ -183,12 +183,12 @@ Feature: sections
 
   # ── surface boundary ──
 
-  Scenario: the section command group offers exactly five verbs
+  Scenario: the section command group offers exactly seven verbs
     Given the section CLI command group
     When the help text for the group is rendered
-    Then the subcommands it lists are exactly "list", "get", "create", "update" and "delete"
+    Then the subcommands it lists are exactly "list", "get", "create", "update", "move", "task" and "delete"
 
-  Scenario: the MCP surface registers exactly the five section tools
+  Scenario: the MCP surface registers exactly the seven section tools
     Given an MCP server with the section tools registered
     When the registered tool names beginning with "asana_section_" are listed
-    Then those names are exactly "asana_section_list", "asana_section_get", "asana_section_create", "asana_section_update" and "asana_section_delete"
+    Then those names are exactly "asana_section_list", "asana_section_get", "asana_section_create", "asana_section_update", "asana_section_move", "asana_section_task_add" and "asana_section_delete"
