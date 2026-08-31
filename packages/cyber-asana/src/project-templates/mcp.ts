@@ -77,6 +77,10 @@ export function registerProjectTemplateTools(server: McpServer, api?: ProjectTem
 				.array(z.object({ gid: z.string(), value: z.string() }))
 				.optional()
 				.describe("Values for the template's date variables, from the template's requested_dates"),
+			requested_roles: z
+				.array(z.object({ gid: z.string(), value: z.string() }))
+				.optional()
+				.describe('Users for the template\'s roles; value is a user GID, an email, or "me"'),
 			is_strict: z
 				.boolean()
 				.optional()
@@ -99,6 +103,7 @@ export function registerProjectTemplateTools(server: McpServer, api?: ProjectTem
 			privacy_setting,
 			is_strict,
 			requested_dates,
+			requested_roles,
 			wait,
 			timeout_seconds,
 		}) => {
@@ -109,6 +114,7 @@ export function registerProjectTemplateTools(server: McpServer, api?: ProjectTem
 				...(privacy_setting !== undefined && { privacySetting: privacy_setting }),
 				...(is_strict !== undefined && { isStrict: is_strict }),
 				...(requested_dates !== undefined && { requestedDates: requested_dates }),
+				...(requested_roles !== undefined && { requestedRoles: requested_roles }),
 			}
 			const templateApi = resolveProjectTemplateApi(api)
 			const job =

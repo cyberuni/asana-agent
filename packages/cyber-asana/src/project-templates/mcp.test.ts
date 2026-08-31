@@ -172,4 +172,22 @@ describe('project-templates/mcp', () => {
 			expect.anything(),
 		)
 	})
+
+	it('asana_project_template_instantiate forwards requested roles', async () => {
+		instantiateProjectAndWaitMock.mockResolvedValue({ gid: 'job1', new_project: { gid: 'proj1' } })
+		const server = createServer()
+		registerProjectTemplateTools(server as any)
+
+		await server.handlers.get('asana_project_template_instantiate')?.({
+			project_template_gid: 'tpl1',
+			name: 'Acme',
+			requested_roles: [{ gid: 'role1', value: 'me' }],
+		})
+
+		expect(instantiateProjectAndWaitMock).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme', requestedRoles: [{ gid: 'role1', value: 'me' }] },
+			expect.anything(),
+		)
+	})
 })

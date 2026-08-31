@@ -926,7 +926,9 @@ both. Omit all three to let Asana decide. Templates that ask for dates list them
 `requested_dates` in `project-template get`; pass each one as
 `--requested-date <date-variable-gid>=<YYYY-MM-DD>` (repeatable). By default Asana
 substitutes a default date for any variable you leave unfilled; `--strict-dates` makes an
-unfilled variable an error instead, so a half-dated project never gets created silently.
+unfilled variable an error instead, so a half-dated project never gets created silently. Templates that
+carry roles take `--requested-role <template-role-gid>=<user>` the same way, where the user
+is a GID, an email, or `me`.
 
 Asana builds the project asynchronously and returns a job, so:
 

@@ -22,7 +22,7 @@ import {
 	listProjectTemplatesForTeam,
 	newProjectOf,
 } from './api.js'
-import type { ProjectTemplatePrivacySetting, RequestedDate } from './gateway.js'
+import type { ProjectTemplatePrivacySetting, RequestedDate, RequestedRole } from './gateway.js'
 
 type ProjectTemplate = {
 	gid: string
@@ -67,6 +67,15 @@ function collectRequestedDate(value: string, previous: RequestedDate[] = []): Re
 	const separator = value.indexOf('=')
 	if (separator < 1 || separator === value.length - 1) {
 		throw new InvalidArgumentError('--requested-date must be <date-variable-gid>=<value>')
+	}
+	return [...previous, { gid: value.slice(0, separator), value: value.slice(separator + 1) }]
+}
+
+/** `--requested-role <template-role-gid>=<user>`, repeatable. */
+function collectRequestedRole(value: string, previous: RequestedRole[] = []): RequestedRole[] {
+	const separator = value.indexOf('=')
+	if (separator < 1 || separator === value.length - 1) {
+		throw new InvalidArgumentError('--requested-role must be <template-role-gid>=<user>')
 	}
 	return [...previous, { gid: value.slice(0, separator), value: value.slice(separator + 1) }]
 }
@@ -200,6 +209,12 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 			collectRequestedDate,
 			undefined,
 		)
+		.option(
+			'--requested-role <gid=user>',
+			'User for a template role — a user GID, an email, or “me” — repeatable',
+			collectRequestedRole,
+			undefined,
+		)
 		.option('--strict-dates', 'Fail if any of the template’s date variables is left unfilled')
 		.option('--no-wait', 'Return the job immediately instead of waiting for the project')
 		.option(
@@ -218,6 +233,7 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 					private?: boolean
 					privacySetting?: ProjectTemplatePrivacySetting
 					requestedDate?: RequestedDate[]
+					requestedRole?: RequestedRole[]
 					strictDates?: boolean
 					wait: boolean
 					timeout?: number
@@ -236,6 +252,7 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 					...((opts.public || opts.private) && { public: opts.public === true }),
 					...(opts.privacySetting !== undefined && { privacySetting: opts.privacySetting }),
 					...(opts.requestedDate !== undefined && { requestedDates: opts.requestedDate }),
+					...(opts.requestedRole !== undefined && { requestedRoles: opts.requestedRole }),
 					...(opts.strictDates !== undefined && { isStrict: opts.strictDates }),
 				}
 				const templateApi = resolveProjectTemplateApi(api)

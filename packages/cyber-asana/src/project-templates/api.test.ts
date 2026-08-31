@@ -170,4 +170,19 @@ describe('project-templates/api', () => {
 			body: { data: { name: 'Acme onboarding', is_strict: true } },
 		})
 	})
+
+	it('instantiateProject carries requested roles into the instantiation body', async () => {
+		vi.spyOn(Asana.ProjectTemplatesApi.prototype, 'instantiateProject').mockResolvedValue({
+			data: mockJob,
+		} as never)
+
+		await instantiateProject('tpl1', {
+			name: 'Acme onboarding',
+			requestedRoles: [{ gid: 'role1', value: 'me' }],
+		})
+
+		expect(Asana.ProjectTemplatesApi.prototype.instantiateProject).toHaveBeenCalledWith('tpl1', {
+			body: { data: { name: 'Acme onboarding', requested_roles: [{ gid: 'role1', value: 'me' }] } },
+		})
+	})
 })

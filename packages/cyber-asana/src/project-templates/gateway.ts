@@ -13,6 +13,13 @@ export type RequestedDate = {
 	value: string
 }
 
+/** A template role, paired with the user who should hold it in the new project. */
+export type RequestedRole = {
+	gid: string
+	/** A user GID, an email, or "me". */
+	value: string
+}
+
 /** Asana's non-deprecated replacement for the `public` boolean. */
 export type ProjectTemplatePrivacySetting = 'public_to_workspace' | 'private_to_team' | 'private'
 
@@ -29,6 +36,7 @@ export type InstantiateProjectFields = {
 	 */
 	isStrict?: boolean
 	requestedDates?: RequestedDate[]
+	requestedRoles?: RequestedRole[]
 }
 
 /** Which templates to list: a workspace's, a team's, or (with both) a team's within a workspace. */
@@ -53,6 +61,7 @@ function instantiationBody(fields: InstantiateProjectFields) {
 			...(fields.privacySetting !== undefined && { privacy_setting: fields.privacySetting }),
 			...(fields.isStrict !== undefined && { is_strict: fields.isStrict }),
 			...(fields.requestedDates !== undefined && { requested_dates: fields.requestedDates }),
+			...(fields.requestedRoles !== undefined && { requested_roles: fields.requestedRoles }),
 		},
 	}
 }

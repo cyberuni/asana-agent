@@ -23,3 +23,6 @@ Close cross-surface gaps in the projects and project-templates domains.
   `asana_project_template_instantiate` gains `is_strict`. Asana's `is_strict` turns an
   unfilled date variable into an error rather than a silently defaulted date; neither
   surface could ask for it.
+- `project-template instantiate` gains a repeatable `--requested-role` and
+  `asana_project_template_instantiate` gains `requested_roles`. `requested_dates` was
+  already plumbed on both surfaces; its role counterpart was not.
