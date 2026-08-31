@@ -271,6 +271,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 	)
 		.option('--notes <text>', 'Task notes')
 		.option('--html-notes <html>', 'Task notes as HTML')
+		.option('--completed', 'Create the task already marked complete')
 		.option('--due-on <date>', 'Due date (YYYY-MM-DD)')
 		.option('--due-at <datetime>', 'Due date and time (ISO 8601 UTC); not usable with --due-on')
 		.option('--start-on <date>', 'Start date (YYYY-MM-DD)')
@@ -293,6 +294,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 					assigneeGid?: string
 					notes?: string
 					htmlNotes?: string
+					completed?: boolean
 					dueOn?: string
 					dueAt?: string
 					startOn?: string
@@ -309,6 +311,7 @@ export function taskCommand(api?: TaskApi | (() => TaskApi)) {
 					buildTaskCreateFields({
 						notes: opts.notes,
 						htmlNotes: opts.htmlNotes,
+						completed: opts.completed,
 						assignee: normalizedGid(opts, 'assignee'),
 						projectInput: opts.projectGid ?? opts.project,
 						followerInput: opts.follower,

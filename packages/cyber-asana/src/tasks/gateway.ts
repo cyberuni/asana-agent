@@ -11,6 +11,7 @@ export type TaskCustomFields = Record<string, unknown>
 export type CreateTaskFields = {
 	notes?: string
 	html_notes?: string
+	completed?: boolean
 	assignee?: string
 	projects?: string[]
 	due_on?: string

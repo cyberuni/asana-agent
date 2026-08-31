@@ -128,6 +128,16 @@ describe('tasks/mcp', () => {
 		})
 	})
 
+	it('asana_task_create passes completed through', async () => {
+		createTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const server = createServer()
+		registerTaskTools(server as any)
+
+		await server.handlers.get('asana_task_create')?.({ workspace_gid: 'ws1', name: 'Task', completed: true })
+
+		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', { completed: true })
+	})
+
 	it('asana_task_update forwards html notes, clear parent, and custom fields', async () => {
 		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
 		const server = createServer()

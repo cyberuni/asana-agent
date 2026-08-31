@@ -233,6 +233,7 @@ Use \\n for line breaks (not <br> or <p>). Example: "<body><h1>Title</h1>Content
 				.describe(
 					'Task notes as HTML (preferred over notes). Must be valid XML wrapped in <body>. Use <h1>, <h2>, <strong>, <code>, <ul>, <ol>, <li>, <hr/>, <pre>, <blockquote>. Use \\n for line breaks.',
 				),
+			completed: z.boolean().optional().describe('Create the task already marked complete'),
 			due_on: z.string().optional().describe('Due date (YYYY-MM-DD)'),
 			due_at: z.string().optional().describe('Due date and time (ISO 8601 UTC); cannot be combined with due_on'),
 			start_on: z.string().optional().describe('Start date (YYYY-MM-DD)'),
@@ -253,6 +254,7 @@ Use \\n for line breaks (not <br> or <p>). Example: "<body><h1>Title</h1>Content
 			assignee_gid,
 			notes,
 			html_notes,
+			completed,
 			due_on,
 			due_at,
 			start_on,
@@ -271,6 +273,7 @@ Use \\n for line breaks (not <br> or <p>). Example: "<body><h1>Title</h1>Content
 							buildTaskCreateFields({
 								notes,
 								htmlNotes: html_notes,
+								completed,
 								assignee: assignee_gid,
 								projectGids: project_gids ?? parseGidList(project_gid),
 								followerGids: typeof follower_gids === 'string' ? parseGidList(follower_gids) : follower_gids,

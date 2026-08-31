@@ -3,6 +3,7 @@ import type { CreateTaskFields, UpdateTaskFields } from './api.js'
 type BuildTaskWriteInput = {
 	notes?: string
 	htmlNotes?: string
+	completed?: boolean
 	dueOn?: string
 	dueAt?: string
 	startOn?: string
@@ -24,7 +25,6 @@ type BuildTaskCreateInput = BuildTaskWriteInput & {
 
 type BuildTaskUpdateInput = BuildTaskWriteInput & {
 	name?: string
-	completed?: boolean
 	clearParent?: boolean
 	clearAssignee?: boolean
 	clearDueOn?: boolean
@@ -96,6 +96,7 @@ export function buildTaskCreateFields(input: BuildTaskCreateInput): CreateTaskFi
 	return {
 		...(input.notes !== undefined && { notes: input.notes }),
 		...(input.htmlNotes !== undefined && { html_notes: input.htmlNotes }),
+		...(input.completed !== undefined && { completed: input.completed }),
 		...(input.assignee !== undefined && { assignee: input.assignee }),
 		...(input.dueOn !== undefined && { due_on: input.dueOn }),
 		...(input.dueAt !== undefined && { due_at: input.dueAt }),

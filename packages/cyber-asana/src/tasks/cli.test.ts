@@ -268,6 +268,17 @@ describe('tasks/cli', () => {
 		})
 	})
 
+	it('task create marks the new task complete', async () => {
+		createTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(['node', 'test', 'task', 'create', 'Task', '--workspace-gid', 'ws1', '--completed'], {
+			from: 'node',
+		})
+
+		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', { completed: true })
+	})
+
 	it('task update sets start_on alongside due_on', async () => {
 		updateTaskMock.mockResolvedValue({ gid: '1', name: 'Task' })
 		const program = new Command().addCommand(taskCommand())

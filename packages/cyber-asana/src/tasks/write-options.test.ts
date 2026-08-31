@@ -43,6 +43,10 @@ describe('tasks/write-options', () => {
 		)
 	})
 
+	it('buildTaskCreateFields maps completed', () => {
+		expect(buildTaskCreateFields({ completed: true })).toEqual({ completed: true })
+	})
+
 	it('buildTaskCreateFields rejects notes and html_notes together', () => {
 		expect(() => buildTaskCreateFields({ notes: 'plain', htmlNotes: '<body>html</body>' })).toThrow(
 			'--notes and --html-notes are mutually exclusive',
