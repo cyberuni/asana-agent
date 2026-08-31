@@ -21,6 +21,7 @@ import {
 	removeTagFromTask,
 	updateTag,
 } from './api.js'
+import { parseFollowerGids } from './write-options.js'
 
 type Tag = { gid: string; name: string; color?: string | null }
 type Task = { gid: string; name: string; completed?: boolean; due_on?: string | null }
@@ -78,7 +79,7 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 			'Examples:',
 			'  cyber-asana tag list --workspace-gid <gid>',
 			'  cyber-asana tag get <gid> --toon',
-			'  cyber-asana tag create "Urgent" --workspace-gid <gid> --color red',
+			'  cyber-asana tag create "Urgent" --workspace-gid <gid> --color red --follower <gid,gid>',
 			'  cyber-asana tag update <gid> --name "Critical"',
 			'  cyber-asana tag tasks <tag-gid>',
 			'  cyber-asana tag task list <task-gid>',
@@ -138,12 +139,20 @@ export function tagCommand(api?: TagApi | (() => TagApi)) {
 			env: 'ASANA_WORKSPACE',
 		},
 	)
-	createCmd.option('--color <color>', 'Tag color').option('--notes <text>', 'Tag notes')
+	createCmd
+		.option('--color <color>', 'Tag color')
+		.option('--notes <text>', 'Tag notes')
+		.option('--follower <gid[,gid...]>', 'Follower user GIDs')
 	createCmd.action(
-		async (name: string, opts: { workspace?: string; workspaceGid?: string; color?: string; notes?: string }) => {
+		async (
+			name: string,
+			opts: { workspace?: string; workspaceGid?: string; color?: string; notes?: string; follower?: string },
+		) => {
+			const followers = parseFollowerGids(opts.follower)
 			const data = await resolveTagApi(api).createTag(requiredGid(opts, 'workspace', 'Workspace GID'), name, {
 				...(opts.color !== undefined && { color: opts.color }),
 				...(opts.notes !== undefined && { notes: opts.notes }),
+				...(followers && { followers }),
 			})
 			output(data, () => fmtTag(data))
 		},

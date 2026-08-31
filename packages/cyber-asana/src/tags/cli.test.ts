@@ -213,4 +213,17 @@ describe('tags/cli', () => {
 
 		expect(injectedCreateTag).toHaveBeenCalledWith('ws1', 'Urgent', {})
 	})
+	it('tag create adds followers from a comma-separated --follower list', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const api = tagApiStub()
+		api.createTag.mockResolvedValue({ gid: 'tag1', name: 'Urgent' })
+
+		await new Command()
+			.addCommand(tagCommand(api))
+			.parseAsync(['node', 'test', 'tag', 'create', 'Urgent', '--workspace-gid', 'ws1', '--follower', 'u1,u2'], {
+				from: 'node',
+			})
+
+		expect(api.createTag).toHaveBeenCalledWith('ws1', 'Urgent', { followers: ['u1', 'u2'] })
+	})
 })

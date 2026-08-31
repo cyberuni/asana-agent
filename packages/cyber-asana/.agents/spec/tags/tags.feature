@@ -77,6 +77,21 @@ Feature: tags
     And the request body has no colour key
     And the request body has no notes key
 
+  Scenario: create sends the followers it was given
+    Given a workspace with GID "88431"
+    When the tag create entry point runs with the name "Tide Chart" in workspace "88431" and the follower GIDs "5501" and "5502"
+    Then the request body carries the followers "5501" and "5502"
+
+  Scenario: create sends no followers key when no follower is named
+    Given a workspace with GID "88431"
+    When the tag create command runs with the name "Tide Chart" and the workspace GID "88431" and no other flag
+    Then the request body has no followers key
+
+  Scenario: update has no followers option, because Asana takes followers only at creation
+    Given a tag with GID "77001"
+    When the tag update entry point's options are read
+    Then those options do not include a follower option
+
   Scenario: create falls back to the workspace environment variable
     Given the ASANA_WORKSPACE environment variable is set to "88431"
     When the tag create command runs with the name "Tide Chart" and no workspace flag

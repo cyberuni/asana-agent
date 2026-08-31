@@ -13,6 +13,7 @@ import {
 	removeTagFromTask,
 	updateTag,
 } from './api.js'
+import { parseFollowerGids } from './write-options.js'
 
 function resolveTagApi(api?: TagApi | (() => TagApi)): TagApi {
 	if (typeof api === 'function') return api()
@@ -63,15 +64,28 @@ export function registerTagTools(server: McpServer, api?: TagApi | (() => TagApi
 			name: z.string().describe('Tag name'),
 			color: z.string().optional().describe('Tag color'),
 			notes: z.string().optional().describe('Tag notes'),
+			follower_gids: z
+				.union([z.array(z.string()), z.string()])
+				.optional()
+				.describe('Follower user GIDs'),
 		},
-		async ({ workspace_gid, name, color, notes }) => ({
-			content: [
-				{
-					type: 'text',
-					text: JSON.stringify(await resolveTagApi(api).createTag(workspace_gid, name, { color, notes })),
-				},
-			],
-		}),
+		async ({ workspace_gid, name, color, notes, follower_gids }) => {
+			const followers = parseFollowerGids(follower_gids)
+			return {
+				content: [
+					{
+						type: 'text',
+						text: JSON.stringify(
+							await resolveTagApi(api).createTag(workspace_gid, name, {
+								...(color !== undefined && { color }),
+								...(notes !== undefined && { notes }),
+								...(followers && { followers }),
+							}),
+						),
+					},
+				],
+			}
+		},
 	)
 
 	server.tool(

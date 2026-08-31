@@ -5,6 +5,7 @@ import {
 	type PaginationOptions,
 	toAsanaPaginationOptions,
 } from '../pagination.js'
+import type { TagCreateFields } from './write-options.js'
 
 export type TagWriteFields = {
 	name?: string
@@ -15,7 +16,7 @@ export type TagWriteFields = {
 export type TagGateway = {
 	listTags(workspaceGid: string, opts?: PaginationOptions): Promise<ListResult<any>>
 	getTag(tagGid: string): Promise<any>
-	createTag(workspaceGid: string, name: string, fields?: Omit<TagWriteFields, 'name'>): Promise<any>
+	createTag(workspaceGid: string, name: string, fields?: TagCreateFields): Promise<any>
 	updateTag(tagGid: string, fields: TagWriteFields): Promise<any>
 	deleteTag(tagGid: string): Promise<void>
 	listTagsForTask(taskGid: string, opts?: PaginationOptions): Promise<ListResult<any>>

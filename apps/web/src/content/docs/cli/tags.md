@@ -22,11 +22,14 @@ cyber-asana tag delete <gid>
 | --- | --- | --- |
 | `list` | — | `--workspace-gid <gid>` / `--workspace <gid>`, [pagination](/cyber-asana/cli/#pagination) |
 | `get` | `<gid>` | — |
-| `create` | `<name>` | `--workspace-gid <gid>`, `--color <color>`, `--notes <text>` |
+| `create` | `<name>` | `--workspace-gid <gid>`, `--color <color>`, `--notes <text>`, `--follower <gid[,gid...]>` |
 | `update` | `<gid>` | `--name <name>`, `--color <color>`, `--notes <text>` |
 | `delete` | `<gid>` | — |
 
 `list` and `create` fall back to `ASANA_WORKSPACE` when `--workspace-gid` is omitted.
+
+`--follower` is create-only: Asana takes `followers` when a tag is created and not when one is
+updated, so `update` has no counterpart.
 
 ## Tags on a task
 

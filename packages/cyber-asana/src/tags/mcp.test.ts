@@ -175,4 +175,31 @@ describe('tags/mcp', () => {
 
 		expect(injectedUpdateTag).toHaveBeenCalledWith('tag1', { name: 'Urgent', color: undefined, notes: undefined })
 	})
+	it('asana_tag_create forwards follower_gids', async () => {
+		createTagMock.mockResolvedValue({ gid: 'tag1', name: 'Urgent' })
+		const server = createServer()
+		registerTagTools(server as any)
+
+		await server.handlers.get('asana_tag_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Urgent',
+			follower_gids: ['u1', 'u2'],
+		})
+
+		expect(createTagMock).toHaveBeenCalledWith('ws1', 'Urgent', { followers: ['u1', 'u2'] })
+	})
+
+	it('asana_tag_create accepts follower_gids as a comma-separated string', async () => {
+		createTagMock.mockResolvedValue({ gid: 'tag1', name: 'Urgent' })
+		const server = createServer()
+		registerTagTools(server as any)
+
+		await server.handlers.get('asana_tag_create')?.({
+			workspace_gid: 'ws1',
+			name: 'Urgent',
+			follower_gids: 'u1,u2',
+		})
+
+		expect(createTagMock).toHaveBeenCalledWith('ws1', 'Urgent', { followers: ['u1', 'u2'] })
+	})
 })
