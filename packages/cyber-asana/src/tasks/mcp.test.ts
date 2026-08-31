@@ -5,6 +5,7 @@ const updateTaskMock = vi.fn()
 const addFollowersToTaskMock = vi.fn()
 const removeFollowersFromTaskMock = vi.fn()
 const getTasksByGidMock = vi.fn()
+const createSubtaskMock = vi.fn()
 
 vi.mock('./api.js', async () => {
 	const actual = await vi.importActual<typeof import('./api.js')>('./api.js')
@@ -15,6 +16,7 @@ vi.mock('./api.js', async () => {
 		addFollowersToTask: addFollowersToTaskMock,
 		removeFollowersFromTask: removeFollowersFromTaskMock,
 		getTasksByGid: getTasksByGidMock,
+		createSubtask: createSubtaskMock,
 	}
 })
 
@@ -136,6 +138,32 @@ describe('tasks/mcp', () => {
 		await server.handlers.get('asana_task_create')?.({ workspace_gid: 'ws1', name: 'Task', completed: true })
 
 		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', { completed: true })
+	})
+
+	it('asana_task_subtask_create forwards the same write fields as asana_task_create', async () => {
+		createSubtaskMock.mockResolvedValue({ gid: '2', name: 'Sub Task' })
+		const server = createServer()
+		registerTaskTools(server as any)
+
+		await server.handlers.get('asana_task_subtask_create')?.({
+			task_gid: '123',
+			name: 'Sub Task',
+			html_notes: '<body>Sub</body>',
+			start_on: '2026-05-01',
+			due_on: '2026-06-01',
+			resource_subtype: 'milestone',
+			custom_fields: { cf1: 'value' },
+			follower_gids: ['u1'],
+		})
+
+		expect(createSubtaskMock).toHaveBeenCalledWith('123', 'Sub Task', {
+			html_notes: '<body>Sub</body>',
+			start_on: '2026-05-01',
+			due_on: '2026-06-01',
+			resource_subtype: 'milestone',
+			custom_fields: { cf1: 'value' },
+			followers: ['u1'],
+		})
 	})
 
 	it('asana_task_update forwards html notes, clear parent, and custom fields', async () => {

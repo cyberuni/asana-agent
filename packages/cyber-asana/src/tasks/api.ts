@@ -101,7 +101,7 @@ export function createTaskApi(gateway: TaskGateway) {
 		listSubtasks(taskGid: string, opts?: PaginationOptions & { completedSince?: string }) {
 			return gateway.listSubtasks(taskGid, opts)
 		},
-		createSubtask(parentTaskGid: string, name: string, opts?: { notes?: string; assignee?: string; dueOn?: string }) {
+		createSubtask(parentTaskGid: string, name: string, opts?: CreateTaskFields) {
 			return gateway.createSubtask(parentTaskGid, name, opts)
 		},
 		addTaskToProject(
@@ -187,11 +187,7 @@ export async function listSubtasks(taskGid: string, opts?: PaginationOptions & {
 	return defaultTaskApi().listSubtasks(taskGid, opts)
 }
 
-export async function createSubtask(
-	parentTaskGid: string,
-	name: string,
-	opts?: { notes?: string; assignee?: string; dueOn?: string },
-) {
+export async function createSubtask(parentTaskGid: string, name: string, opts?: CreateTaskFields) {
 	return defaultTaskApi().createSubtask(parentTaskGid, name, opts)
 }
 

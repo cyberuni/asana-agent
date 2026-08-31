@@ -10,6 +10,7 @@ const getTaskMock = vi.fn()
 const listTasksMock = vi.fn()
 const getMyTasksMock = vi.fn()
 const listSubtasksMock = vi.fn()
+const createSubtaskMock = vi.fn()
 
 vi.mock('./api.js', async () => {
 	const actual = await vi.importActual<typeof import('./api.js')>('./api.js')
@@ -24,6 +25,7 @@ vi.mock('./api.js', async () => {
 		listTasks: listTasksMock,
 		getMyTasks: getMyTasksMock,
 		listSubtasks: listSubtasksMock,
+		createSubtask: createSubtaskMock,
 	}
 })
 
@@ -277,6 +279,45 @@ describe('tasks/cli', () => {
 		})
 
 		expect(createTaskMock).toHaveBeenCalledWith('ws1', 'Task', { completed: true })
+	})
+
+	it('task subtask create forwards the same write fields as task create', async () => {
+		createSubtaskMock.mockResolvedValue({ gid: '2', name: 'Sub Task' })
+		const program = new Command().addCommand(taskCommand())
+
+		await program.parseAsync(
+			[
+				'node',
+				'test',
+				'task',
+				'subtask',
+				'create',
+				'123',
+				'Sub Task',
+				'--html-notes',
+				'<body>Sub</body>',
+				'--start-on',
+				'2026-05-01',
+				'--due-on',
+				'2026-06-01',
+				'--resource-subtype',
+				'milestone',
+				'--custom-field',
+				'cf1=value',
+				'--follower',
+				'u1',
+			],
+			{ from: 'node' },
+		)
+
+		expect(createSubtaskMock).toHaveBeenCalledWith('123', 'Sub Task', {
+			html_notes: '<body>Sub</body>',
+			start_on: '2026-05-01',
+			due_on: '2026-06-01',
+			resource_subtype: 'milestone',
+			custom_fields: { cf1: 'value' },
+			followers: ['u1'],
+		})
 	})
 
 	it('task update sets start_on alongside due_on', async () => {
