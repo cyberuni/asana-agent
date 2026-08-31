@@ -918,9 +918,12 @@ cyber-asana project-template get <gid>                  # includes the template'
 cyber-asana project-template instantiate <gid> --name "Acme onboarding" --team-gid <gid>
 ```
 
-`--team-gid` is required when the workspace is an organization. `--public` / `--private` set
-the new project's visibility; omit both to let Asana decide. Templates that ask for dates
-list them under `requested_dates` in `project-template get`; pass each one as
+`--team-gid` is required when the workspace is an organization.
+`--privacy-setting <public_to_workspace|private_to_team|private>` sets the new project's
+visibility; `--public` / `--private` are the older two-valued form of the same thing and
+Asana has deprecated the `public` field behind them, so pass one form or the other, never
+both. Omit all three to let Asana decide. Templates that ask for dates list them under
+`requested_dates` in `project-template get`; pass each one as
 `--requested-date <date-variable-gid>=<YYYY-MM-DD>` (repeatable).
 
 Asana builds the project asynchronously and returns a job, so:

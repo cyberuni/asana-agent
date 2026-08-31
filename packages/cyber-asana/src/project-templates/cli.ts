@@ -22,7 +22,7 @@ import {
 	listProjectTemplatesForTeam,
 	newProjectOf,
 } from './api.js'
-import type { RequestedDate } from './gateway.js'
+import type { ProjectTemplatePrivacySetting, RequestedDate } from './gateway.js'
 
 type ProjectTemplate = {
 	gid: string
@@ -191,6 +191,10 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 		.option('--public', 'Make the new project visible to the whole team')
 		.option('--private', 'Make the new project private to its members')
 		.option(
+			'--privacy-setting <value>',
+			'Privacy of the new project: public_to_workspace, private_to_team, private (replaces --public/--private)',
+		)
+		.option(
 			'--requested-date <gid=value>',
 			'Value for a template date variable, repeatable',
 			collectRequestedDate,
@@ -211,6 +215,7 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 					teamGid?: string
 					public?: boolean
 					private?: boolean
+					privacySetting?: ProjectTemplatePrivacySetting
 					requestedDate?: RequestedDate[]
 					wait: boolean
 					timeout?: number
@@ -219,11 +224,15 @@ export function projectTemplateCommand(api?: ProjectTemplateApi | (() => Project
 				if (opts.public && opts.private) {
 					throw new InvalidArgumentError('--public and --private cannot be used together')
 				}
+				if (opts.privacySetting !== undefined && (opts.public || opts.private)) {
+					throw new InvalidArgumentError('--privacy-setting cannot be used with --public or --private')
+				}
 				const teamGid = normalizedGid(opts, 'team')
 				const fields = {
 					name: opts.name,
 					...(teamGid !== undefined && { team: teamGid }),
 					...((opts.public || opts.private) && { public: opts.public === true }),
+					...(opts.privacySetting !== undefined && { privacySetting: opts.privacySetting }),
 					...(opts.requestedDate !== undefined && { requestedDates: opts.requestedDate }),
 				}
 				const templateApi = resolveProjectTemplateApi(api)

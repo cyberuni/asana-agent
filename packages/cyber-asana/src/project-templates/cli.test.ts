@@ -198,4 +198,46 @@ describe('project-templates/cli', () => {
 
 		expect(listProjectTemplatesMock).toHaveBeenCalled()
 	})
+
+	it('instantiate carries --privacy-setting into the instantiation fields', async () => {
+		vi.spyOn(console, 'log').mockImplementation(() => {})
+		const api = templateApiStub()
+		api.instantiateProjectAndWait = vi.fn().mockResolvedValue(succeededJob)
+		const program = new Command().addCommand(projectTemplateCommand(api))
+
+		await program.parseAsync(
+			['node', 'test', 'project-template', 'instantiate', 'tpl1', '--name', 'Acme', '--privacy-setting', 'private'],
+			{ from: 'node' },
+		)
+
+		expect(api.instantiateProjectAndWait).toHaveBeenCalledWith(
+			'tpl1',
+			{ name: 'Acme', privacySetting: 'private' },
+			expect.anything(),
+		)
+	})
+
+	it('instantiate rejects --privacy-setting alongside --public', async () => {
+		const api = templateApiStub()
+		const program = exitOverriding(new Command().addCommand(projectTemplateCommand(api)))
+
+		await expect(
+			program.parseAsync(
+				[
+					'node',
+					'test',
+					'project-template',
+					'instantiate',
+					'tpl1',
+					'--name',
+					'Acme',
+					'--public',
+					'--privacy-setting',
+					'private',
+				],
+				{ from: 'node' },
+			),
+		).rejects.toThrow(/privacy-setting/)
+		expect(api.instantiateProjectAndWait).not.toHaveBeenCalled()
+	})
 })

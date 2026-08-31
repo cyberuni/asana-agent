@@ -146,4 +146,16 @@ describe('project-templates/api', () => {
 		expect(error).toBeInstanceOf(JobFailedError)
 		expect(error.jobGid).toBe('job1')
 	})
+
+	it('instantiateProject carries the privacy setting into the instantiation body', async () => {
+		vi.spyOn(Asana.ProjectTemplatesApi.prototype, 'instantiateProject').mockResolvedValue({
+			data: mockJob,
+		} as never)
+
+		await instantiateProject('tpl1', { name: 'Acme onboarding', privacySetting: 'private_to_team' })
+
+		expect(Asana.ProjectTemplatesApi.prototype.instantiateProject).toHaveBeenCalledWith('tpl1', {
+			body: { data: { name: 'Acme onboarding', privacy_setting: 'private_to_team' } },
+		})
+	})
 })

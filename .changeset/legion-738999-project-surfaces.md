@@ -16,3 +16,6 @@ Close cross-surface gaps in the projects and project-templates domains.
 - `project create` / `project update` gain `--default-access-level`, and the matching
   MCP tools gain `default_access_level`. Its sibling `privacy_setting` was already
   exposed on both surfaces.
+- `project-template instantiate` gains `--privacy-setting` and
+  `asana_project_template_instantiate` gains `privacy_setting`. Both surfaces exposed only
+  the `public` boolean, which Asana deprecated in favour of `privacy_setting`.

@@ -13,11 +13,16 @@ export type RequestedDate = {
 	value: string
 }
 
+/** Asana's non-deprecated replacement for the `public` boolean. */
+export type ProjectTemplatePrivacySetting = 'public_to_workspace' | 'private_to_team' | 'private'
+
 export type InstantiateProjectFields = {
 	name?: string
 	/** Team the new project belongs to. Required when the workspace is an organization. */
 	team?: string
+	/** *Deprecated by Asana* in favour of `privacySetting`. */
 	public?: boolean
+	privacySetting?: ProjectTemplatePrivacySetting
 	requestedDates?: RequestedDate[]
 }
 
@@ -40,6 +45,7 @@ function instantiationBody(fields: InstantiateProjectFields) {
 			...(fields.name !== undefined && { name: fields.name }),
 			...(fields.team !== undefined && { team: fields.team }),
 			...(fields.public !== undefined && { public: fields.public }),
+			...(fields.privacySetting !== undefined && { privacy_setting: fields.privacySetting }),
 			...(fields.requestedDates !== undefined && { requested_dates: fields.requestedDates }),
 		},
 	}
